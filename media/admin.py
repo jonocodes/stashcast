@@ -4,7 +4,7 @@ from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
 from media.models import MediaItem
-from media.tasks import process_media, generate_summary
+from media.tasks import generate_summary, process_media
 
 
 @admin.register(MediaItem)
@@ -16,7 +16,7 @@ class MediaItemAdmin(admin.ModelAdmin):
         'author',
         'publish_date',
         'file_size_display',
-        'created_at',
+        'updated_at',
         'action_links'
     ]
 
