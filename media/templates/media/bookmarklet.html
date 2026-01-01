@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bookmarklet Tool - Stashcast</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-top: 0;
+        }
+        h2 {
+            color: #555;
+            margin-top: 30px;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .explainer {
+            background: #e7f3ff;
+            border-left: 4px solid #007bff;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .form-group {
+            margin: 20px 0;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        input[type="text"], input[type="url"], select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .bookmarklet-link {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: 600;
+            margin: 20px 0;
+            cursor: move;
+        }
+        .bookmarklet-link:hover {
+            background: #0056b3;
+        }
+        textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 10px 20px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #218838;
+        }
+        .copy-button {
+            background: #6c757d;
+        }
+        .copy-button:hover {
+            background: #5a6268;
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #007bff;
+            text-decoration: none;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        .instruction {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/admin/" class="back-link">&larr; Back to Admin</a>
+
+        <h1>Stashcast Bookmarklet Tool</h1>
+
+        <div class="explainer">
+            <strong>What is a bookmarklet?</strong><br>
+            A bookmarklet is a bookmark that runs JavaScript to perform actions on the current page.
+            Drag the bookmarklet link below to your bookmarks bar, then click it on any page with
+            media you want to download to Stashcast.
+        </div>
+
+        <h2>1. Configure Bookmarklet</h2>
+
+        <form id="bookmarklet-form">
+            <div class="form-group">
+                <label for="base-url">Base URL:</label>
+                <input type="url" id="base-url" value="{{ base_url }}" required>
+                <small>The base URL of your Stashcast instance</small>
+            </div>
+
+            <div class="form-group">
+                <label for="media-type">Default Media Type:</label>
+                <select id="media-type">
+                    <option value="auto" selected>Auto</option>
+                    <option value="audio">Audio</option>
+                    <option value="video">Video</option>
+                </select>
+                <small>What type of media to download by default</small>
+            </div>
+        </form>
+
+        <h2>2. Your Bookmarklet</h2>
+
+        <div class="instruction">
+            <strong>Installation:</strong> Drag the button below to your bookmarks bar. If your bookmarks
+            bar is hidden, enable it in your browser settings first.
+        </div>
+
+        <a href="#" id="bookmarklet" class="bookmarklet-link">
+            📥 Stash to Stashcast
+        </a>
+
+        <h2>3. JavaScript Code</h2>
+
+        <p>You can also copy the JavaScript code below and create a bookmark manually:</p>
+
+        <textarea id="bookmarklet-code" readonly></textarea>
+
+        <div style="margin-top: 10px;">
+            <button class="copy-button" onclick="copyCode()">Copy Code</button>
+        </div>
+
+        <h2>4. Test It</h2>
+
+        <form id="test-form" style="margin-top: 20px;">
+            <div class="form-group">
+                <label for="test-url">Test URL:</label>
+                <input type="url" id="test-url" placeholder="https://example.com/video" required>
+            </div>
+            <button type="submit">Test Bookmarklet</button>
+        </form>
+    </div>
+
+    <script>
+        const apiKey = '{{ api_key }}';
+
+        function generateBookmarklet() {
+            const baseUrl = document.getElementById('base-url').value;
+            const mediaType = document.getElementById('media-type').value;
+
+            const code = `javascript:(function(){
+                const url = encodeURIComponent(window.location.href);
+                const stashUrl = '${baseUrl}/stash/?apikey=${apiKey}&url=' + url + '&type=${mediaType}';
+                window.open(stashUrl, '_blank');
+            })();`;
+
+            const bookmarklet = document.getElementById('bookmarklet');
+            const codeTextarea = document.getElementById('bookmarklet-code');
+
+            bookmarklet.href = code;
+            codeTextarea.value = code;
+        }
+
+        function copyCode() {
+            const codeTextarea = document.getElementById('bookmarklet-code');
+            codeTextarea.select();
+            document.execCommand('copy');
+            alert('Code copied to clipboard!');
+        }
+
+        document.getElementById('base-url').addEventListener('input', generateBookmarklet);
+        document.getElementById('media-type').addEventListener('change', generateBookmarklet);
+
+        document.getElementById('test-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const testUrl = document.getElementById('test-url').value;
+            const baseUrl = document.getElementById('base-url').value;
+            const mediaType = document.getElementById('media-type').value;
+
+            const stashUrl = `${baseUrl}/stash/?apikey=${apiKey}&url=${encodeURIComponent(testUrl)}&type=${mediaType}`;
+            window.open(stashUrl, '_blank');
+        });
+
+        // Initialize on page load
+        generateBookmarklet();
+    </script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+django>=6.0
+huey>=2.5.5
+yt-dlp>=2025.12.8
+pillow>=12.0.0
+python-nanoid>=2.0.0
+sumy>=0.11.0
+nltk>=3.9.2
+requests>=2.32.5
+numpy>=2.4.0
+scipy>=1.16.3
+watchdog>=6.0.0
+honcho>=2.0.0
+beautifulsoup4>=4.12.0
+django-huey-monitor>=0.9.0
+bx-django-utils>=80

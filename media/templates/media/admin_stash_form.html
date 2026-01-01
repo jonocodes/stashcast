@@ -1,0 +1,223 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}Add URL - Stashcast{% endblock %}
+
+{% block extrastyle %}
+<style>
+    .stash-form-container {
+        max-width: 800px;
+        margin: 20px auto;
+        padding: 20px;
+    }
+    .stash-form {
+        background: white;
+        border-radius: 8px;
+        padding: 30px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .form-row {
+        margin-bottom: 20px;
+    }
+    .form-row label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 8px;
+        color: #333;
+    }
+    .form-row input[type="url"],
+    .form-row select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+        box-sizing: border-box;
+    }
+    .form-row input[type="url"]:focus,
+    .form-row select:focus {
+        outline: none;
+        border-color: #417690;
+    }
+    .form-row small {
+        display: block;
+        margin-top: 5px;
+        color: #666;
+        font-size: 13px;
+    }
+    .submit-row {
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #eee;
+    }
+    .submit-row input[type="submit"] {
+        background: #417690;
+        color: white;
+        padding: 12px 30px;
+        border: none;
+        border-radius: 4px;
+        font-size: 14px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+    .submit-row input[type="submit"]:hover {
+        background: #305d75;
+    }
+    .recent-items {
+        margin-top: 30px;
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .recent-items h2 {
+        margin-top: 0;
+        color: #333;
+        font-size: 18px;
+    }
+    .recent-items table {
+        width: 100%;
+        margin-top: 15px;
+    }
+    .recent-items th {
+        text-align: left;
+        padding: 8px;
+        border-bottom: 2px solid #ddd;
+        font-weight: bold;
+        color: #666;
+    }
+    .recent-items td {
+        padding: 8px;
+        border-bottom: 1px solid #eee;
+    }
+    .status-badge {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 3px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+    .status-ready { background: #d4edda; color: #155724; }
+    .status-error { background: #f8d7da; color: #721c24; }
+    .status-processing { background: #fff3cd; color: #856404; }
+    .status-downloading { background: #d1ecf1; color: #0c5460; }
+    .status-prefetching { background: #e2e3e5; color: #383d41; }
+    .example-urls {
+        background: #f8f9fa;
+        border-left: 4px solid #417690;
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 4px;
+    }
+    .example-urls h3 {
+        margin-top: 0;
+        font-size: 14px;
+        color: #417690;
+    }
+    .example-urls ul {
+        margin: 10px 0 0 0;
+        padding-left: 20px;
+    }
+    .example-urls li {
+        margin: 5px 0;
+        font-size: 13px;
+    }
+    .example-urls code {
+        background: #e9ecef;
+        padding: 2px 5px;
+        border-radius: 3px;
+        font-size: 12px;
+    }
+</style>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">Home</a>
+    &rsaquo; Add URL
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="stash-form-container">
+    <div class="stash-form">
+        <h1>Add URL to Stashcast</h1>
+        <p>Download media from any URL supported by yt-dlp or direct media links.</p>
+
+        <div class="example-urls">
+            <h3>Example URLs to try:</h3>
+            <ul>
+                <li><strong>Test Server:</strong> <code>http://localhost:8001/01_Eragon_001_of_115.mp3</code></li>
+                <li><strong>YouTube:</strong> <code>https://www.youtube.com/watch?v=VIDEO_ID</code></li>
+                <li><strong>Direct media:</strong> Any URL ending in .mp3, .mp4, .m4a, etc.</li>
+            </ul>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="form-row">
+                <label for="url">URL *</label>
+                <input type="url"
+                       id="url"
+                       name="url"
+                       placeholder="https://example.com/video"
+                       required
+                       autofocus>
+                <small>Enter any URL supported by yt-dlp or a direct media file URL</small>
+            </div>
+
+            <div class="form-row">
+                <label for="type">Media Type *</label>
+                <select id="type" name="type" required>
+                    <option value="auto" selected>Auto-detect</option>
+                    <option value="audio">Audio only</option>
+                    <option value="video">Video</option>
+                </select>
+                <small>Auto-detect will determine if the content is audio or video</small>
+            </div>
+
+            <div class="submit-row">
+                <input type="submit" value="Add to Stashcast">
+            </div>
+        </form>
+    </div>
+
+    {% if recent_items %}
+    <div class="recent-items">
+        <h2>Recent Items</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in recent_items %}
+                <tr>
+                    <td>{{ item.title|default:"Untitled"|truncatechars:50 }}</td>
+                    <td>{{ item.media_type|default:"-"|title }}</td>
+                    <td>
+                        <span class="status-badge status-{{ item.status|lower }}">
+                            {{ item.get_status_display }}
+                        </span>
+                    </td>
+                    <td>{{ item.created_at|timesince }} ago</td>
+                    <td>
+                        <a href="{% url 'admin:media_mediaitem_change' item.guid %}">View</a>
+                        {% if item.is_ready %}
+                        | <a href="{% url 'item_detail' item.guid %}" target="_blank">Preview</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

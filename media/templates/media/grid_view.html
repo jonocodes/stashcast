@@ -1,0 +1,203 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+{% load media_filters %}
+
+{% block title %}{{ title }} - Stashcast{% endblock %}
+
+{% block extrastyle %}
+<style>
+    .grid-container {
+        max-width: 1400px;
+        margin: 20px auto;
+        padding: 20px;
+    }
+
+    .filters {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 30px;
+        padding: 15px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .filters select {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 20px;
+    }
+
+    .grid-item {
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: transform 0.2s, box-shadow 0.2s;
+        cursor: pointer;
+    }
+
+    .grid-item:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .thumbnail {
+        width: 100%;
+        height: 160px;
+        object-fit: cover;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 48px;
+        position: relative;
+    }
+
+    .thumbnail img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .duration {
+        position: absolute;
+        bottom: 8px;
+        right: 8px;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .item-info {
+        padding: 12px;
+    }
+
+    .item-title {
+        font-size: 14px;
+        font-weight: 500;
+        margin: 0 0 8px 0;
+        color: #333;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        line-height: 1.4;
+    }
+
+    .item-meta {
+        font-size: 12px;
+        color: #666;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 3px;
+        font-size: 11px;
+        font-weight: 500;
+        text-transform: uppercase;
+    }
+
+    .status-ready { background: #d4edda; color: #155724; }
+    .status-error { background: #f8d7da; color: #721c24; }
+    .status-processing { background: #fff3cd; color: #856404; }
+    .status-downloading { background: #d1ecf1; color: #0c5460; }
+    .status-prefetching { background: #e2e3e5; color: #383d41; }
+
+    .type-badge {
+        background: #e3f2fd;
+        color: #1976d2;
+        padding: 2px 8px;
+        border-radius: 3px;
+        font-size: 11px;
+        font-weight: 500;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #666;
+    }
+
+    .empty-state h2 {
+        margin: 0 0 10px 0;
+        color: #999;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="grid-container">
+    <h1>Media Grid</h1>
+
+    <div class="filters">
+        <form method="get" style="display: flex; gap: 15px; align-items: center;">
+            <label for="type">Type:</label>
+            <select name="type" id="type" onchange="this.form.submit()">
+                <option value="all" {% if media_type_filter == 'all' %}selected{% endif %}>All</option>
+                <option value="audio" {% if media_type_filter == 'audio' %}selected{% endif %}>Audio</option>
+                <option value="video" {% if media_type_filter == 'video' %}selected{% endif %}>Video</option>
+            </select>
+
+            <label for="status">Status:</label>
+            <select name="status" id="status" onchange="this.form.submit()">
+                <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All</option>
+                <option value="READY" {% if status_filter == 'READY' %}selected{% endif %}>Ready</option>
+                <option value="PROCESSING" {% if status_filter == 'PROCESSING' %}selected{% endif %}>Processing</option>
+                <option value="DOWNLOADING" {% if status_filter == 'DOWNLOADING' %}selected{% endif %}>Downloading</option>
+                <option value="PREFETCHING" {% if status_filter == 'PREFETCHING' %}selected{% endif %}>Prefetching</option>
+                <option value="ERROR" {% if status_filter == 'ERROR' %}selected{% endif %}>Error</option>
+            </select>
+        </form>
+    </div>
+
+    {% if items %}
+    <div class="grid">
+        {% for data in items %}
+        <a href="/items/{{ data.item.guid }}/" class="grid-item" style="text-decoration: none;">
+            <div class="thumbnail">
+                {% if data.thumbnail_url %}
+                    <img src="{{ data.thumbnail_url }}" alt="{{ data.item.title }}">
+                {% else %}
+                    {% if data.item.media_type == 'audio' %}🎵{% else %}🎬{% endif %}
+                {% endif %}
+                {% if data.item.duration_seconds %}
+                    <span class="duration">{{ data.item.duration_seconds|duration }}</span>
+                {% endif %}
+            </div>
+            <div class="item-info">
+                <h3 class="item-title">{{ data.item.title|default:"Untitled" }}</h3>
+                <div class="item-meta">
+                    <span class="type-badge">{{ data.item.media_type|upper }}</span>
+                    <span class="status-badge status-{{ data.item.status|lower }}">{{ data.item.status }}</span>
+                    {% if data.item.author %}
+                        <span>{{ data.item.author }}</span>
+                    {% endif %}
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <h2>No items found</h2>
+        <p>Try adjusting your filters or add some media items.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
