@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pecha Kucha - Audio Only</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+        h1 {
+            margin: 0 0 10px 0;
+            font-size: 2em;
+        }
+        .meta {
+            opacity: 0.9;
+            margin-bottom: 30px;
+            font-size: 0.9em;
+        }
+        .thumbnail {
+            width: 100%;
+            max-width: 400px;
+            border-radius: 10px;
+            margin: 20px auto;
+            display: block;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        }
+        audio {
+            width: 100%;
+            margin: 20px 0;
+            border-radius: 10px;
+        }
+        .description {
+            line-height: 1.6;
+            opacity: 0.95;
+        }
+        .subtitle-link {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            text-decoration: none;
+            color: white;
+            transition: background 0.3s;
+        }
+        .subtitle-link:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Pecha Kucha</h1>
+        <div class="meta">
+            <strong>Type:</strong> Audio Only (M4A)<br>
+            <strong>Format:</strong> AAC Audio with Subtitles Available
+        </div>
+
+        <img src="thumbnail.webp" alt="Pecha Kucha Thumbnail" class="thumbnail">
+
+        <audio controls>
+            <source src="aud.m4a" type="audio/mp4">
+            Your browser does not support the audio element.
+        </audio>
+
+        <div class="description">
+            <h3>About Pecha Kucha</h3>
+            <p>
+                PechaKucha (Japanese: ペチャクチャ) is a presentation style in which 20 slides
+                are shown for 20 seconds each (6 minutes and 40 seconds in total). The format
+                keeps presentations concise and fast-paced, perfect for sharing ideas and stories.
+            </p>
+            <a href="subtitles.vtt" download class="subtitle-link">📄 Download Subtitles (VTT)</a>
+        </div>
+    </div>
+</body>
+</html>

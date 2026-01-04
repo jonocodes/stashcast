@@ -134,10 +134,33 @@ STASHCAST_API_KEY = os.environ.get('STASHCAST_API_KEY', 'dev-api-key-change-in-p
 
 # Optional environment variables
 STASHCAST_MEDIA_BASE_URL = os.environ.get('STASHCAST_MEDIA_BASE_URL', None)
-STASHCAST_DEFAULT_YTDLP_ARGS_AUDIO = os.environ.get('STASHCAST_DEFAULT_YTDLP_ARGS_AUDIO', '')
-STASHCAST_DEFAULT_YTDLP_ARGS_VIDEO = os.environ.get('STASHCAST_DEFAULT_YTDLP_ARGS_VIDEO', '')
-STASHCAST_DEFAULT_FFMPEG_ARGS_AUDIO = os.environ.get('STASHCAST_DEFAULT_FFMPEG_ARGS_AUDIO', '')
-STASHCAST_DEFAULT_FFMPEG_ARGS_VIDEO = os.environ.get('STASHCAST_DEFAULT_FFMPEG_ARGS_VIDEO', '')
+
+# Default yt-dlp args optimized for mobile playback
+# Audio: AAC codec in M4A container is widely supported
+STASHCAST_DEFAULT_YTDLP_ARGS_AUDIO = os.environ.get(
+    'STASHCAST_DEFAULT_YTDLP_ARGS_AUDIO',
+    '--audio-format m4a --audio-quality 128K'
+)
+
+# Video: H.264/AAC in MP4 container for maximum mobile compatibility
+# Limit to 720p to balance quality and file size
+# Format filter: prefer best video ≤720p + best audio, fallback to combined format ≤720p
+STASHCAST_DEFAULT_YTDLP_ARGS_VIDEO = os.environ.get(
+    'STASHCAST_DEFAULT_YTDLP_ARGS_VIDEO',
+    '--format "bv*[height<=720][vcodec^=avc]+ba/b[height<=720]" --merge-output-format mp4'
+)
+
+# FFmpeg args for transcoding (if needed)
+STASHCAST_DEFAULT_FFMPEG_ARGS_AUDIO = os.environ.get(
+    'STASHCAST_DEFAULT_FFMPEG_ARGS_AUDIO',
+    '-c:a aac -b:a 128k'
+)
+
+STASHCAST_DEFAULT_FFMPEG_ARGS_VIDEO = os.environ.get(
+    'STASHCAST_DEFAULT_FFMPEG_ARGS_VIDEO',
+    '-c:v libx264 -preset fast -crf 23 -c:a aac -b:a 128k -movflags +faststart'
+)
+
 STASHCAST_SLUG_MAX_WORDS = int(os.environ.get('STASHCAST_SLUG_MAX_WORDS', '6'))
 STASHCAST_SLUG_MAX_CHARS = int(os.environ.get('STASHCAST_SLUG_MAX_CHARS', '40'))
 STASHCAST_SUMMARY_SENTENCES = int(os.environ.get('STASHCAST_SUMMARY_SENTENCES', '8'))
@@ -151,11 +174,12 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media_files'
 
 # Huey configuration (SQLite backend)
+import sys
 HUEY = {
     'huey_class': 'huey.SqliteHuey',
     'name': 'stashcast',
     'filename': str(BASE_DIR / 'huey.db'),
-    'immediate': False,
+    'immediate': 'test' in sys.argv,  # Execute tasks immediately during tests
     'consumer': {
         'workers': 2,
         'worker_type': 'thread',

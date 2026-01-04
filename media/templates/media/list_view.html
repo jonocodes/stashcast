@@ -1,0 +1,297 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+{% load media_filters %}
+
+{% block title %}{{ title }} - StashCast{% endblock %}
+
+{% block extrastyle %}
+<style>
+    .list-container {
+        max-width: 1400px;
+        margin: 20px auto;
+        padding: 20px;
+    }
+
+    .filters {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 30px;
+        padding: 15px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .filters select {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+
+    .view-switcher {
+        margin-left: auto;
+        display: flex;
+        gap: 10px;
+    }
+
+    .view-switcher a {
+        padding: 8px 16px;
+        background: #f5f5f5;
+        border-radius: 4px;
+        text-decoration: none;
+        color: #333;
+        font-size: 14px;
+        transition: background 0.2s;
+    }
+
+    .view-switcher a:hover {
+        background: #e0e0e0;
+    }
+
+    .view-switcher a.active {
+        background: #667eea;
+        color: white;
+    }
+
+    .list-items {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+
+    .list-item {
+        display: flex;
+        gap: 15px;
+        padding: 15px;
+        border-bottom: 1px solid #f0f0f0;
+        transition: background 0.2s;
+        text-decoration: none !important;
+        color: inherit;
+        cursor: pointer;
+    }
+
+    .list-item * {
+        text-decoration: none !important;
+    }
+
+    .list-item:last-child {
+        border-bottom: none;
+    }
+
+    .list-item:hover {
+        background: #f9f9f9;
+    }
+
+    .list-item:hover .list-title {
+        text-decoration: underline !important;
+    }
+
+    .list-thumbnail {
+        width: 160px;
+        height: 90px;
+        flex-shrink: 0;
+        border-radius: 4px;
+        overflow: hidden;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 36px;
+        position: relative;
+    }
+
+    .list-thumbnail img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .duration {
+        position: absolute;
+        bottom: 4px;
+        right: 4px;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 11px;
+        font-weight: 500;
+    }
+
+    .list-content {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .list-title {
+        font-size: 16px;
+        font-weight: 500;
+        margin: 0 0 8px 0;
+        color: #333;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .list-description {
+        font-size: 13px;
+        color: #666;
+        margin: 0 0 10px 0;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        line-height: 1.4;
+    }
+
+    .list-meta {
+        font-size: 12px;
+        color: #666;
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 3px;
+        font-size: 11px;
+        font-weight: 500;
+        text-transform: uppercase;
+    }
+
+    .status-ready { background: #d4edda; color: #155724; }
+    .status-error { background: #f8d7da; color: #721c24; }
+    .status-processing { background: #fff3cd; color: #856404; }
+    .status-downloading { background: #d1ecf1; color: #0c5460; }
+    .status-prefetching { background: #e2e3e5; color: #383d41; }
+
+    .type-badge {
+        background: #e3f2fd;
+        color: #1976d2;
+        padding: 3px 8px;
+        border-radius: 3px;
+        font-size: 11px;
+        font-weight: 500;
+        text-transform: uppercase;
+    }
+
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .meta-label {
+        color: #999;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #666;
+        background: white;
+        border-radius: 8px;
+    }
+
+    .empty-state h2 {
+        margin: 0 0 10px 0;
+        color: #999;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="list-container">
+    <h1>Media List</h1>
+
+    <div class="filters">
+        <form method="get" style="display: flex; gap: 15px; align-items: center; flex: 1;">
+            <label for="type">Type:</label>
+            <select name="type" id="type" onchange="this.form.submit()">
+                <option value="all" {% if media_type_filter == 'all' %}selected{% endif %}>All</option>
+                <option value="audio" {% if media_type_filter == 'audio' %}selected{% endif %}>Audio</option>
+                <option value="video" {% if media_type_filter == 'video' %}selected{% endif %}>Video</option>
+            </select>
+
+            <label for="status">Status:</label>
+            <select name="status" id="status" onchange="this.form.submit()">
+                <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All</option>
+                <option value="READY" {% if status_filter == 'READY' %}selected{% endif %}>Ready</option>
+                <option value="PROCESSING" {% if status_filter == 'PROCESSING' %}selected{% endif %}>Processing</option>
+                <option value="DOWNLOADING" {% if status_filter == 'DOWNLOADING' %}selected{% endif %}>Downloading</option>
+                <option value="PREFETCHING" {% if status_filter == 'PREFETCHING' %}selected{% endif %}>Prefetching</option>
+                <option value="ERROR" {% if status_filter == 'ERROR' %}selected{% endif %}>Error</option>
+            </select>
+
+            <div style="margin-left: auto; font-weight: 500; color: #333;">
+                Total Storage: {{ total_storage_bytes|filesize }}
+            </div>
+        </form>
+
+        <div class="view-switcher">
+            <a href="{% url 'grid_view' %}?type={{ media_type_filter }}&status={{ status_filter }}">Grid</a>
+            <a href="{% url 'list_view' %}?type={{ media_type_filter }}&status={{ status_filter }}" class="active">List</a>
+        </div>
+    </div>
+
+    {% if items %}
+    <div class="list-items">
+        {% for data in items %}
+        <a href="/items/{{ data.item.guid }}/" class="list-item">
+            <div class="list-thumbnail">
+                {% if data.thumbnail_url %}
+                    <img src="{{ data.thumbnail_url }}" alt="{{ data.item.title }}">
+                {% else %}
+                    {% if data.item.media_type == 'audio' %}🎵{% else %}🎬{% endif %}
+                {% endif %}
+                {% if data.item.duration_seconds %}
+                    <span class="duration">{{ data.item.duration_seconds|duration }}</span>
+                {% endif %}
+            </div>
+            <div class="list-content">
+                <h3 class="list-title">{{ data.item.title|default:"Untitled" }}</h3>
+                {% if data.item.description %}
+                    <p class="list-description">{{ data.item.description }}</p>
+                {% endif %}
+                <div class="list-meta">
+                    <span class="type-badge">{{ data.item.media_type }}</span>
+                    {% if data.item.status != 'READY' %}
+                        <span class="status-badge status-{{ data.item.status|lower }}">{{ data.item.status }}</span>
+                    {% endif %}
+                    {% if data.item.file_size %}
+                        <span class="meta-item">
+                            <span class="meta-label">Size:</span>
+                            <span>{{ data.item.file_size|filesize }}</span>
+                        </span>
+                    {% endif %}
+                    {% if data.item.author %}
+                        <span class="meta-item">
+                            <span class="meta-label">Author:</span>
+                            <span>{{ data.item.author }}</span>
+                        </span>
+                    {% endif %}
+                    {% if data.item.created_at %}
+                        <span class="meta-item">
+                            <span class="meta-label">Added:</span>
+                            <span>{{ data.item.created_at|date:"M d, Y" }}</span>
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <h2>No items found</h2>
+        <p>Try adjusting your filters or add some media items.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

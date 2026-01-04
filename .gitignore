@@ -14,7 +14,7 @@ ENV/
 db.sqlite3
 db.sqlite3-journal
 huey.db
-huey.db-journal
+huey.db-*
 
 # Media files
 media_files/

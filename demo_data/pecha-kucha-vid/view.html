@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pecha Kucha - Video</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+        h1 {
+            margin: 0 0 10px 0;
+            font-size: 2em;
+        }
+        .meta {
+            opacity: 0.9;
+            margin-bottom: 30px;
+            font-size: 0.9em;
+        }
+        video {
+            width: 100%;
+            margin: 20px 0;
+            border-radius: 10px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        }
+        .description {
+            line-height: 1.6;
+            opacity: 0.95;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Pecha Kucha</h1>
+        <div class="meta">
+            <strong>Type:</strong> Video (MP4)<br>
+            <strong>Format:</strong> Video with Embedded Subtitles
+        </div>
+
+        <video controls poster="thumbnail.webp">
+            <source src="vid.mp4" type="video/mp4">
+            <track kind="subtitles" src="subtitles.vtt" srclang="en" label="English" default>
+            Your browser does not support the video tag.
+        </video>
+
+        <div class="description">
+            <h3>About Pecha Kucha</h3>
+            <p>
+                PechaKucha (Japanese: ペチャクチャ) is a presentation style in which 20 slides
+                are shown for 20 seconds each (6 minutes and 40 seconds in total). The format
+                keeps presentations concise and fast-paced, making it an engaging way to share
+                ideas, projects, and creative work.
+            </p>
+            <p>
+                This video version includes visual slides synchronized with the presentation.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

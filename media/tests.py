@@ -1,7 +1,8 @@
-from django.test import TestCase, Client
+from django.test import TestCase, Client, override_settings
 from django.conf import settings
 from media.models import MediaItem
 from media.utils import generate_slug, ensure_unique_slug
+from unittest.mock import patch, MagicMock
 
 
 class MediaItemModelTest(TestCase):
@@ -28,6 +29,91 @@ class MediaItemModelTest(TestCase):
         # Should only contain A-Z a-z 0-9
         self.assertTrue(item.guid.isalnum())
 
+    def test_same_slug_different_media_type_allowed(self):
+        """Test that same slug can be used for audio and video"""
+        # Create video item
+        video_item = MediaItem.objects.create(
+            source_url="https://example.com/content",
+            requested_type=MediaItem.REQUESTED_TYPE_VIDEO,
+            slug="my-content",
+            media_type=MediaItem.MEDIA_TYPE_VIDEO
+        )
+
+        # Create audio item with same slug - should succeed
+        audio_item = MediaItem.objects.create(
+            source_url="https://example.com/content",
+            requested_type=MediaItem.REQUESTED_TYPE_AUDIO,
+            slug="my-content",
+            media_type=MediaItem.MEDIA_TYPE_AUDIO
+        )
+
+        self.assertEqual(video_item.slug, audio_item.slug)
+        self.assertNotEqual(video_item.guid, audio_item.guid)
+        self.assertEqual(MediaItem.objects.filter(slug="my-content").count(), 2)
+
+    def test_get_base_dir_audio(self):
+        """Test get_base_dir for audio items"""
+        item = MediaItem.objects.create(
+            source_url="https://example.com/audio",
+            requested_type=MediaItem.REQUESTED_TYPE_AUDIO,
+            slug="test-audio",
+            media_type=MediaItem.MEDIA_TYPE_AUDIO
+        )
+        base_dir = item.get_base_dir()
+        self.assertIsNotNone(base_dir)
+        self.assertTrue(str(base_dir).endswith("audio/test-audio"))
+
+    def test_get_base_dir_video(self):
+        """Test get_base_dir for video items"""
+        item = MediaItem.objects.create(
+            source_url="https://example.com/video",
+            requested_type=MediaItem.REQUESTED_TYPE_VIDEO,
+            slug="test-video",
+            media_type=MediaItem.MEDIA_TYPE_VIDEO
+        )
+        base_dir = item.get_base_dir()
+        self.assertIsNotNone(base_dir)
+        self.assertTrue(str(base_dir).endswith("video/test-video"))
+
+    def test_get_base_dir_pending_slug(self):
+        """Test get_base_dir returns None for pending slug"""
+        item = MediaItem.objects.create(
+            source_url="https://example.com/video",
+            requested_type=MediaItem.REQUESTED_TYPE_AUTO,
+            slug="pending"
+        )
+        base_dir = item.get_base_dir()
+        self.assertIsNone(base_dir)
+
+    def test_get_absolute_paths(self):
+        """Test absolute path helper methods"""
+        item = MediaItem.objects.create(
+            source_url="https://example.com/video",
+            requested_type=MediaItem.REQUESTED_TYPE_VIDEO,
+            slug="test-video",
+            media_type=MediaItem.MEDIA_TYPE_VIDEO,
+            content_path="content.mp4",
+            thumbnail_path="thumbnail.webp",
+            subtitle_path="subtitles.vtt",
+            log_path="download.log"
+        )
+
+        content_path = item.get_absolute_content_path()
+        self.assertIsNotNone(content_path)
+        self.assertTrue(str(content_path).endswith("test-video/content.mp4"))
+
+        thumbnail_path = item.get_absolute_thumbnail_path()
+        self.assertIsNotNone(thumbnail_path)
+        self.assertTrue(str(thumbnail_path).endswith("test-video/thumbnail.webp"))
+
+        subtitle_path = item.get_absolute_subtitle_path()
+        self.assertIsNotNone(subtitle_path)
+        self.assertTrue(str(subtitle_path).endswith("test-video/subtitles.vtt"))
+
+        log_path = item.get_absolute_log_path()
+        self.assertIsNotNone(log_path)
+        self.assertTrue(str(log_path).endswith("test-video/download.log"))
+
 
 class SlugUtilsTest(TestCase):
     def test_generate_slug_basic(self):
@@ -50,6 +136,31 @@ class SlugUtilsTest(TestCase):
         slug = generate_slug("Hello! This & That (2024)")
         self.assertEqual(slug, "hello-this-that-2024")
 
+    def test_generate_slug_empty_string(self):
+        """Test slug generation with empty string"""
+        slug = generate_slug("")
+        self.assertEqual(slug, "untitled")
+
+    def test_generate_slug_only_special_chars(self):
+        """Test slug with only special characters"""
+        slug = generate_slug("!@#$%^&*()")
+        self.assertEqual(slug, "untitled")
+
+    def test_generate_slug_unicode(self):
+        """Test slug with unicode characters"""
+        slug = generate_slug("Hello 世界 Мир")
+        # Non-ASCII characters are stripped, leaving "hello"
+        self.assertEqual(slug, "hello")
+
+    def test_generate_slug_very_long(self):
+        """Test slug truncation with very long title"""
+        long_title = " ".join([f"word{i}" for i in range(100)])
+        slug = generate_slug(long_title, max_words=6, max_chars=40)
+        # Should be truncated
+        self.assertTrue(len(slug) <= 40)
+        # Should have max 6 words
+        self.assertTrue(len(slug.split('-')) <= 6)
+
     def test_ensure_unique_slug_new(self):
         """Test unique slug for new item"""
         slug = ensure_unique_slug("test-slug", "https://example.com/1")
@@ -70,18 +181,80 @@ class SlugUtilsTest(TestCase):
         MediaItem.objects.create(
             source_url="https://example.com/video1",
             requested_type=MediaItem.REQUESTED_TYPE_AUTO,
-            slug="test-slug"
+            slug="test-slug",
+            media_type=MediaItem.MEDIA_TYPE_VIDEO
         )
-        slug = ensure_unique_slug("test-slug", "https://example.com/video2")
+        slug = ensure_unique_slug("test-slug", "https://example.com/video2", media_type=MediaItem.MEDIA_TYPE_VIDEO)
         # Should have a suffix added
         self.assertTrue(slug.startswith("test-slug-"))
         self.assertNotEqual(slug, "test-slug")
+
+    def test_ensure_unique_slug_same_url_different_type(self):
+        """Test slug generation for same URL but different media type"""
+        # Create video item
+        MediaItem.objects.create(
+            source_url="https://example.com/content",
+            requested_type=MediaItem.REQUESTED_TYPE_VIDEO,
+            slug="my-content",
+            media_type=MediaItem.MEDIA_TYPE_VIDEO
+        )
+
+        # Request audio from same URL - should reuse same slug (different media_type allows this)
+        slug = ensure_unique_slug(
+            "my-content",
+            "https://example.com/content",
+            media_type=MediaItem.MEDIA_TYPE_AUDIO
+        )
+        self.assertEqual(slug, "my-content")
+
+    def test_ensure_unique_slug_same_url_video_after_audio(self):
+        """Test slug generation when video is requested after audio"""
+        # Create audio item
+        MediaItem.objects.create(
+            source_url="https://example.com/content",
+            requested_type=MediaItem.REQUESTED_TYPE_AUDIO,
+            slug="my-content",
+            media_type=MediaItem.MEDIA_TYPE_AUDIO
+        )
+
+        # Request video from same URL - should reuse same slug (different media_type allows this)
+        slug = ensure_unique_slug(
+            "my-content",
+            "https://example.com/content",
+            media_type=MediaItem.MEDIA_TYPE_VIDEO
+        )
+        self.assertEqual(slug, "my-content")
+
+    def test_ensure_unique_slug_reuse_same_type(self):
+        """Test slug reuse when same URL and type already exists"""
+        # Create video item
+        item = MediaItem.objects.create(
+            source_url="https://example.com/content",
+            requested_type=MediaItem.REQUESTED_TYPE_VIDEO,
+            slug="my-content",
+            media_type=MediaItem.MEDIA_TYPE_VIDEO
+        )
+
+        # Request same URL and type - should reuse slug
+        slug = ensure_unique_slug(
+            "my-content",
+            "https://example.com/content",
+            existing_item=item,
+            media_type=MediaItem.MEDIA_TYPE_VIDEO
+        )
+        self.assertEqual(slug, "my-content")
 
 
 class StashViewTest(TestCase):
     def setUp(self):
         self.client = Client()
         self.api_key = settings.STASHCAST_API_KEY
+        # Mock the process_media task to prevent actual downloads during tests
+        self.process_media_patcher = patch('media.views.process_media')
+        self.mock_process_media = self.process_media_patcher.start()
+
+    def tearDown(self):
+        self.process_media_patcher.stop()
 
     def test_stash_missing_api_key(self):
         """Test stash endpoint without API key"""
@@ -129,8 +302,8 @@ class StashViewTest(TestCase):
         self.assertTrue(data['success'])
         self.assertIn('guid', data)
 
-    def test_stash_duplicate_url(self):
-        """Test stashing the same URL twice"""
+    def test_stash_duplicate_url_same_type(self):
+        """Test stashing the same URL twice with same type - should reuse"""
         url = 'https://example.com/video.mp4'
 
         # First request
@@ -141,16 +314,83 @@ class StashViewTest(TestCase):
         })
         guid1 = response1.json()['guid']
 
-        # Second request with same URL
+        # Second request with same URL and same type
         response2 = self.client.get('/stash/', {
+            'apikey': self.api_key,
+            'url': url,
+            'type': 'auto'
+        })
+        guid2 = response2.json()['guid']
+
+        # Should reuse the same GUID for same URL+type
+        self.assertEqual(guid1, guid2)
+        self.assertEqual(MediaItem.objects.count(), 1)
+
+    def test_stash_same_url_different_types(self):
+        """Test stashing the same URL as both audio and video - should create separate items"""
+        url = 'https://example.com/content'
+
+        # First request - video
+        response1 = self.client.get('/stash/', {
             'apikey': self.api_key,
             'url': url,
             'type': 'video'
         })
+        guid1 = response1.json()['guid']
+        item1 = MediaItem.objects.get(guid=guid1)
+        item1.media_type = 'video'  # Simulate what would happen after processing
+        item1.slug = 'test-content'
+        item1.save()
+
+        # Second request - audio from same URL
+        response2 = self.client.get('/stash/', {
+            'apikey': self.api_key,
+            'url': url,
+            'type': 'audio'
+        })
         guid2 = response2.json()['guid']
 
-        # Should reuse the same GUID
-        self.assertEqual(guid1, guid2)
+        # Should create a different GUID for different type
+        self.assertNotEqual(guid1, guid2)
+
+        # Should have two separate database entries
+        self.assertEqual(MediaItem.objects.count(), 2)
+
+        # Verify both items exist with different types
+        item1 = MediaItem.objects.get(guid=guid1)
+        item2 = MediaItem.objects.get(guid=guid2)
+        self.assertEqual(item1.source_url, url)
+        self.assertEqual(item2.source_url, url)
+        self.assertEqual(item1.requested_type, 'video')
+        self.assertEqual(item2.requested_type, 'audio')
+
+    def test_stash_auto_then_explicit_type(self):
+        """Test stashing with auto, then explicitly requesting different type"""
+        url = 'https://example.com/content'
+
+        # First request - auto
+        response1 = self.client.get('/stash/', {
+            'apikey': self.api_key,
+            'url': url,
+            'type': 'auto'
+        })
+        guid1 = response1.json()['guid']
+        item1 = MediaItem.objects.get(guid=guid1)
+        item1.media_type = 'video'  # Simulate auto detection resulting in video
+        item1.slug = 'test-content'
+        item1.save()
+
+        # Second request - explicit audio
+        response2 = self.client.get('/stash/', {
+            'apikey': self.api_key,
+            'url': url,
+            'type': 'audio'
+        })
+        guid2 = response2.json()['guid']
+
+        # Should create a new item for explicit audio type
+        self.assertNotEqual(guid1, guid2)
+        self.assertEqual(MediaItem.objects.count(), 2)
 
 
 class ItemDetailViewTest(TestCase):
@@ -203,6 +443,42 @@ class FeedTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response['Content-Type'], 'application/rss+xml; charset=utf-8')
         self.assertContains(response, "Test Video")
+
+    def test_feeds_separate_same_slug(self):
+        """Test that audio and video feeds correctly separate items with same slug"""
+        # Create audio and video items with same slug
+        audio_item = MediaItem.objects.create(
+            source_url="https://example.com/content",
+            requested_type=MediaItem.REQUESTED_TYPE_AUDIO,
+            slug="my-content",
+            title="My Content (Audio)",
+            media_type=MediaItem.MEDIA_TYPE_AUDIO,
+            status=MediaItem.STATUS_READY,
+            content_path="content.m4a"
+        )
+        video_item = MediaItem.objects.create(
+            source_url="https://example.com/content",
+            requested_type=MediaItem.REQUESTED_TYPE_VIDEO,
+            slug="my-content",
+            title="My Content (Video)",
+            media_type=MediaItem.MEDIA_TYPE_VIDEO,
+            status=MediaItem.STATUS_READY,
+            content_path="content.mp4"
+        )
+
+        # Check audio feed only contains audio item
+        audio_response = self.client.get('/feeds/audio.xml')
+        self.assertEqual(audio_response.status_code, 200)
+        self.assertContains(audio_response, "My Content (Audio)")
+        self.assertNotContains(audio_response, "My Content (Video)")
+        self.assertContains(audio_response, "audio/my-content/content.m4a")
+
+        # Check video feed only contains video item
+        video_response = self.client.get('/feeds/video.xml')
+        self.assertEqual(video_response.status_code, 200)
+        self.assertContains(video_response, "My Content (Video)")
+        self.assertNotContains(video_response, "My Content (Audio)")
+        self.assertContains(video_response, "video/my-content/content.mp4")
 
 
 class FeedViewXMLTest(TestCase):
@@ -354,3 +630,148 @@ class HTMLMediaExtractorTest(TestCase):
 
         self.assertIsNone(media_url)
         self.assertIsNone(media_type)
+
+
+class WorkerTimeoutTest(TestCase):
+    """Tests for worker timeout detection"""
+
+    def test_worker_timeout_detection(self):
+        """Test that items stuck in PREFETCHING for >30s get timeout error"""
+        from media.tasks import process_media
+        from django.utils import timezone
+        from datetime import timedelta
+
+        # Create item with old timestamp (simulating stuck item)
+        old_time = timezone.now() - timedelta(seconds=35)
+        item = MediaItem.objects.create(
+            source_url="https://example.com/video.mp4",
+            requested_type=MediaItem.REQUESTED_TYPE_AUTO,
+            slug="pending",
+            status=MediaItem.STATUS_PREFETCHING
+        )
+
+        # Force old timestamp by updating with raw SQL to bypass auto_now
+        MediaItem.objects.filter(guid=item.guid).update(updated_at=old_time)
+
+        # Refresh to get the updated timestamp
+        item.refresh_from_db()
+
+        # Call process_media directly (not as async task)
+        # The timeout check happens before any actual processing
+        process_media.call_local(item.guid)
+
+        item.refresh_from_db()
+        self.assertEqual(item.status, MediaItem.STATUS_ERROR)
+        self.assertIn("Worker timeout", item.error_message)
+        self.assertIn("run_huey", item.error_message)
+
+    def test_worker_timeout_not_triggered_for_recent_items(self):
+        """Test that recently created items don't trigger timeout"""
+        from media.tasks import process_media
+        from unittest.mock import patch
+
+        # Create item that's been PREFETCHING for only 5 seconds (recent)
+        item = MediaItem.objects.create(
+            source_url="https://example.com/video.mp4",
+            requested_type=MediaItem.REQUESTED_TYPE_AUTO,
+            slug="pending",
+            status=MediaItem.STATUS_PREFETCHING
+        )
+
+        # Mock the actual processing to prevent real download
+        with patch('media.tasks.prefetch_direct') as mock_prefetch:
+            # Make it fail quickly so we can test timeout didn't trigger
+            mock_prefetch.side_effect = Exception("Test error")
+
+            try:
+                process_media.call_local(item.guid)
+            except Exception:
+                pass  # Expected to fail
+
+        item.refresh_from_db()
+        # Should have error from the mock exception, not timeout
+        self.assertEqual(item.status, MediaItem.STATUS_ERROR)
+        self.assertNotIn("Worker timeout", item.error_message)
+        self.assertIn("Test error", item.error_message)
+
+
+class SummaryGenerationTest(TestCase):
+    """Tests for summary generation settings"""
+
+    @override_settings(STASHCAST_SUMMARY_SENTENCES=0)
+    def test_summary_generation_skipped_when_zero(self):
+        """Test that summary generation is skipped when STASHCAST_SUMMARY_SENTENCES is 0"""
+        from media.tasks import generate_summary
+        from media.models import MediaItem
+        import tempfile
+        from pathlib import Path
+
+        # Create a test item with subtitles
+        item = MediaItem.objects.create(
+            source_url="https://example.com/video",
+            requested_type=MediaItem.REQUESTED_TYPE_AUTO,
+            slug="test-video",
+            media_type=MediaItem.MEDIA_TYPE_VIDEO,
+            subtitle_path="subtitles.vtt"
+        )
+
+        # Create a fake subtitle file
+        base_dir = item.get_base_dir()
+        base_dir.mkdir(parents=True, exist_ok=True)
+        subtitle_file = base_dir / "subtitles.vtt"
+        subtitle_file.write_text("WEBVTT\n\n00:00:00.000 --> 00:00:01.000\nTest subtitle")
+
+        # Call generate_summary - it should return early without processing
+        generate_summary(item.guid)
+
+        # Refresh from DB
+        item.refresh_from_db()
+
+        # Summary should still be empty since generation was skipped
+        self.assertEqual(item.summary, '')
+
+    @override_settings(STASHCAST_SUMMARY_SENTENCES=3)
+    def test_summary_generation_runs_when_positive(self):
+        """Test that summary generation runs when STASHCAST_SUMMARY_SENTENCES > 0"""
+        from media.tasks import generate_summary
+        from media.models import MediaItem
+        from pathlib import Path
+
+        # Create a test item with subtitles
+        item = MediaItem.objects.create(
+            source_url="https://example.com/video",
+            requested_type=MediaItem.REQUESTED_TYPE_AUTO,
+            slug="test-video-summary",
+            media_type=MediaItem.MEDIA_TYPE_VIDEO,
+            subtitle_path="subtitles.vtt"
+        )
+
+        # Create a fake subtitle file with enough content
+        base_dir = item.get_base_dir()
+        base_dir.mkdir(parents=True, exist_ok=True)
+        subtitle_file = base_dir / "subtitles.vtt"
+        subtitle_content = """WEBVTT
+
+00:00:00.000 --> 00:00:05.000
+This is the first sentence about an important topic.
+
+00:00:05.000 --> 00:00:10.000
+Here is another sentence with more details.
+
+00:00:10.000 --> 00:00:15.000
+And this is a third sentence to provide context.
+
+00:00:15.000 --> 00:00:20.000
+Finally we have a fourth sentence to conclude.
+"""
+        subtitle_file.write_text(subtitle_content)
+
+        # Call generate_summary
+        generate_summary(item.guid)
+
+        # Refresh from DB
+        item.refresh_from_db()
+
+        # Summary should be generated
+        self.assertIsNotNone(item.summary)
+        self.assertTrue(len(item.summary) > 0)

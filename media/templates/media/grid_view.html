@@ -2,7 +2,7 @@
 {% load static %}
 {% load media_filters %}
 
-{% block title %}{{ title }} - Stashcast{% endblock %}
+{% block title %}{{ title }} - StashCast{% endblock %}
 
 {% block extrastyle %}
 <style>
@@ -138,6 +138,31 @@
         margin: 0 0 10px 0;
         color: #999;
     }
+
+    .view-switcher {
+        margin-left: auto;
+        display: flex;
+        gap: 10px;
+    }
+
+    .view-switcher a {
+        padding: 8px 16px;
+        background: #f5f5f5;
+        border-radius: 4px;
+        text-decoration: none;
+        color: #333;
+        font-size: 14px;
+        transition: background 0.2s;
+    }
+
+    .view-switcher a:hover {
+        background: #e0e0e0;
+    }
+
+    .view-switcher a.active {
+        background: #667eea;
+        color: white;
+    }
 </style>
 {% endblock %}
 
@@ -146,7 +171,7 @@
     <h1>Media Grid</h1>
 
     <div class="filters">
-        <form method="get" style="display: flex; gap: 15px; align-items: center;">
+        <form method="get" style="display: flex; gap: 15px; align-items: center; flex: 1;">
             <label for="type">Type:</label>
             <select name="type" id="type" onchange="this.form.submit()">
                 <option value="all" {% if media_type_filter == 'all' %}selected{% endif %}>All</option>
@@ -163,7 +188,16 @@
                 <option value="PREFETCHING" {% if status_filter == 'PREFETCHING' %}selected{% endif %}>Prefetching</option>
                 <option value="ERROR" {% if status_filter == 'ERROR' %}selected{% endif %}>Error</option>
             </select>
+
+            <div style="margin-left: auto; font-weight: 500; color: #333;">
+                Total Storage: {{ total_storage_bytes|filesize }}
+            </div>
         </form>
+
+        <div class="view-switcher">
+            <a href="{% url 'grid_view' %}?type={{ media_type_filter }}&status={{ status_filter }}" class="active">Grid</a>
+            <a href="{% url 'list_view' %}?type={{ media_type_filter }}&status={{ status_filter }}">List</a>
+        </div>
     </div>
 
     {% if items %}
@@ -184,7 +218,12 @@
                 <h3 class="item-title">{{ data.item.title|default:"Untitled" }}</h3>
                 <div class="item-meta">
                     <span class="type-badge">{{ data.item.media_type|upper }}</span>
-                    <span class="status-badge status-{{ data.item.status|lower }}">{{ data.item.status }}</span>
+                    {% if data.item.status != 'READY' %}
+                        <span class="status-badge status-{{ data.item.status|lower }}">{{ data.item.status }}</span>
+                    {% endif %}
+                    {% if data.item.file_size %}
+                        <span>{{ data.item.file_size|filesize }}</span>
+                    {% endif %}
                     {% if data.item.author %}
                         <span>{{ data.item.author }}</span>
                     {% endif %}

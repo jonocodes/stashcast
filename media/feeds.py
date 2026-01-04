@@ -1,5 +1,5 @@
-from django.contrib.syndication.views import Feed
 from django.conf import settings
+from django.contrib.syndication.views import Feed
 from django.utils.feedgenerator import Rss201rev2Feed
 
 from media.models import MediaItem
@@ -8,7 +8,7 @@ from media.models import MediaItem
 class AudioFeed(Feed):
     """Podcast feed for audio items"""
     feed_type = Rss201rev2Feed
-    title = "Stashcast Audio Feed"
+    title = "StashCast Audio Feed"
     link = "/feeds/audio.xml"
     description = "Downloaded audio content"
 
@@ -40,12 +40,11 @@ class AudioFeed(Feed):
 
     def item_enclosure_url(self, item):
         if settings.STASHCAST_MEDIA_BASE_URL and item.content_path:
-            rel_path = item.content_path.replace(str(settings.STASHCAST_AUDIO_DIR), 'audio')
-            return f"{settings.STASHCAST_MEDIA_BASE_URL.rstrip('/')}/{rel_path.lstrip('/')}"
+            rel_path = f'audio/{item.slug}/{item.content_path}'
+            return f"{settings.STASHCAST_MEDIA_BASE_URL.rstrip('/')}/{rel_path}"
         elif item.content_path:
-            # Use Django static files - convert absolute path to relative from MEDIA_ROOT
-            from pathlib import Path
-            rel_path = Path(item.content_path).relative_to(settings.MEDIA_ROOT)
+            # Use Django static files - build relative path from slug and filename
+            rel_path = f'audio/{item.slug}/{item.content_path}'
             return f"/media/files/{rel_path}"
         return ""
 
@@ -59,7 +58,7 @@ class AudioFeed(Feed):
 class VideoFeed(Feed):
     """Podcast feed for video items"""
     feed_type = Rss201rev2Feed
-    title = "Stashcast Video Feed"
+    title = "StashCast Video Feed"
     link = "/feeds/video.xml"
     description = "Downloaded video content"
 
@@ -91,12 +90,11 @@ class VideoFeed(Feed):
 
     def item_enclosure_url(self, item):
         if settings.STASHCAST_MEDIA_BASE_URL and item.content_path:
-            rel_path = item.content_path.replace(str(settings.STASHCAST_VIDEO_DIR), 'video')
-            return f"{settings.STASHCAST_MEDIA_BASE_URL.rstrip('/')}/{rel_path.lstrip('/')}"
+            rel_path = f'video/{item.slug}/{item.content_path}'
+            return f"{settings.STASHCAST_MEDIA_BASE_URL.rstrip('/')}/{rel_path}"
         elif item.content_path:
-            # Use Django static files - convert absolute path to relative from MEDIA_ROOT
-            from pathlib import Path
-            rel_path = Path(item.content_path).relative_to(settings.MEDIA_ROOT)
+            # Use Django static files - build relative path from slug and filename
+            rel_path = f'video/{item.slug}/{item.content_path}'
             return f"/media/files/{rel_path}"
         return ""
 

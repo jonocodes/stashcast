@@ -1,4 +1,6 @@
 from django.db import models
+from django.conf import settings
+from pathlib import Path
 from nanoid import generate
 
 
@@ -83,8 +85,7 @@ class MediaItem(models.Model):
     external_id = models.CharField(max_length=200, blank=True)
     webpage_url = models.URLField(max_length=2048, blank=True)
 
-    # File paths
-    base_dir = models.CharField(max_length=500, blank=True)
+    # File paths (relative to slug directory)
     content_path = models.CharField(max_length=500, blank=True)
     thumbnail_path = models.CharField(max_length=500, blank=True)
     subtitle_path = models.CharField(max_length=500, blank=True)
@@ -126,3 +127,48 @@ class MediaItem(models.Model):
     @property
     def has_error(self):
         return self.status == self.STATUS_ERROR
+
+    def get_base_dir(self):
+        """Get absolute base directory path for this item's files"""
+        if not self.slug or self.slug == 'pending':
+            return None
+        if self.media_type == self.MEDIA_TYPE_AUDIO:
+            return Path(settings.STASHCAST_AUDIO_DIR) / self.slug
+        else:
+            return Path(settings.STASHCAST_VIDEO_DIR) / self.slug
+
+    def get_absolute_content_path(self):
+        """Get absolute path to content file"""
+        if not self.content_path:
+            return None
+        base_dir = self.get_base_dir()
+        if not base_dir:
+            return None
+        return base_dir / self.content_path
+
+    def get_absolute_thumbnail_path(self):
+        """Get absolute path to thumbnail file"""
+        if not self.thumbnail_path:
+            return None
+        base_dir = self.get_base_dir()
+        if not base_dir:
+            return None
+        return base_dir / self.thumbnail_path
+
+    def get_absolute_subtitle_path(self):
+        """Get absolute path to subtitle file"""
+        if not self.subtitle_path:
+            return None
+        base_dir = self.get_base_dir()
+        if not base_dir:
+            return None
+        return base_dir / self.subtitle_path
+
+    def get_absolute_log_path(self):
+        """Get absolute path to log file"""
+        if not self.log_path:
+            return None
+        base_dir = self.get_base_dir()
+        if not base_dir:
+            return None
+        return base_dir / self.log_path

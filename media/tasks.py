@@ -13,25 +13,19 @@ import yt_dlp
 
 from media.models import MediaItem
 from media.utils import generate_slug, ensure_unique_slug
-
-
-def is_direct_media_url(url):
-    """Check if URL is a direct media file"""
-    media_extensions = [
-        '.mp3', '.m4a', '.mp4', '.webm', '.ogg', '.wav',
-        '.aac', '.flac', '.opus', '.mkv', '.avi', '.mov'
-    ]
-    parsed = urlparse(url)
-    path = parsed.path.lower()
-    return any(path.endswith(ext) for ext in media_extensions)
+from service.config import parse_ytdlp_extra_args
+from service.process import add_metadata_without_transcode, process_thumbnail, process_subtitle
+from service.strategy import choose_download_strategy
+from service.resolve import get_media_type_from_extension
 
 
 def write_log(log_path, message):
     """Append message to log file"""
-    os.makedirs(os.path.dirname(log_path), exist_ok=True)
-    with open(log_path, 'a') as f:
-        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        f.write(f"[{timestamp}] {message}\n")
+    if log_path:
+        os.makedirs(os.path.dirname(log_path), exist_ok=True)
+        with open(log_path, 'a') as f:
+            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            f.write(f"[{timestamp}] {message}\n")
 
 
 @db_task()
@@ -44,34 +38,77 @@ def process_media(guid):
     2. DOWNLOADING - Download media files
     3. PROCESSING - Transcode if necessary
     4. READY - Finalize and mark complete
+
+    Downloads occur in tmp-{guid}/ directory in the media folder, then moved to final
+    slug-based directory after successful completion. This makes debugging easier and
+    keeps download progress visible.
     """
     try:
         item = MediaItem.objects.get(guid=guid)
     except MediaItem.DoesNotExist:
         return
 
-    # Log file will be set after we know the base_dir
+    # Check for worker timeout: if task was enqueued but worker wasn't running
+    # Items can get stuck in PREFETCHING if worker is down
+    now = timezone.now()
+    time_since_update = now - item.updated_at
+
+    if item.status == MediaItem.STATUS_PREFETCHING and time_since_update.total_seconds() > 30:
+        item.status = MediaItem.STATUS_ERROR
+        item.error_message = (
+            f"Worker timeout: Item stuck in PREFETCHING for {int(time_since_update.total_seconds())} seconds. "
+            "Huey worker may not be running. Start with: python manage.py run_huey"
+        )
+        item.save()
+        return
+
+    # Create tmp directory in media folder for this download
+    # Format: <media_dir>/tmp-{guid}/
+    tmp_dir = None
     log_path = None
 
     try:
+        # Determine base media directory (don't know slug yet)
+        if item.media_type == MediaItem.MEDIA_TYPE_AUDIO or item.requested_type == MediaItem.REQUESTED_TYPE_AUDIO:
+            media_base = Path(settings.STASHCAST_AUDIO_DIR)
+        else:
+            media_base = Path(settings.STASHCAST_VIDEO_DIR)
+
+        media_base.mkdir(parents=True, exist_ok=True)
+
+        # Create tmp directory with GUID
+        tmp_dir = media_base / f"tmp-{guid}"
+        tmp_dir.mkdir(exist_ok=True)
+
+        # Create log file immediately in tmp directory
+        log_path = tmp_dir / 'download.log'
+        write_log(log_path, "=== TASK STARTED ===")
+        write_log(log_path, f"GUID: {guid}")
+        write_log(log_path, f"URL: {item.source_url}")
+        write_log(log_path, f"Requested type: {item.requested_type}")
+        write_log(log_path, f"Tmp directory: {tmp_dir}")
+
         # PREFETCHING
         item.status = MediaItem.STATUS_PREFETCHING
         item.save()
+        write_log(log_path, "=== PREFETCHING ===")
 
-        is_direct = is_direct_media_url(item.source_url)
+        # Determine download strategy
+        strategy = choose_download_strategy(item.source_url)
+        is_direct = strategy in ('direct', 'file')
 
         if is_direct:
             # Direct download - minimal metadata
-            log_path = prefetch_direct(item, log_path)
+            prefetch_direct(item, tmp_dir, log_path)
         else:
             # Use yt-dlp to extract metadata (may fallback to HTML extractor)
-            log_path = prefetch_ytdlp(item, log_path)
+            prefetch_ytdlp(item, tmp_dir, log_path)
 
             # Re-check if URL is now direct (HTML extractor may have found direct media)
             item.refresh_from_db()
-            is_direct = is_direct_media_url(item.source_url)
+            strategy = choose_download_strategy(item.source_url)
+            is_direct = strategy in ('direct', 'file')
 
-        write_log(log_path, "=== PREFETCHING ===")
         write_log(log_path, f"Direct media URL: {is_direct}")
 
         # DOWNLOADING
@@ -80,16 +117,33 @@ def process_media(guid):
         write_log(log_path, "=== DOWNLOADING ===")
 
         if is_direct:
-            download_direct(item, log_path)
+            download_direct(item, tmp_dir, log_path)
         else:
-            download_ytdlp(item, log_path)
+            download_ytdlp(item, tmp_dir, log_path)
 
         # PROCESSING
         item.status = MediaItem.STATUS_PROCESSING
         item.save()
         write_log(log_path, "=== PROCESSING ===")
 
-        process_files(item, log_path)
+        process_files(item, tmp_dir, log_path)
+
+        # Move from tmp directory to final slug-based directory
+        write_log(log_path, "=== MOVING TO FINAL DIRECTORY ===")
+        final_dir = item.get_base_dir()
+        final_dir.parent.mkdir(parents=True, exist_ok=True)
+
+        # If final directory exists, remove it (overwrite behavior)
+        if final_dir.exists():
+            write_log(log_path, f"Removing existing directory: {final_dir}")
+            shutil.rmtree(final_dir)
+
+        # Move tmp directory to final location
+        shutil.move(str(tmp_dir), str(final_dir))
+        write_log(log_path, f"Moved to: {final_dir}")
+
+        # Update log_path to new location for final messages
+        log_path = final_dir / 'download.log'
 
         # READY
         item.status = MediaItem.STATUS_READY
@@ -99,7 +153,7 @@ def process_media(guid):
         write_log(log_path, f"Completed successfully: {item.title}")
 
         # Generate summary if subtitles are available
-        if item.subtitle_path:
+        if item.subtitle_path and settings.STASHCAST_SUMMARY_SENTENCES > 0:
             write_log(log_path, "Enqueuing summary generation task")
             generate_summary(item.guid)
 
@@ -109,13 +163,22 @@ def process_media(guid):
         item.error_message = str(e)
         item.save()
         if log_path:
-            write_log(log_path, f"=== ERROR ===")
+            write_log(log_path, "=== ERROR ===")
             write_log(log_path, f"Error: {str(e)}")
+
+        # Clean up tmp directory on error
+        if tmp_dir and tmp_dir.exists():
+            write_log(log_path, f"Cleaning up tmp directory: {tmp_dir}")
+            try:
+                shutil.rmtree(tmp_dir)
+            except Exception as cleanup_error:
+                write_log(log_path, f"Failed to clean up tmp: {cleanup_error}")
+
         raise
 
 
-def prefetch_direct(item, log_path):
-    """Prefetch metadata for direct URL"""
+def prefetch_direct(item, tmp_dir, log_path):
+    """Prefetch metadata for direct URL - works in tmp directory"""
     # For direct URLs, use the filename as title
     parsed = urlparse(item.source_url)
     filename = Path(parsed.path).stem
@@ -123,37 +186,24 @@ def prefetch_direct(item, log_path):
 
     # Resolve media type based on extension
     if item.requested_type == MediaItem.REQUESTED_TYPE_AUTO:
-        audio_exts = ['.mp3', '.m4a', '.ogg', '.wav', '.aac', '.flac', '.opus']
-        path = parsed.path.lower()
-        if any(path.endswith(ext) for ext in audio_exts):
-            item.media_type = MediaItem.MEDIA_TYPE_AUDIO
-        else:
-            item.media_type = MediaItem.MEDIA_TYPE_VIDEO
+        extension = Path(parsed.path).suffix
+        media_type = get_media_type_from_extension(extension)
+        item.media_type = media_type
     else:
         item.media_type = item.requested_type
 
     # Generate slug
-    existing = MediaItem.objects.filter(source_url=item.source_url).exclude(guid=item.guid).first()
+    existing = MediaItem.objects.filter(source_url=item.source_url, media_type=item.media_type).exclude(guid=item.guid).first()
     slug = generate_slug(item.title)
-    item.slug = ensure_unique_slug(slug, item.source_url, existing)
+    item.slug = ensure_unique_slug(slug, item.source_url, existing, item.media_type)
 
-    # Set base directory
-    if item.media_type == MediaItem.MEDIA_TYPE_AUDIO:
-        item.base_dir = str(Path(settings.STASHCAST_AUDIO_DIR) / item.slug)
-    else:
-        item.base_dir = str(Path(settings.STASHCAST_VIDEO_DIR) / item.slug)
-
-    # Create directory and set up log file
-    os.makedirs(item.base_dir, exist_ok=True)
-    log_path = Path(item.base_dir) / 'download.log'
-    item.log_path = str(log_path)
+    # Set log path (relative) - will be in final directory after move
+    item.log_path = 'download.log'
 
     item.save()
     write_log(log_path, f"Title: {item.title}")
     write_log(log_path, f"Media type: {item.media_type}")
     write_log(log_path, f"Slug: {item.slug}")
-
-    return log_path
 
 
 def extract_media_from_html(url):
@@ -212,8 +262,8 @@ def extract_media_from_html(url):
         return (None, None)
 
 
-def prefetch_ytdlp(item, log_path):
-    """Prefetch metadata using yt-dlp"""
+def prefetch_ytdlp(item, tmp_dir, log_path):
+    """Prefetch metadata using yt-dlp - works in tmp directory"""
     ydl_opts = {
         'quiet': True,
         'no_warnings': True,
@@ -255,20 +305,12 @@ def prefetch_ytdlp(item, log_path):
                 item.media_type = item.requested_type
 
             # Generate slug
-            existing = MediaItem.objects.filter(source_url=item.source_url).exclude(guid=item.guid).first()
+            existing = MediaItem.objects.filter(source_url=item.source_url, media_type=item.media_type).exclude(guid=item.guid).first()
             slug = generate_slug(item.title)
-            item.slug = ensure_unique_slug(slug, item.source_url, existing)
+            item.slug = ensure_unique_slug(slug, item.source_url, existing, item.media_type)
 
-            # Set base directory
-            if item.media_type == MediaItem.MEDIA_TYPE_AUDIO:
-                item.base_dir = str(Path(settings.STASHCAST_AUDIO_DIR) / item.slug)
-            else:
-                item.base_dir = str(Path(settings.STASHCAST_VIDEO_DIR) / item.slug)
-
-            # Create directory and set up log file
-            os.makedirs(item.base_dir, exist_ok=True)
-            log_path = Path(item.base_dir) / 'download.log'
-            item.log_path = str(log_path)
+            # Set log path (relative) - will be in final directory after move
+            item.log_path = 'download.log'
 
             item.save()
             write_log(log_path, f"Extracting metadata from: {item.source_url}")
@@ -276,8 +318,6 @@ def prefetch_ytdlp(item, log_path):
             write_log(log_path, f"Media type: {item.media_type}")
             write_log(log_path, f"Slug: {item.slug}")
             write_log(log_path, f"Duration: {item.duration_seconds}s")
-
-            return log_path
 
     except Exception as e:
         # Try HTML extractor as fallback
@@ -320,20 +360,12 @@ def prefetch_ytdlp(item, log_path):
             item.title = page_title
 
             # Generate slug
-            existing = MediaItem.objects.filter(webpage_url=original_url).exclude(guid=item.guid).first()
+            existing = MediaItem.objects.filter(webpage_url=original_url, media_type=item.media_type).exclude(guid=item.guid).first()
             slug = generate_slug(item.title)
-            item.slug = ensure_unique_slug(slug, original_url, existing)
+            item.slug = ensure_unique_slug(slug, original_url, existing, item.media_type)
 
-            # Set base directory
-            if item.media_type == MediaItem.MEDIA_TYPE_AUDIO:
-                item.base_dir = str(Path(settings.STASHCAST_AUDIO_DIR) / item.slug)
-            else:
-                item.base_dir = str(Path(settings.STASHCAST_VIDEO_DIR) / item.slug)
-
-            # Create directory and set up log file
-            os.makedirs(item.base_dir, exist_ok=True)
-            log_path = Path(item.base_dir) / 'download.log'
-            item.log_path = str(log_path)
+            # Set log path (relative) - will be in final directory after move
+            item.log_path = 'download.log'
 
             item.save()
             write_log(log_path, f"HTML extractor found media: {media_url}")
@@ -341,8 +373,6 @@ def prefetch_ytdlp(item, log_path):
             write_log(log_path, f"Title: {item.title}")
             write_log(log_path, f"Media type: {item.media_type}")
             write_log(log_path, f"Slug: {item.slug}")
-
-            return log_path
         else:
             # No media found in HTML either
             write_log_msg = "No embedded media found in HTML"
@@ -415,15 +445,13 @@ def extract_metadata_with_ffprobe(item, file_path, log_path):
         write_log(log_path, f"Unexpected error extracting metadata: {e}")
 
 
-def download_direct(item, log_path):
-    """Download media directly via HTTP"""
-    os.makedirs(item.base_dir, exist_ok=True)
-
+def download_direct(item, tmp_dir, log_path):
+    """Download media directly via HTTP - saves to tmp directory"""
     # Determine file extension
     parsed = urlparse(item.source_url)
     ext = Path(parsed.path).suffix or '.mp4'
 
-    # Determine content filename
+    # Determine content filename (relative)
     if item.media_type == MediaItem.MEDIA_TYPE_AUDIO:
         if ext == '.mp3':
             content_file = 'content.mp3'
@@ -432,7 +460,8 @@ def download_direct(item, log_path):
     else:
         content_file = 'content.mp4'
 
-    content_path = Path(item.base_dir) / content_file
+    # Download to tmp directory
+    content_path = tmp_dir / content_file
 
     write_log(log_path, f"Downloading to: {content_path}")
 
@@ -444,7 +473,8 @@ def download_direct(item, log_path):
         for chunk in response.iter_content(chunk_size=8192):
             f.write(chunk)
 
-    item.content_path = str(content_path)
+    # Store relative path (will be valid after move to final dir)
+    item.content_path = content_file
     item.file_size = content_path.stat().st_size
     item.mime_type = response.headers.get('content-type', 'application/octet-stream')
     item.save()
@@ -459,124 +489,156 @@ def download_direct(item, log_path):
         write_log(log_path, f"Could not extract metadata: {e}")
 
 
-def download_ytdlp(item, log_path):
-    """Download media using yt-dlp"""
-    os.makedirs(item.base_dir, exist_ok=True)
-
+def download_ytdlp(item, tmp_dir, log_path):
+    """Download media using yt-dlp - saves to tmp directory"""
     # Prepare yt-dlp options
+    # Start with fallback format specs
     if item.media_type == MediaItem.MEDIA_TYPE_AUDIO:
         format_spec = 'bestaudio/best'
-        default_args = settings.STASHCAST_DEFAULT_YTDLP_ARGS_AUDIO
+        ytdlp_args = settings.STASHCAST_DEFAULT_YTDLP_ARGS_AUDIO
     else:
         format_spec = 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best'
-        default_args = settings.STASHCAST_DEFAULT_YTDLP_ARGS_VIDEO
+        ytdlp_args = settings.STASHCAST_DEFAULT_YTDLP_ARGS_VIDEO
 
-    # Use temp directory for download, then move to fixed names
-    with tempfile.TemporaryDirectory() as temp_dir:
-        temp_output = Path(temp_dir) / 'download.%(ext)s'
+    # Download directly to tmp directory (no nested temp dir)
+    temp_output = tmp_dir / 'download.%(ext)s'
 
-        ydl_opts = {
-            'format': format_spec,
-            'outtmpl': str(temp_output),
-            'writethumbnail': True,
-            'writesubtitles': True,
-            'writeautomaticsub': True,
-            'subtitleslangs': ['en'],
-            'noplaylist': True,
-            'quiet': False,
-        }
+    ydl_opts = {
+        'format': format_spec,
+        'outtmpl': str(temp_output),
+        'writethumbnail': True,
+        'writesubtitles': True,
+        'writeautomaticsub': True,
+        'subtitleslangs': ['en'],
+        'noplaylist': True,
+        'quiet': False,
+    }
 
-        write_log(log_path, f"Downloading with yt-dlp: {item.source_url}")
+    # Parse and apply extra args from settings
+    ydl_opts = parse_ytdlp_extra_args(ytdlp_args, ydl_opts)
 
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([item.source_url])
+    write_log(log_path, f"Downloading with yt-dlp: {item.source_url}")
+    write_log(log_path, f"Format: {ydl_opts.get('format')}")
 
-        # Move files to final locations with fixed names
-        # yt-dlp may create files like: download.mp4, download.f137.mp4, download.webp, etc.
-        files = list(Path(temp_dir).iterdir())
-        write_log(log_path, f"Downloaded {len(files)} files from yt-dlp")
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        ydl.download([item.source_url])
 
-        # Find main content file (video/audio)
-        content_files = [f for f in files if f.suffix in ['.mp4', '.mkv', '.webm', '.mp3', '.m4a', '.ogg']]
-        if content_files:
-            # Use the largest file as the main content
-            temp_file = max(content_files, key=lambda f: f.stat().st_size)
+    # Rename files to fixed names (content.mp4, thumbnail_temp.jpg, etc.)
+    # yt-dlp may create files like: download.mp4, download.f137.mp4, download.webp, etc.
+    files = list(tmp_dir.glob('download.*'))
+    write_log(log_path, f"Downloaded {len(files)} files from yt-dlp")
 
-            if item.media_type == MediaItem.MEDIA_TYPE_AUDIO:
-                if temp_file.suffix == '.mp3':
-                    dest = Path(item.base_dir) / 'content.mp3'
-                else:
-                    dest = Path(item.base_dir) / 'content.m4a'
+    # Find main content file (video/audio)
+    content_files = [f for f in files if f.suffix in ['.mp4', '.mkv', '.webm', '.mp3', '.m4a', '.ogg']]
+    if content_files:
+        # Use the largest file as the main content
+        downloaded_file = max(content_files, key=lambda f: f.stat().st_size)
+
+        if item.media_type == MediaItem.MEDIA_TYPE_AUDIO:
+            if downloaded_file.suffix == '.mp3':
+                content_file = 'content.mp3'
             else:
-                dest = Path(item.base_dir) / 'content.mp4'
+                content_file = 'content.m4a'
+        else:
+            content_file = 'content.mp4'
 
-            shutil.copy2(temp_file, dest)
-            item.content_path = str(dest)
-            item.file_size = dest.stat().st_size
-            write_log(log_path, f"Content saved to: {dest} ({item.file_size} bytes)")
+        dest = tmp_dir / content_file
+        shutil.move(str(downloaded_file), str(dest))
+        item.content_path = content_file  # Store relative path
+        item.file_size = dest.stat().st_size
+        write_log(log_path, f"Content renamed to: {content_file} ({item.file_size} bytes)")
 
-        # Find and save thumbnail
-        thumb_files = [f for f in files if f.suffix in ['.jpg', '.jpeg', '.png', '.webp'] and 'thumbnail' not in f.stem]
-        if not thumb_files:
-            # Also check for files with 'download' in name that are images
-            thumb_files = [f for f in files if f.suffix in ['.jpg', '.jpeg', '.png', '.webp']]
+    # Find and save thumbnail
+    thumb_files = [f for f in files if f.suffix in ['.jpg', '.jpeg', '.png', '.webp'] and 'thumbnail' not in f.stem]
+    if not thumb_files:
+        # Also check for files with 'download' in name that are images
+        thumb_files = [f for f in files if f.suffix in ['.jpg', '.jpeg', '.png', '.webp']]
 
-        if thumb_files:
-            temp_file = thumb_files[0]  # Take first thumbnail found
-            dest = Path(item.base_dir) / f'thumbnail_temp{temp_file.suffix}'
-            shutil.copy2(temp_file, dest)
-            write_log(log_path, f"Thumbnail saved (temp): {dest}")
+    if thumb_files:
+        downloaded_file = thumb_files[0]  # Take first thumbnail found
+        dest = tmp_dir / f'thumbnail_temp{downloaded_file.suffix}'
+        shutil.move(str(downloaded_file), str(dest))
+        write_log(log_path, f"Thumbnail renamed to: thumbnail_temp{downloaded_file.suffix}")
 
-        # Find and save subtitles
-        subtitle_files = [f for f in files if f.suffix in ['.vtt', '.srt']]
-        if subtitle_files:
-            temp_file = subtitle_files[0]  # Take first subtitle found
-            dest = Path(item.base_dir) / f'subtitles_temp{temp_file.suffix}'
-            shutil.copy2(temp_file, dest)
-            write_log(log_path, f"Subtitles saved (temp): {dest}")
+    # Find and save subtitles
+    subtitle_files = [f for f in files if f.suffix in ['.vtt', '.srt']]
+    if subtitle_files:
+        downloaded_file = subtitle_files[0]  # Take first subtitle found
+        dest = tmp_dir / f'subtitles_temp{downloaded_file.suffix}'
+        shutil.move(str(downloaded_file), str(dest))
+        write_log(log_path, f"Subtitles renamed to: subtitles_temp{downloaded_file.suffix}")
 
     item.save()
 
 
-def process_files(item, log_path):
-    """Process downloaded files (transcode, convert thumbnails/subtitles)"""
-    base_dir = Path(item.base_dir)
+def process_files(item, tmp_dir, log_path):
+    """Process downloaded files (transcode, convert thumbnails/subtitles) in tmp directory"""
+
+    # Add metadata to content file
+    if item.content_path:
+        content_file = tmp_dir / item.content_path
+        if content_file.exists():
+            # Create metadata dict
+            metadata = {}
+            if item.title:
+                metadata['title'] = item.title
+            if item.author:
+                metadata['author'] = item.author
+            if item.description:
+                metadata['description'] = item.description
+
+            # If we have metadata, embed it using the centralized service
+            if metadata:
+                try:
+                    temp_file = content_file.with_suffix(content_file.suffix + '.tmp')
+
+                    # Use centralized metadata embedding from service.process
+                    add_metadata_without_transcode(
+                        content_file,
+                        temp_file,
+                        metadata=metadata,
+                        logger=lambda msg: write_log(log_path, msg)
+                    )
+
+                    # Replace original with metadata-embedded version
+                    if temp_file.exists():
+                        temp_file.replace(content_file)
+                        write_log(log_path, "Metadata embedded successfully")
+                except Exception as e:
+                    write_log(log_path, f"Metadata embedding error: {type(e).__name__}: {str(e)}")
+                    # Clean up temp file if it exists
+                    if temp_file.exists():
+                        temp_file.unlink()
 
     # Process thumbnail
-    for thumb_file in base_dir.glob('thumbnail_temp*'):
-        webp_path = base_dir / 'thumbnail.webp'
+    for thumb_file in tmp_dir.glob('thumbnail_temp*'):
+        webp_path = tmp_dir / 'thumbnail.webp'
         try:
-            # Use Pillow to convert to webp
-            from PIL import Image
-            img = Image.open(thumb_file)
-            img.save(webp_path, 'WEBP', quality=85)
-            item.thumbnail_path = str(webp_path)
+            # Use centralized thumbnail processing
+            process_thumbnail(
+                thumb_file,
+                webp_path,
+                logger=lambda msg: write_log(log_path, msg)
+            )
+            item.thumbnail_path = 'thumbnail.webp'  # Store relative path
             thumb_file.unlink()
-            write_log(log_path, f"Thumbnail converted to webp: {webp_path}")
         except Exception as e:
             write_log(log_path, f"Thumbnail conversion failed: {e}")
 
     # Process subtitles - convert to VTT
-    for sub_file in base_dir.glob('subtitles_temp*'):
-        vtt_path = base_dir / 'subtitles.vtt'
-        if sub_file.suffix == '.vtt':
-            # Already VTT, just rename
-            shutil.move(sub_file, vtt_path)
-        else:
-            # Convert SRT to VTT using ffmpeg
-            try:
-                subprocess.run([
-                    'ffmpeg', '-i', str(sub_file),
-                    str(vtt_path)
-                ], check=True, capture_output=True)
-                sub_file.unlink()
-            except subprocess.CalledProcessError as e:
-                write_log(log_path, f"Subtitle conversion failed: {e}")
-                # Just rename it
-                shutil.move(sub_file, vtt_path)
-
-        item.subtitle_path = str(vtt_path)
-        write_log(log_path, f"Subtitles saved: {vtt_path}")
+    for sub_file in tmp_dir.glob('subtitles_temp*'):
+        vtt_path = tmp_dir / 'subtitles.vtt'
+        try:
+            # Use centralized subtitle processing
+            process_subtitle(
+                sub_file,
+                vtt_path,
+                logger=lambda msg: write_log(log_path, msg)
+            )
+            item.subtitle_path = 'subtitles.vtt'  # Store relative path
+            sub_file.unlink()
+        except Exception as e:
+            write_log(log_path, f"Subtitle processing failed: {e}")
 
     # Determine MIME type
     if item.content_path:
@@ -600,14 +662,20 @@ def generate_summary(guid):
     Generate summary from subtitle file using extractive summarization.
     Future: Could be extended to use transcription from audio.
     """
+    # Skip summary generation if STASHCAST_SUMMARY_SENTENCES is set to 0
+    num_sentences = settings.STASHCAST_SUMMARY_SENTENCES
+    if num_sentences <= 0:
+        return
+
     try:
         item = MediaItem.objects.get(guid=guid)
     except MediaItem.DoesNotExist:
         return
 
-    log_path = item.log_path if item.log_path else None
+    log_path = item.get_absolute_log_path() if item.log_path else None
 
-    if not item.subtitle_path or not os.path.exists(item.subtitle_path):
+    subtitle_path = item.get_absolute_subtitle_path()
+    if not subtitle_path or not os.path.exists(subtitle_path):
         if log_path:
             write_log(log_path, "No subtitles available for summary generation")
         return
@@ -615,9 +683,9 @@ def generate_summary(guid):
     try:
         if log_path:
             write_log(log_path, "=== GENERATING SUMMARY ===")
-            write_log(log_path, f"Reading subtitles from: {item.subtitle_path}")
+            write_log(log_path, f"Reading subtitles from: {subtitle_path}")
         # Read subtitle file and extract text
-        with open(item.subtitle_path, 'r', encoding='utf-8') as f:
+        with open(subtitle_path, 'r', encoding='utf-8') as f:
             subtitle_text = f.read()
 
         # Remove VTT formatting
@@ -665,5 +733,6 @@ def generate_summary(guid):
 
     except Exception as e:
         # Don't fail the whole item if summary generation fails
-        if item.log_path:
-            write_log(item.log_path, f"Summary generation failed: {str(e)}")
+        log_path = item.get_absolute_log_path()
+        if log_path:
+            write_log(log_path, f"Summary generation failed: {str(e)}")

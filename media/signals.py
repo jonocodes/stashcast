@@ -11,9 +11,10 @@ def cleanup_media_files(sender, instance, **kwargs):
     Delete associated files and directory when a MediaItem is deleted.
     This handles both single and bulk deletions.
     """
-    if instance.base_dir and os.path.exists(instance.base_dir):
+    base_dir = instance.get_base_dir()
+    if base_dir and os.path.exists(base_dir):
         try:
-            shutil.rmtree(instance.base_dir)
+            shutil.rmtree(base_dir)
         except Exception as e:
             # Log error but continue with deletion
-            print(f"Error deleting directory {instance.base_dir}: {e}")
+            print(f"Error deleting directory {base_dir}: {e}")

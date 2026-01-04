@@ -21,7 +21,7 @@ from django.conf.urls.static import static
 
 from media.views import (
     stash_view, item_detail_view, bookmarklet_view, admin_stash_form_view,
-    view_audio_feed_xml, view_video_feed_xml, grid_view
+    view_audio_feed_xml, view_video_feed_xml, grid_view, list_view
 )
 from media.feeds import AudioFeed, VideoFeed
 
@@ -30,6 +30,7 @@ urlpatterns = [
     path('admin/tools/bookmarklet/', bookmarklet_view, name='bookmarklet'),
     path('admin/tools/add-url/', admin_stash_form_view, name='admin_stash_form'),
     path('admin/tools/grid/', grid_view, name='grid_view'),
+    path('admin/tools/list/', list_view, name='list_view'),
 
     # Standard admin (includes django-huey-monitor integration)
     path('admin/', admin.site.urls),

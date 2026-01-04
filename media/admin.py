@@ -66,7 +66,6 @@ class MediaItemAdmin(admin.ModelAdmin):
         }),
         ('Files', {
             'fields': [
-                'base_dir',
                 'content_path',
                 'thumbnail_path',
                 'subtitle_path',
@@ -110,7 +109,9 @@ class MediaItemAdmin(admin.ModelAdmin):
             f'<a href="{view_url}" target="_blank">View</a>',
         ]
         if obj.log_path:
-            links.append(f'<a href="#log">Logs</a>')
+            # Link to the admin change page with log anchor
+            admin_url = reverse('admin:media_mediaitem_change', args=[obj.guid])
+            links.append(f'<a href="{admin_url}#log">Logs</a>')
         return mark_safe(' | '.join(links))
     action_links.short_description = "Actions"
 
@@ -129,8 +130,12 @@ class MediaItemAdmin(admin.ModelAdmin):
         if not obj.log_path:
             return "No log file"
 
+        log_path = obj.get_absolute_log_path()
+        if not log_path:
+            return "No log file"
+
         try:
-            with open(obj.log_path, 'r') as f:
+            with open(log_path, 'r') as f:
                 log_content = f.read()
             return format_html(
                 '<a name="log"></a><pre style="background: #f5f5f5; padding: 10px; '
