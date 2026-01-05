@@ -6,7 +6,7 @@ Determines whether to use direct HTTP download or yt-dlp for a given URL.
 from urllib.parse import urlparse
 from pathlib import Path
 
-from service.constants import MEDIA_EXTENSIONS
+from media.service.constants import MEDIA_EXTENSIONS
 
 
 def choose_download_strategy(url):

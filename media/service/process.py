@@ -8,7 +8,7 @@ from pathlib import Path
 import subprocess
 import shutil
 
-from service.config import (
+from media.service.config import (
     get_acceptable_audio_formats,
     get_acceptable_video_formats,
     get_target_audio_format,

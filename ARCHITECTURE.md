@@ -4,34 +4,42 @@ This document describes the internal architecture of STASHCAST, particularly the
 
 ## Overview
 
-STASHCAST is organized into two main layers:
+STASHCAST is organized into two main layers within the Django `media` app:
 
-1. **Service Layer** (`service/`) - Framework-agnostic media processing logic
-2. **Web App Layer** (`media/`) - Django-specific models, views, and tasks
+1. **Service Layer** (`media/service/`) - Reusable media processing functions
+2. **Application Layer** (`media/`) - Django models, views, tasks, CLI commands, and processing wrappers
 
-This separation allows the core media processing logic to be reused by both the CLI tool (`manage.py transcode`) and the web application.
+This separation allows:
+- Service functions to be pure, testable, and reusable
+- Processing wrappers to bridge service functions with Django models
+- Clear separation between background tasks (Huey) and foreground execution (CLI)
 
 ```mermaid
 graph TB
     subgraph "User Interfaces"
-        CLI[CLI: manage.py transcode]
+        CLI_T[CLI: manage.py transcode]
+        CLI_S[CLI: manage.py stash]
         WEB[Web: /stash/ endpoint]
     end
 
-    subgraph "Service Layer (Framework-agnostic)"
-        CONST[constants.py<br/>Media extensions]
-        STRAT[strategy.py<br/>Download strategy]
-        RESOLVE[resolve.py<br/>Metadata & type]
-        DOWNLOAD[download.py<br/>HTTP & yt-dlp]
-        PROCESS[process.py<br/>Transcode & metadata]
-        CONFIG[config.py<br/>Settings adapter]
-    end
+    subgraph "media/ - Django App"
+        subgraph "Service Layer"
+            CONST[service/constants.py<br/>Media extensions]
+            STRAT[service/strategy.py<br/>Download strategy]
+            RESOLVE[service/resolve.py<br/>Metadata & type]
+            DOWNLOAD[service/download.py<br/>HTTP & yt-dlp]
+            PROCESS[service/process.py<br/>Transcode & metadata]
+            CONFIG[service/config.py<br/>Settings adapter]
+            TRANSCODE[service/transcode_service.py<br/>Orchestration]
+        end
 
-    subgraph "Web App Layer (Django)"
-        TASKS[tasks.py<br/>Huey background]
-        MODELS[models.py<br/>MediaItem]
-        VIEWS[views.py<br/>HTTP endpoints]
-        FEEDS[feeds.py<br/>Podcast RSS]
+        subgraph "Application Layer"
+            PROC[processing.py<br/>Django wrappers]
+            TASKS[tasks.py<br/>Huey background]
+            MODELS[models.py<br/>MediaItem]
+            VIEWS[views.py<br/>HTTP endpoints]
+            FEEDS[feeds.py<br/>Podcast RSS]
+        end
     end
 
     subgraph "External Tools"
@@ -39,16 +47,19 @@ graph TB
         FFMPEG[ffmpeg]
     end
 
-    CLI --> STRAT
-    CLI --> RESOLVE
-    CLI --> DOWNLOAD
-    CLI --> PROCESS
-
+    CLI_T --> TRANSCODE
+    CLI_S --> PROC
     WEB --> TASKS
-    TASKS --> STRAT
-    TASKS --> RESOLVE
-    TASKS --> PROCESS
-    TASKS --> MODELS
+    TASKS --> PROC
+
+    TRANSCODE --> STRAT
+    TRANSCODE --> RESOLVE
+    TRANSCODE --> DOWNLOAD
+    TRANSCODE --> PROCESS
+
+    PROC --> STRAT
+    PROC --> PROCESS
+    PROC --> MODELS
 
     STRAT --> CONST
     RESOLVE --> CONST
@@ -61,7 +72,8 @@ graph TB
     MODELS --> FEEDS
     VIEWS --> MODELS
 
-    style CLI fill:#e1f5ff
+    style CLI_T fill:#e1f5ff
+    style CLI_S fill:#e1f5ff
     style WEB fill:#e1f5ff
     style CONST fill:#fff4e1
     style STRAT fill:#fff4e1
@@ -69,6 +81,8 @@ graph TB
     style DOWNLOAD fill:#fff4e1
     style PROCESS fill:#fff4e1
     style CONFIG fill:#fff4e1
+    style TRANSCODE fill:#fff4e1
+    style PROC fill:#d4edda
     style TASKS fill:#f0e1ff
     style MODELS fill:#f0e1ff
     style VIEWS fill:#f0e1ff
@@ -79,23 +93,28 @@ graph TB
 
 ```
 stashcast/
-├── service/                    # Service layer (framework-agnostic)
-│   ├── constants.py           # Shared constants (media extensions)
-│   ├── strategy.py            # Download strategy detection
-│   ├── resolve.py             # Metadata extraction and type resolution
-│   ├── download.py            # Download implementations (HTTP, yt-dlp)
-│   ├── process.py             # Media processing (transcode, metadata)
-│   ├── config.py              # Configuration adapter
-│   ├── transcode_service.py   # Main transcode orchestration
-│   └── tests/                 # Service layer tests (121 tests)
-│
-├── media/                      # Web app layer (Django-specific)
+├── media/                      # Main Django app
+│   ├── service/               # Reusable service functions
+│   │   ├── constants.py       # Media extensions
+│   │   ├── strategy.py        # Download strategy detection
+│   │   ├── resolve.py         # Metadata extraction
+│   │   ├── download.py        # Download implementations
+│   │   ├── process.py         # Media processing (transcode, metadata)
+│   │   ├── config.py          # Settings adapter
+│   │   └── transcode_service.py  # Transcode orchestration
+│   │
+│   ├── processing.py          # Django wrappers for service functions
 │   ├── models.py              # MediaItem model
 │   ├── views.py               # HTTP endpoints (/stash/, /items/)
 │   ├── feeds.py               # Podcast feed generation
 │   ├── tasks.py               # Huey background tasks
 │   ├── admin.py               # Django admin interface
-│   └── tests/                 # Web app tests (42 tests)
+│   ├── management/commands/   # CLI commands
+│   │   ├── stash.py          # Foreground stash command
+│   │   ├── transcode.py      # Standalone transcode command
+│   │   └── summarize.py      # Subtitle summarization
+│   ├── tests.py               # App integration tests (44 tests)
+│   └── test_service/          # Service layer tests (121 tests)
 │
 └── stashcast/                  # Django project settings
     └── settings.py
@@ -103,7 +122,7 @@ stashcast/
 
 ## Service Layer Components
 
-### `service/constants.py`
+### `media/service/constants.py`
 
 Centralized media format definitions:
 
@@ -113,7 +132,7 @@ Centralized media format definitions:
 
 **Used by**: `strategy.py`, `resolve.py`
 
-### `service/strategy.py`
+### `media/service/strategy.py`
 
 Download strategy detection:
 
@@ -129,7 +148,7 @@ Determines whether to:
 
 **Used by**: CLI transcode command, web app tasks
 
-### `service/resolve.py`
+### `media/service/resolve.py`
 
 Metadata extraction and media type resolution:
 
@@ -146,7 +165,7 @@ def get_media_type_from_extension(extension) -> str:
 
 **Used by**: CLI transcode command, web app prefetch tasks
 
-### `service/download.py`
+### `media/service/download.py`
 
 Download implementations:
 
@@ -165,7 +184,7 @@ All return `DownloadedFileInfo` dataclass with paths to content, thumbnail, and 
 
 **Used by**: CLI transcode command
 
-### `service/process.py`
+### `media/service/process.py`
 
 Media processing (transcoding, metadata embedding):
 
@@ -196,7 +215,7 @@ def process_subtitle(subtitle_path, output_path, logger=None) -> Path:
 
 **Used by**: CLI transcode command, web app processing tasks
 
-### `service/config.py`
+### `media/service/config.py`
 
 Configuration adapter that centralizes access to Django settings:
 
@@ -219,7 +238,7 @@ def get_target_video_format() -> str:
 
 **Used by**: All service modules that need configuration
 
-### `service/transcode_service.py`
+### `media/service/transcode_service.py`
 
 Main orchestration for the CLI transcode command:
 
@@ -240,7 +259,48 @@ Coordinates all service modules to:
 
 **Used by**: CLI transcode command
 
-## Web App Layer
+## Processing Layer
+
+### `media/processing.py`
+
+Django-specific processing functions shared by both Huey tasks and CLI commands:
+
+```python
+def write_log(log_path, message):
+    """Append timestamped message to log file"""
+
+def prefetch_direct(item, tmp_dir, log_path):
+    """Prefetch metadata for direct URL - updates MediaItem"""
+
+def prefetch_ytdlp(item, tmp_dir, log_path):
+    """Prefetch metadata using yt-dlp - updates MediaItem"""
+
+def extract_media_from_html(url):
+    """Extract embedded media URL from HTML (fallback for yt-dlp)"""
+
+def extract_metadata_with_ffprobe(item, file_path, log_path):
+    """Extract metadata from media file using ffprobe"""
+
+def download_direct(item, tmp_dir, log_path):
+    """Download media directly via HTTP"""
+
+def download_ytdlp(item, tmp_dir, log_path):
+    """Download media using yt-dlp"""
+
+def process_files(item, tmp_dir, log_path):
+    """Process downloaded files (metadata, thumbnails, subtitles)"""
+```
+
+**Key features**:
+- All functions work with Django MediaItem model
+- All functions write to log files
+- All functions save to tmp directories
+- Uses service layer functions for actual media operations
+- Shared by both `tasks.py` (Huey) and `management/commands/stash.py` (CLI)
+
+**Used by**: Huey tasks, CLI stash command
+
+## Application Layer
 
 ### `media/tasks.py`
 
@@ -250,21 +310,40 @@ Huey background tasks for the web application:
 @db_task()
 def process_media(guid):
     """Main processing task"""
-    # 1. PREFETCHING
-    # 2. DOWNLOADING
-    # 3. PROCESSING - uses service.process functions
-    # 4. READY
+    # 1. PREFETCHING - calls prefetch_direct() or prefetch_ytdlp()
+    # 2. DOWNLOADING - calls download_direct() or download_ytdlp()
+    # 3. PROCESSING - calls process_files()
+    # 4. READY - moves from tmp to final directory
 
 @db_task()
 def generate_summary(guid):
     """Generate summary from subtitles"""
 ```
 
-**Key refactorings**:
-- Uses `choose_download_strategy()` instead of duplicate logic
-- Uses `get_media_type_from_extension()` for type resolution
-- Uses `add_metadata_without_transcode()` for metadata embedding
-- Uses `process_thumbnail()` and `process_subtitle()` for asset processing
+**Key implementation**:
+- Imports processing functions from `media.processing`
+- Manages MediaItem state transitions (PREFETCHING → DOWNLOADING → PROCESSING → READY)
+- Handles tmp directory creation and cleanup
+- Moves files from tmp directory to final slug-based directory
+
+### `media/management/commands/stash.py`
+
+CLI command for foreground stashing (no Huey):
+
+```python
+python manage.py stash <url> [--type auto|audio|video] [--verbose] [--json]
+```
+
+**Features**:
+- Same pipeline as web app but runs synchronously
+- Reuses existing MediaItem or creates new one
+- Overwrites files if URL already exists
+- Supports `--verbose` for detailed logging
+- Supports `--json` for machine-readable output
+- Detects and rejects playlist URLs
+- Uses same processing functions as Huey tasks
+
+**Used by**: CLI workflows, debugging, automation scripts
 
 ### `media/models.py`
 
@@ -403,9 +482,9 @@ sequenceDiagram
 
 ### 1. Single Source of Truth
 
-- **Constants**: All media extensions in `service/constants.py`
-- **Strategy**: URL detection logic in `service/strategy.py`
-- **Processing**: Metadata/transcode logic in `service/process.py`
+- **Constants**: All media extensions in `media/service/constants.py`
+- **Strategy**: URL detection logic in `media/service/strategy.py`
+- **Processing**: Metadata/transcode logic in `media/service/process.py`
 
 ### 2. Separation of Concerns
 
@@ -513,6 +592,52 @@ flowchart TD
 - Faster than transcoding
 - Used when format is already compatible
 
+## Output Directory Structure
+
+### Web App Output
+
+Files are organized by media type and slug:
+
+```
+/audio/<slug>/
+  content.m4a OR content.mp3
+  thumbnail.webp (if available)
+  subtitles.vtt (if available)
+
+/video/<slug>/
+  content.mp4
+  thumbnail.webp (if available)
+  subtitles.vtt (if available)
+```
+
+### CLI Output
+
+The transcode command outputs files directly:
+
+```
+/output-dir/
+  <slug>.mp3 OR <slug>.mp4
+```
+
+## Media Processing Behavior
+
+### Overwrite Behavior
+
+When fetching the same URL again:
+
+- Reuses the same database row
+- Reuses the same slug and GUID
+- Overwrites files on disk
+- Appends a log entry noting the overwrite
+
+### Summary Generation
+
+Summaries are generated from downloaded subtitles using extractive summarization (LexRank):
+
+- Automatically generated during download if subtitles are available
+- Can be regenerated from admin interface
+- Future-ready for audio transcription-based summaries
+
 ## Future Enhancements
 
 The architecture is designed to support:
@@ -527,24 +652,25 @@ The architecture is designed to support:
 ### Running Tests
 
 ```bash
-# All tests
-python manage.py test
+# All tests (165 total: 121 service + 44 app)
+python manage.py test media
 
-# Service layer only
-python manage.py test service.tests
+# Service layer only (121 tests)
+python manage.py test media.test_service
 
-# Web app only
+# App integration tests only (44 tests)
 python manage.py test media.tests
 
-# Parallel execution
-python manage.py test --parallel
+# Parallel execution for faster results
+python manage.py test media --parallel
 ```
 
 ### Adding New Features
 
-**For features used by both CLI and web app:**
-1. Add to appropriate service module
-2. Add tests to `service/tests/`
+**For reusable media processing functions:**
+1. Add to appropriate `media/service/` module
+2. Add tests to `media/test_service/`
+3. Keep functions pure (no Django model dependencies)
 3. Update both CLI command and web tasks to use it
 
 **For web-only features:**

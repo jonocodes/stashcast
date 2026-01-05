@@ -265,6 +265,15 @@ def view_video_feed_xml(request):
     return response
 
 
+def view_combined_feed_xml(request):
+    """View combined feed XML inline in browser"""
+    from media.feeds import CombinedFeed
+    feed = CombinedFeed()
+    response = feed(request)
+    response['Content-Type'] = 'text/xml; charset=utf-8'
+    return response
+
+
 @staff_member_required
 def grid_view(request):
     """

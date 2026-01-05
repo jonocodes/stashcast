@@ -21,9 +21,10 @@ from django.conf.urls.static import static
 
 from media.views import (
     stash_view, item_detail_view, bookmarklet_view, admin_stash_form_view,
-    view_audio_feed_xml, view_video_feed_xml, grid_view, list_view
+    view_audio_feed_xml, view_video_feed_xml, view_combined_feed_xml,
+    grid_view, list_view
 )
-from media.feeds import AudioFeed, VideoFeed
+from media.feeds import AudioFeed, VideoFeed, CombinedFeed
 
 urlpatterns = [
     # Custom admin tools (must come before admin.site.urls)
@@ -40,8 +41,10 @@ urlpatterns = [
     path('items/<str:guid>/', item_detail_view, name='item_detail'),
     path('feeds/audio.xml', AudioFeed(), name='audio_feed'),
     path('feeds/video.xml', VideoFeed(), name='video_feed'),
+    path('feeds/combined.xml', CombinedFeed(), name='combined_feed'),
     path('feeds/audio-view.xml', view_audio_feed_xml, name='audio_feed_view'),
     path('feeds/video-view.xml', view_video_feed_xml, name='video_feed_view'),
+    path('feeds/combined-view.xml', view_combined_feed_xml, name='combined_feed_view'),
 ]
 
 # Serve media files in development

@@ -3,7 +3,7 @@ Tests for service/resolve.py
 """
 from django.test import TestCase
 from unittest.mock import patch, MagicMock
-from service.resolve import (
+from media.service.resolve import (
     prefetch,
     resolve_media_type,
     PlaylistNotSupported,
@@ -84,7 +84,7 @@ class ResolveServiceTest(TestCase):
         self.assertTrue(len(logs) > 0)
         self.assertTrue(any('Direct URL' in log for log in logs))
 
-    @patch('service.resolve.yt_dlp.YoutubeDL')
+    @patch('media.service.resolve.yt_dlp.YoutubeDL')
     def test_prefetch_ytdlp_success(self, mock_ytdlp_class):
         """Test successful yt-dlp metadata extraction"""
         # Mock the yt-dlp info extraction
@@ -115,7 +115,7 @@ class ResolveServiceTest(TestCase):
         self.assertTrue(result.has_video_streams)
         self.assertTrue(result.has_audio_streams)
 
-    @patch('service.resolve.yt_dlp.YoutubeDL')
+    @patch('media.service.resolve.yt_dlp.YoutubeDL')
     def test_prefetch_ytdlp_audio_only(self, mock_ytdlp_class):
         """Test yt-dlp extraction for audio-only content"""
         mock_ydl = MagicMock()
@@ -133,7 +133,7 @@ class ResolveServiceTest(TestCase):
         self.assertFalse(result.has_video_streams)
         self.assertTrue(result.has_audio_streams)
 
-    @patch('service.resolve.yt_dlp.YoutubeDL')
+    @patch('media.service.resolve.yt_dlp.YoutubeDL')
     def test_prefetch_ytdlp_playlist_error(self, mock_ytdlp_class):
         """Test that playlists raise PlaylistNotSupported"""
         mock_ydl = MagicMock()
@@ -151,8 +151,8 @@ class ResolveServiceTest(TestCase):
             prefetch(url, 'ytdlp')
 
     @patch('bs4.BeautifulSoup')
-    @patch('service.resolve.yt_dlp.YoutubeDL')
-    @patch('service.resolve.requests.get')
+    @patch('media.service.resolve.yt_dlp.YoutubeDL')
+    @patch('media.service.resolve.requests.get')
     def test_prefetch_ytdlp_fallback_to_html(self, mock_requests, mock_ytdlp_class, mock_bs):
         """Test HTML extraction fallback when yt-dlp fails"""
         # Make yt-dlp fail with DownloadError

@@ -7,7 +7,7 @@ from pathlib import Path
 import tempfile
 import os
 
-from service.download import (
+from media.service.download import (
     download_direct,
     download_ytdlp,
     DownloadedFileInfo
@@ -29,7 +29,7 @@ class DownloadServiceTest(TestCase):
         self.assertEqual(info.extension, '.mp3')
         self.assertIsNone(info.mime_type)
 
-    @patch('service.download.requests.get')
+    @patch('media.service.download.requests.get')
     def test_download_direct_success(self, mock_get):
         """Test successful direct download"""
         # Mock HTTP response
@@ -47,7 +47,7 @@ class DownloadServiceTest(TestCase):
             self.assertEqual(result.extension, '.mp3')
             self.assertEqual(result.mime_type, 'audio/mpeg')
 
-    @patch('service.download.requests.get')
+    @patch('media.service.download.requests.get')
     def test_download_direct_creates_directory(self, mock_get):
         """Test that download_direct creates parent directory"""
         mock_response = MagicMock()
@@ -62,7 +62,7 @@ class DownloadServiceTest(TestCase):
             self.assertTrue(out_path.exists())
             self.assertTrue(out_path.parent.exists())
 
-    @patch('service.download.requests.get')
+    @patch('media.service.download.requests.get')
     def test_download_direct_with_logger(self, mock_get):
         """Test direct download with logger callback"""
         mock_response = MagicMock()
@@ -80,7 +80,7 @@ class DownloadServiceTest(TestCase):
             self.assertTrue(len(logs) > 0)
             self.assertTrue(any('Downloading' in log for log in logs))
 
-    @patch('service.download.requests.get')
+    @patch('media.service.download.requests.get')
     def test_download_direct_raises_on_http_error(self, mock_get):
         """Test that HTTP errors are raised"""
         mock_response = MagicMock()
@@ -92,7 +92,7 @@ class DownloadServiceTest(TestCase):
             with self.assertRaises(Exception):
                 download_direct('https://example.com/notfound.mp3', out_path)
 
-    @patch('service.download.yt_dlp.YoutubeDL')
+    @patch('media.service.download.yt_dlp.YoutubeDL')
     def test_download_ytdlp_audio(self, mock_ytdlp_class):
         """Test yt-dlp download for audio"""
         mock_ydl = MagicMock()
@@ -118,7 +118,7 @@ class DownloadServiceTest(TestCase):
             self.assertEqual(result.extension, '.m4a')
             self.assertTrue(result.file_size > 0)
 
-    @patch('service.download.yt_dlp.YoutubeDL')
+    @patch('media.service.download.yt_dlp.YoutubeDL')
     def test_download_ytdlp_video(self, mock_ytdlp_class):
         """Test yt-dlp download for video"""
         mock_ydl = MagicMock()
@@ -139,7 +139,7 @@ class DownloadServiceTest(TestCase):
 
             self.assertEqual(result.extension, '.mp4')
 
-    @patch('service.download.yt_dlp.YoutubeDL')
+    @patch('media.service.download.yt_dlp.YoutubeDL')
     def test_download_ytdlp_with_thumbnail(self, mock_ytdlp_class):
         """Test yt-dlp download with thumbnail"""
         mock_ydl = MagicMock()
@@ -160,7 +160,7 @@ class DownloadServiceTest(TestCase):
             self.assertIsNotNone(result.thumbnail_path)
             self.assertTrue(result.thumbnail_path.exists())
 
-    @patch('service.download.yt_dlp.YoutubeDL')
+    @patch('media.service.download.yt_dlp.YoutubeDL')
     def test_download_ytdlp_with_subtitles(self, mock_ytdlp_class):
         """Test yt-dlp download with subtitles"""
         mock_ydl = MagicMock()
@@ -181,7 +181,7 @@ class DownloadServiceTest(TestCase):
             self.assertIsNotNone(result.subtitle_path)
             self.assertTrue(result.subtitle_path.exists())
 
-    @patch('service.download.yt_dlp.YoutubeDL')
+    @patch('media.service.download.yt_dlp.YoutubeDL')
     def test_download_ytdlp_selects_largest_file(self, mock_ytdlp_class):
         """Test that yt-dlp selects the largest content file"""
         mock_ydl = MagicMock()
@@ -202,7 +202,7 @@ class DownloadServiceTest(TestCase):
             # Should select the larger file
             self.assertEqual(result.file_size, large_file.stat().st_size)
 
-    @patch('service.download.yt_dlp.YoutubeDL')
+    @patch('media.service.download.yt_dlp.YoutubeDL')
     def test_download_ytdlp_with_logger(self, mock_ytdlp_class):
         """Test yt-dlp download with logger"""
         mock_ydl = MagicMock()
@@ -222,7 +222,7 @@ class DownloadServiceTest(TestCase):
             self.assertTrue(len(logs) > 0)
             self.assertTrue(any('Downloading' in log for log in logs))
 
-    @patch('service.download.yt_dlp.YoutubeDL')
+    @patch('media.service.download.yt_dlp.YoutubeDL')
     def test_download_ytdlp_no_media_file_raises(self, mock_ytdlp_class):
         """Test that missing media file raises exception"""
         mock_ydl = MagicMock()
@@ -238,7 +238,7 @@ class DownloadServiceTest(TestCase):
 
             self.assertIn('No media file found', str(ctx.exception))
 
-    @patch('service.download.yt_dlp.YoutubeDL')
+    @patch('media.service.download.yt_dlp.YoutubeDL')
     def test_download_ytdlp_format_spec_audio(self, mock_ytdlp_class):
         """Test that correct format spec is used for audio"""
         mock_ydl = MagicMock()
@@ -256,7 +256,7 @@ class DownloadServiceTest(TestCase):
             self.assertIn('format', call_args)
             self.assertEqual(call_args['format'], 'bestaudio/best')
 
-    @patch('service.download.yt_dlp.YoutubeDL')
+    @patch('media.service.download.yt_dlp.YoutubeDL')
     def test_download_ytdlp_format_spec_video(self, mock_ytdlp_class):
         """Test that correct format spec is used for video"""
         mock_ydl = MagicMock()

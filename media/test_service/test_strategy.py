@@ -2,7 +2,7 @@
 Tests for service/strategy.py
 """
 from django.test import TestCase
-from service.strategy import choose_download_strategy
+from media.service.strategy import choose_download_strategy
 
 
 class StrategyServiceTest(TestCase):

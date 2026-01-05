@@ -11,17 +11,17 @@ from urllib.parse import urlparse
 import tempfile
 import shutil
 
-from service.strategy import choose_download_strategy
-from service.resolve import prefetch, resolve_media_type, PlaylistNotSupported
-from service.download import download_direct, download_ytdlp, download_file
-from service.process import (
+from media.service.strategy import choose_download_strategy
+from media.service.resolve import prefetch, resolve_media_type, PlaylistNotSupported
+from media.service.download import download_direct, download_ytdlp, download_file
+from media.service.process import (
     needs_transcode,
     transcode_to_playable,
     add_metadata_without_transcode,
     process_thumbnail,
     process_subtitle
 )
-from service.config import (
+from media.service.config import (
     get_ytdlp_args_for_type,
     get_ffmpeg_args_for_type,
     get_target_audio_format,

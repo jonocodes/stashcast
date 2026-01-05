@@ -127,6 +127,7 @@ Parameters:
 
 - Audio feed: `http://localhost:8000/feeds/audio.xml`
 - Video feed: `http://localhost:8000/feeds/video.xml`
+- Combined feed: `http://localhost:8000/feeds/combined.xml`
 
 Add these URLs to your podcast app (AntennaPod, Overcast, etc.)
 
@@ -157,9 +158,29 @@ Your current test files:
 - Audio: `http://localhost:8001/01_Eragon_001_of_115.mp3` (4.0 MB)
 - Video: `http://localhost:8001/dji_fly_20250723_094842_13_1753459195176_quickshot.mp4` (53.7 MB)
 
+### Stash Command
+
+Download media and add it to your podcast feed (same as web interface but runs in foreground):
+
+```bash
+# Stash a URL
+python manage.py stash https://example.com/video.mp4
+
+# Specify media type (default: auto)
+python manage.py stash https://example.com/audio.mp3 --type audio
+
+# Verbose output (shows all processing steps)
+python manage.py stash https://example.com/video.mp4 --verbose
+
+# JSON output (machine-readable)
+python manage.py stash https://example.com/video.mp4 --json
+```
+
+This command performs the same pipeline as the web app's `/stash/` endpoint but runs synchronously in the foreground. Files are saved to the configured media directories and added to your podcast feeds.
+
 ### Transcode Command
 
-Download and transcode media from URLs or local files:
+Download and transcode media from URLs or local files to a custom output directory:
 
 ```bash
 # Transcode from a URL
@@ -184,6 +205,8 @@ python manage.py transcode https://example.com/video.mp4 --verbose
 python manage.py transcode https://example.com/video.mp4 --json
 ```
 
+This command is for standalone transcoding without adding to podcast feeds.
+
 ### Summarize Command
 
 Generate summaries from VTT subtitle files:
@@ -204,62 +227,17 @@ python manage.py summarize demo_data/carpool/subtitles.vtt --algorithm luhn
 
 See `EXAMPLES.md` for more usage examples.
 
-## Architecture
+## How It Works
 
-STASHCAST is organized into two layers:
+STASHCAST downloads media from URLs and makes it available through podcast feeds. When you submit a URL:
 
-- **Service Layer** (`service/`) - Framework-agnostic media processing shared by CLI and web app
-- **Web App Layer** (`media/`) - Django-specific models, views, and background tasks
+1. Metadata is extracted (title, duration, etc.)
+2. Media is downloaded in the background
+3. Files are processed (thumbnails converted to WebP, subtitles to VTT)
+4. Optional summaries are generated from subtitles
+5. Media becomes available in your podcast feed
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed information about the service layer, data flow, and design principles.
-
-### Media Processing Pipeline
-
-1. **PREFETCHING**: Extract metadata and validate URL
-2. **DOWNLOADING**: Download media files
-3. **PROCESSING**: Transcode if needed, convert subtitles to VTT
-4. **READY**: Media is available
-
-### Directory Structure
-
-For the web app (stash endpoint):
-
-```
-/audio/<slug>/
-  content.m4a OR content.mp3
-  thumbnail.webp (if available)
-  subtitles.vtt (if available)
-
-/video/<slug>/
-  content.mp4
-  thumbnail.webp (if available)
-  subtitles.vtt (if available)
-```
-
-For the transcode command (CLI):
-
-The transcode command outputs files with slug-based names directly in the specified output directory:
-
-```
-/output-dir/
-  <slug>.mp3 OR <slug>.mp4 (depending on media type)
-```
-
-### Key Components
-
-**Service Layer** (shared by CLI and web app):
-- **Strategy** (`service/strategy.py`): Download strategy detection
-- **Resolve** (`service/resolve.py`): Metadata extraction and type resolution
-- **Download** (`service/download.py`): HTTP and yt-dlp download implementations
-- **Process** (`service/process.py`): Transcoding and metadata embedding
-- **Config** (`service/config.py`): Configuration adapter
-
-**Web App Layer** (Django-specific):
-- **Models** (`media/models.py`): MediaItem with all metadata
-- **Tasks** (`media/tasks.py`): Huey background tasks for downloading
-- **Views** (`media/views.py`): Stash endpoint, item detail pages
-- **Feeds** (`media/feeds.py`): Podcast feed generation
-- **Admin** (`media/admin.py`): Rich admin interface
+For technical details, see [ARCHITECTURE.md](ARCHITECTURE.md)
 
 ## Configuration
 
@@ -285,45 +263,13 @@ See `.env.example` for all available configuration options.
 
 ## Development
 
-### Running tests
-
 ```bash
-# Run all tests (163 total)
+# Run all tests
 python manage.py test
 
-# Run only service layer tests (121 tests)
-python manage.py test service.tests
-
-# Run only web app tests (42 tests)
-python manage.py test media.tests
-
-# Run tests in parallel for faster execution
-python manage.py test --parallel
-```
-
-### Database migrations
-
-```bash
-# Create migrations
+# Create and apply database migrations
 python manage.py makemigrations
-
-# Apply migrations
 python manage.py migrate
 ```
 
-## Overwrite Behavior
-
-Fetching the same URL again:
-
-- Reuses the same database row
-- Reuses the same slug and GUID
-- Overwrites files on disk
-- Appends a log entry noting the overwrite
-
-## Summary Generation
-
-Summaries are generated from downloaded subtitles using extractive summarization (LexRank).
-
-- Automatically generated during download if subtitles are available
-- Can be regenerated from admin interface
-- Future-ready for audio transcription-based summaries
+See [ARCHITECTURE.md](ARCHITECTURE.md) for more details on the codebase structure and testing strategy.

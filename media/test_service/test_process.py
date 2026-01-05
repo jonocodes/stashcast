@@ -6,7 +6,7 @@ from unittest.mock import patch, MagicMock
 from pathlib import Path
 import tempfile
 
-from service.process import (
+from media.service.process import (
     needs_transcode,
     transcode_to_playable,
     process_thumbnail,
@@ -96,7 +96,7 @@ class ProcessServiceTest(TestCase):
             needs = needs_transcode(f.name, 'audio')
             self.assertFalse(needs)
 
-    @patch('service.process.subprocess.run')
+    @patch('media.service.process.subprocess.run')
     def test_transcode_to_playable_success(self, mock_run):
         """Test successful transcoding"""
         def mock_ffmpeg(cmd, **kwargs):
@@ -138,7 +138,7 @@ class ProcessServiceTest(TestCase):
             # Verify result
             self.assertTrue(result.was_transcoded)
 
-    @patch('service.process.subprocess.run')
+    @patch('media.service.process.subprocess.run')
     def test_transcode_to_playable_with_logger(self, mock_run):
         """Test transcoding with logger callback"""
         def mock_ffmpeg(cmd, **kwargs):
@@ -164,7 +164,7 @@ class ProcessServiceTest(TestCase):
             self.assertTrue(len(logs) > 0)
             self.assertTrue(any('Transcoding' in log for log in logs))
 
-    @patch('service.process.subprocess.run')
+    @patch('media.service.process.subprocess.run')
     def test_transcode_to_playable_ffmpeg_error(self, mock_run):
         """Test that ffmpeg errors are raised"""
         mock_result = MagicMock()
@@ -183,7 +183,7 @@ class ProcessServiceTest(TestCase):
 
             self.assertIn('ffmpeg failed', str(ctx.exception))
 
-    @patch('service.process.subprocess.run')
+    @patch('media.service.process.subprocess.run')
     def test_transcode_to_playable_creates_parent_dir(self, mock_run):
         """Test that transcoding creates parent directory"""
         def mock_ffmpeg(cmd, **kwargs):
@@ -206,7 +206,7 @@ class ProcessServiceTest(TestCase):
 
             self.assertTrue(output_file.parent.exists())
 
-    @patch('service.process.subprocess.run')
+    @patch('media.service.process.subprocess.run')
     def test_transcode_audio_uses_audio_settings(self, mock_run):
         """Test that audio transcoding uses audio ffmpeg settings"""
         def mock_ffmpeg(cmd, **kwargs):
@@ -230,7 +230,7 @@ class ProcessServiceTest(TestCase):
             # Should contain AAC codec for audio
             self.assertTrue(any('aac' in str(arg).lower() for arg in call_args))
 
-    @patch('service.process.subprocess.run')
+    @patch('media.service.process.subprocess.run')
     def test_transcode_video_uses_video_settings(self, mock_run):
         """Test that video transcoding uses video ffmpeg settings"""
         def mock_ffmpeg(cmd, **kwargs):
@@ -313,7 +313,7 @@ class ProcessServiceTest(TestCase):
             self.assertTrue(any('thumbnail' in log.lower() for log in logs))
 
     @patch('PIL.Image.open')
-    @patch('service.process.shutil.copy2')
+    @patch('media.service.process.shutil.copy2')
     def test_process_thumbnail_fallback_on_error(self, mock_copy, mock_image_open):
         """Test that thumbnail processing falls back to copy on error"""
         mock_image_open.side_effect = Exception("PIL error")
@@ -347,7 +347,7 @@ class ProcessServiceTest(TestCase):
             # Content should be copied
             self.assertIn('WEBVTT', output_sub.read_text())
 
-    @patch('service.process.subprocess.run')
+    @patch('media.service.process.subprocess.run')
     def test_process_subtitle_srt_conversion(self, mock_run):
         """Test that SRT subtitles are converted to VTT"""
         mock_result = MagicMock()
@@ -381,7 +381,7 @@ class ProcessServiceTest(TestCase):
         result = process_subtitle(Path('/nonexistent/sub.vtt'), Path('/tmp/out.vtt'))
         self.assertIsNone(result)
 
-    @patch('service.process.subprocess.run')
+    @patch('media.service.process.subprocess.run')
     def test_process_subtitle_with_logger(self, mock_run):
         """Test subtitle processing with logger"""
         mock_result = MagicMock()
@@ -402,8 +402,8 @@ class ProcessServiceTest(TestCase):
             self.assertTrue(len(logs) > 0)
             self.assertTrue(any('subtitle' in log.lower() for log in logs))
 
-    @patch('service.process.subprocess.run')
-    @patch('service.process.shutil.copy2')
+    @patch('media.service.process.subprocess.run')
+    @patch('media.service.process.shutil.copy2')
     def test_process_subtitle_fallback_on_conversion_error(self, mock_copy, mock_run):
         """Test that subtitle processing falls back to copy on conversion error"""
         mock_result = MagicMock()

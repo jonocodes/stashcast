@@ -18,11 +18,41 @@
     </a>
     <a href="{% url 'admin_stash_form' %}">➕ Add URL</a>
     <a href="{% url 'grid_view' %}">🎬 Grid View</a>
+    <a href="{% url 'list_view' %}">📋 List View</a>
     <a href="/admin/huey_monitor/taskmodel/">📊 Task Monitor</a>
     <a href="{% url 'bookmarklet' %}">📥 Bookmarklet</a>
-    <a href="/feeds/audio.xml" target="_blank">🎵 Audio Feed</a>
-    <a href="/feeds/audio-view.xml" target="_blank" style="margin-left: 10px; font-size: 0.9em;">View XML</a>
-    <a href="/feeds/video.xml" target="_blank">🎬 Video Feed</a>
-    <a href="/feeds/video-view.xml" target="_blank" style="margin-left: 10px; font-size: 0.9em;">View XML</a>
+    <div class="feed-link">
+      <a href="/feeds/audio.xml" target="_blank">🎵 Audio Feed</a>
+      <a href="/feeds/audio-view.xml" target="_blank" class="view-xml">View XML</a>
+    </div>
+    <div class="feed-link">
+      <a href="/feeds/video.xml" target="_blank">🎬 Video Feed</a>
+      <a href="/feeds/video-view.xml" target="_blank" class="view-xml">View XML</a>
+    </div>
+    <div class="feed-link">
+      <a href="/feeds/combined.xml" target="_blank">📺 Combined Feed</a>
+      <a href="/feeds/combined-view.xml" target="_blank" class="view-xml">View XML</a>
+    </div>
   </div>
 </nav>
+
+<style>
+.app-tools a:not(.section):not(.view-xml) {
+  display: block;
+}
+.app-tools .feed-link {
+  display: block;
+  padding: 5px 16px;
+}
+.app-tools .feed-link a:first-child {
+  display: inline-block;
+}
+.app-tools .feed-link a.view-xml {
+  margin-left: 10px;
+  font-size: 0.85em;
+  opacity: 0.7;
+}
+.app-tools .feed-link a.view-xml:hover {
+  opacity: 1;
+}
+</style>

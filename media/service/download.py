@@ -11,7 +11,7 @@ import tempfile
 import requests
 import yt_dlp
 
-from service.config import get_ytdlp_args_for_type, parse_ytdlp_extra_args
+from media.service.config import get_ytdlp_args_for_type, parse_ytdlp_extra_args
 
 
 @dataclass

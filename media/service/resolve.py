@@ -10,7 +10,7 @@ from pathlib import Path
 import requests
 import yt_dlp
 
-from service.constants import AUDIO_EXTENSIONS
+from media.service.constants import AUDIO_EXTENSIONS
 
 
 class PlaylistNotSupported(Exception):

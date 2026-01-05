@@ -2,7 +2,7 @@
 Tests for service/config.py
 """
 from django.test import TestCase, override_settings
-from service.config import (
+from media.service.config import (
     get_ytdlp_args_for_type,
     get_ffmpeg_args_for_type,
     get_audio_dir,

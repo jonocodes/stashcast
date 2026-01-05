@@ -8,8 +8,8 @@ import sys
 from pathlib import Path
 from django.core.management.base import BaseCommand, CommandError
 
-from service.transcode_service import transcode_url_to_dir
-from service.resolve import PlaylistNotSupported
+from media.service.transcode_service import transcode_url_to_dir
+from media.service.resolve import PlaylistNotSupported
 
 
 class Command(BaseCommand):
@@ -60,8 +60,8 @@ class Command(BaseCommand):
 
         # Dry run mode
         if dry_run:
-            from service.strategy import choose_download_strategy
-            from service.resolve import prefetch, resolve_media_type
+            from media.service.strategy import choose_download_strategy
+            from media.service.resolve import prefetch, resolve_media_type
 
             if not output_json:
                 self.stdout.write(self.style.WARNING("DRY RUN MODE - No files will be downloaded"))

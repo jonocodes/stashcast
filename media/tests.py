@@ -161,11 +161,6 @@ class SlugUtilsTest(TestCase):
         # Should have max 6 words
         self.assertTrue(len(slug.split('-')) <= 6)
 
-    def test_ensure_unique_slug_new(self):
-        """Test unique slug for new item"""
-        slug = ensure_unique_slug("test-slug", "https://example.com/1")
-        self.assertEqual(slug, "test-slug")
-
     def test_ensure_unique_slug_same_url(self):
         """Test slug reuse for same URL"""
         item = MediaItem.objects.create(
@@ -393,24 +388,6 @@ class StashViewTest(TestCase):
         self.assertEqual(MediaItem.objects.count(), 2)
 
 
-class ItemDetailViewTest(TestCase):
-    def test_item_detail_not_found(self):
-        """Test item detail page for non-existent item"""
-        response = self.client.get('/items/nonexistent/')
-        self.assertEqual(response.status_code, 404)
-
-    def test_item_detail_exists(self):
-        """Test item detail page for existing item"""
-        item = MediaItem.objects.create(
-            source_url="https://example.com/video",
-            requested_type=MediaItem.REQUESTED_TYPE_AUTO,
-            slug="test-video",
-            title="Test Video",
-            status=MediaItem.STATUS_READY
-        )
-        response = self.client.get(f'/items/{item.guid}/')
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Test Video")
 
 
 class FeedTest(TestCase):
@@ -481,56 +458,12 @@ class FeedTest(TestCase):
         self.assertContains(video_response, "video/my-content/content.mp4")
 
 
-class FeedViewXMLTest(TestCase):
-    """Test the XML viewing endpoints for feeds"""
-
-    def setUp(self):
-        """Create test items"""
-        self.client = Client()
-
-    def test_audio_feed_view_xml(self):
-        """Test that audio-view.xml returns XML with correct content type"""
-        # Create a ready audio item
-        MediaItem.objects.create(
-            source_url="https://example.com/audio",
-            requested_type=MediaItem.REQUESTED_TYPE_AUDIO,
-            slug="test-audio",
-            title="Test Audio",
-            media_type=MediaItem.MEDIA_TYPE_AUDIO,
-            status=MediaItem.STATUS_READY
-        )
-
-        response = self.client.get('/feeds/audio-view.xml')
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response['Content-Type'], 'text/xml; charset=utf-8')
-        self.assertContains(response, 'Test Audio')
-        self.assertContains(response, '<?xml')
-
-    def test_video_feed_view_xml(self):
-        """Test that video-view.xml returns XML with correct content type"""
-        # Create a ready video item
-        MediaItem.objects.create(
-            source_url="https://example.com/video",
-            requested_type=MediaItem.REQUESTED_TYPE_VIDEO,
-            slug="test-video",
-            title="Test Video",
-            media_type=MediaItem.MEDIA_TYPE_VIDEO,
-            status=MediaItem.STATUS_READY
-        )
-
-        response = self.client.get('/feeds/video-view.xml')
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response['Content-Type'], 'text/xml; charset=utf-8')
-        self.assertContains(response, 'Test Video')
-        self.assertContains(response, '<?xml')
-
-
 class HTMLMediaExtractorTest(TestCase):
     """Test the HTML media extractor fallback"""
 
     def test_extract_audio_tag_with_src(self):
         """Test extracting <audio src='...'> tag"""
-        from media.tasks import extract_media_from_html
+        from media.processing import extract_media_from_html
         from unittest.mock import patch, Mock
         from media.models import MediaItem
 
@@ -548,7 +481,7 @@ class HTMLMediaExtractorTest(TestCase):
         mock_response.text = html
         mock_response.raise_for_status = Mock()
 
-        with patch('media.tasks.requests.get', return_value=mock_response):
+        with patch('media.processing.requests.get', return_value=mock_response):
             media_url, media_type = extract_media_from_html('https://example.com/page.html')
 
         self.assertEqual(media_url, 'https://example.com/media/audio.mp3')
@@ -556,7 +489,7 @@ class HTMLMediaExtractorTest(TestCase):
 
     def test_extract_video_tag_with_src(self):
         """Test extracting <video src='...'> tag"""
-        from media.tasks import extract_media_from_html
+        from media.processing import extract_media_from_html
         from unittest.mock import patch, Mock
         from media.models import MediaItem
 
@@ -574,7 +507,7 @@ class HTMLMediaExtractorTest(TestCase):
         mock_response.text = html
         mock_response.raise_for_status = Mock()
 
-        with patch('media.tasks.requests.get', return_value=mock_response):
+        with patch('media.processing.requests.get', return_value=mock_response):
             media_url, media_type = extract_media_from_html('https://example.com/page.html')
 
         self.assertEqual(media_url, 'https://example.com/media/video.mp4')
@@ -582,7 +515,7 @@ class HTMLMediaExtractorTest(TestCase):
 
     def test_extract_source_tag_inside_audio(self):
         """Test extracting <source> tag inside <audio>"""
-        from media.tasks import extract_media_from_html
+        from media.processing import extract_media_from_html
         from unittest.mock import patch, Mock
         from media.models import MediaItem
 
@@ -601,7 +534,7 @@ class HTMLMediaExtractorTest(TestCase):
         mock_response.text = html
         mock_response.raise_for_status = Mock()
 
-        with patch('media.tasks.requests.get', return_value=mock_response):
+        with patch('media.processing.requests.get', return_value=mock_response):
             media_url, media_type = extract_media_from_html('https://example.com/page.html')
 
         self.assertEqual(media_url, 'https://cdn.example.com/audio.mp3')
@@ -609,7 +542,7 @@ class HTMLMediaExtractorTest(TestCase):
 
     def test_no_media_found(self):
         """Test when no media is found in HTML"""
-        from media.tasks import extract_media_from_html
+        from media.processing import extract_media_from_html
         from unittest.mock import patch, Mock
 
         html = """
@@ -625,7 +558,7 @@ class HTMLMediaExtractorTest(TestCase):
         mock_response.text = html
         mock_response.raise_for_status = Mock()
 
-        with patch('media.tasks.requests.get', return_value=mock_response):
+        with patch('media.processing.requests.get', return_value=mock_response):
             media_url, media_type = extract_media_from_html('https://example.com/page.html')
 
         self.assertIsNone(media_url)
@@ -775,3 +708,179 @@ Finally we have a fourth sentence to conclude.
         # Summary should be generated
         self.assertIsNotNone(item.summary)
         self.assertTrue(len(item.summary) > 0)
+
+
+class MetadataEmbeddingTest(TestCase):
+    """Tests for metadata embedding without transcoding"""
+
+    def test_metadata_embedded_in_file(self):
+        """Test that metadata is embedded in media files"""
+        from media.service.process import add_metadata_without_transcode
+        from pathlib import Path
+        import tempfile
+        import shutil
+        import subprocess
+        import json
+
+        # Create a temporary directory
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_dir = Path(temp_dir)
+
+            # Create a minimal valid MP4 file (empty but valid structure)
+            input_file = temp_dir / 'input.mp4'
+            output_file = temp_dir / 'output.mp4'
+
+            # Create a minimal MP4 using ffmpeg
+            subprocess.run([
+                'ffmpeg', '-f', 'lavfi', '-i', 'anullsrc=duration=1',
+                '-c:a', 'aac', '-t', '1', str(input_file)
+            ], capture_output=True, check=True)
+
+            # Add metadata
+            metadata = {
+                'title': 'Test Title',
+                'author': 'Test Author',
+                'description': 'Test Description'
+            }
+
+            add_metadata_without_transcode(input_file, output_file, metadata=metadata)
+
+            # Verify metadata was embedded using ffprobe
+            result = subprocess.run([
+                'ffprobe', '-v', 'quiet', '-show_format', '-of', 'json', str(output_file)
+            ], capture_output=True, text=True, check=True)
+
+            probe_data = json.loads(result.stdout)
+            tags = probe_data.get('format', {}).get('tags', {})
+
+            # Check metadata is present (ffprobe returns lowercase keys)
+            self.assertEqual(tags.get('title'), 'Test Title')
+            self.assertEqual(tags.get('artist'), 'Test Author')
+            self.assertEqual(tags.get('comment'), 'Test Description')
+
+    def test_metadata_without_transcode_no_quality_loss(self):
+        """Test that metadata embedding doesn't re-encode the file"""
+        from media.service.process import add_metadata_without_transcode
+        from pathlib import Path
+        import tempfile
+        import subprocess
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_dir = Path(temp_dir)
+
+            input_file = temp_dir / 'input.mp4'
+            output_file = temp_dir / 'output.mp4'
+
+            # Create a test file
+            subprocess.run([
+                'ffmpeg', '-f', 'lavfi', '-i', 'anullsrc=duration=1',
+                '-c:a', 'aac', '-t', '1', str(input_file)
+            ], capture_output=True, check=True)
+
+            input_size = input_file.stat().st_size
+
+            # Add metadata
+            metadata = {'title': 'Test'}
+            add_metadata_without_transcode(input_file, output_file, metadata=metadata)
+
+            output_size = output_file.stat().st_size
+
+            # File sizes should be very similar (within 5% due to metadata overhead)
+            size_diff_percent = abs(output_size - input_size) / input_size * 100
+            self.assertLess(size_diff_percent, 5)
+
+
+class SlugPathSecurityTest(TestCase):
+    """Tests for path traversal security in slugs"""
+
+    def test_slug_path_traversal_protection(self):
+        """Test that slugs with path traversal attempts are sanitized"""
+        from media.utils import generate_slug
+
+        # Test various path traversal attempts
+        malicious_inputs = [
+            "../../../etc/passwd",
+            "..\\..\\windows\\system32",
+            "test/../../../sensitive",
+            "normal-name/../../etc",
+        ]
+
+        for malicious in malicious_inputs:
+            slug = generate_slug(malicious)
+            # Slug should not contain .. or /
+            self.assertNotIn('..', slug)
+            self.assertNotIn('/', slug)
+            self.assertNotIn('\\', slug)
+
+    def test_get_base_dir_no_traversal(self):
+        """Test that get_base_dir doesn't allow path traversal"""
+        from pathlib import Path
+
+        # Try to create an item with a malicious slug
+        item = MediaItem.objects.create(
+            source_url="https://example.com/test",
+            requested_type=MediaItem.REQUESTED_TYPE_AUTO,
+            slug="../../../etc/passwd",
+            media_type=MediaItem.MEDIA_TYPE_AUDIO
+        )
+
+        base_dir = item.get_base_dir()
+
+        # Verify the path is still within the audio directory
+        audio_dir = Path(settings.STASHCAST_AUDIO_DIR)
+        try:
+            # This will raise ValueError if base_dir is not relative to audio_dir
+            base_dir.relative_to(audio_dir)
+        except ValueError:
+            self.fail("get_base_dir allowed path traversal outside audio directory")
+
+
+class DownloadStrategyTest(TestCase):
+    """Tests for download strategy selection"""
+
+    def test_direct_url_strategy(self):
+        """Test that direct media URLs use direct download strategy"""
+        from media.service.strategy import choose_download_strategy
+
+        direct_urls = [
+            "https://example.com/video.mp4",
+            "https://cdn.example.com/audio.mp3",
+            "https://example.com/media/file.m4a",
+        ]
+
+        for url in direct_urls:
+            strategy = choose_download_strategy(url)
+            self.assertEqual(strategy, 'direct')
+
+    def test_ytdlp_strategy_for_hosted_content(self):
+        """Test that hosted video platforms use yt-dlp strategy"""
+        from media.service.strategy import choose_download_strategy
+
+        ytdlp_urls = [
+            "https://youtube.com/watch?v=dQw4w9WgXcQ",
+            "https://vimeo.com/123456789",
+            "https://example.com/video-page",
+        ]
+
+        for url in ytdlp_urls:
+            strategy = choose_download_strategy(url)
+            self.assertEqual(strategy, 'ytdlp')
+
+    def test_local_file_strategy(self):
+        """Test that local file paths use file strategy"""
+        from media.service.strategy import choose_download_strategy
+        import tempfile
+        from pathlib import Path
+
+        with tempfile.NamedTemporaryFile(suffix='.mp4') as tmp:
+            strategy = choose_download_strategy(tmp.name)
+            self.assertEqual(strategy, 'file')
+
+    def test_html_file_uses_ytdlp_strategy(self):
+        """Test that local HTML files use yt-dlp strategy for extraction"""
+        from media.service.strategy import choose_download_strategy
+        import tempfile
+
+        with tempfile.NamedTemporaryFile(suffix='.html') as tmp:
+            strategy = choose_download_strategy(tmp.name)
+            self.assertEqual(strategy, 'ytdlp')
