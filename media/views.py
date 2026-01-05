@@ -9,6 +9,11 @@ from media.models import MediaItem
 from media.tasks import process_media
 
 
+def home_view(request):
+    """Landing page with quick access to add URLs."""
+    return render(request, 'media/home.html')
+
+
 @csrf_exempt
 @require_http_methods(["GET", "POST"])
 def stash_view(request):

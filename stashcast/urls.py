@@ -14,19 +14,25 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.contrib import admin
-from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.contrib import admin
+from django.urls import include, path
+from django.views.generic import RedirectView
 
-from media.views import (
-    stash_view, item_detail_view, bookmarklet_view, admin_stash_form_view,
-    view_audio_feed_xml, view_video_feed_xml, view_combined_feed_xml,
-    grid_view, list_view
-)
-from media.feeds import AudioFeed, VideoFeed, CombinedFeed
+from media.feeds import AudioFeed, CombinedFeed, VideoFeed
+from media.views import (admin_stash_form_view, bookmarklet_view, grid_view,
+                         home_view, item_detail_view, list_view, stash_view,
+                         view_audio_feed_xml, view_combined_feed_xml,
+                         view_video_feed_xml)
 
 urlpatterns = [
+    # Favicon
+    path('favicon.ico', RedirectView.as_view(url='/static/media/favicon.ico', permanent=True), name='favicon'),
+    
+    # Landing page
+    path('', home_view, name='home'),
+
     # Custom admin tools (must come before admin.site.urls)
     path('admin/tools/bookmarklet/', bookmarklet_view, name='bookmarklet'),
     path('admin/tools/add-url/', admin_stash_form_view, name='admin_stash_form'),

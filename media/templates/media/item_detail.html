@@ -1,10 +1,12 @@
 {% load media_filters %}
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ item.title }} - StashCast</title>
+    <link rel="icon" type="image/x-icon" href="{% static 'media/favicon.ico' %}">
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;

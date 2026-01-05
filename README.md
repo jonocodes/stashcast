@@ -1,18 +1,26 @@
-# STASHCAST
+![screenshot](./docs/header-transparent.png)
 
-A single-user Django application for downloading online media (audio/video) for offline consumption and exposing it via podcast feeds.
+StashCast is an application for downloading online media (audio/video) for offline consumption and exposing it via podcast feeds, so you can watch it later. It runs as a single user Django web app.
+
+## Motivation
+
+I created this since friends and family often send me links to listen to a single episode of a podcast via Apple Podcasts, or a single lecture on youtube. I don't want to subscribe to the show to listen to a single eposide, but I do want to listen to it - later.
 
 ## Features
 
-- Download media from any URL supported by yt-dlp, direct media URLs, or HTML with referenced media
-- Async background processing via Huey task queue
+- Download media from any URL supported by yt-dlp, direct media URLs, or HTML with embedded media
+- Async background processing via task queue
 - Automatic media type detection (audio/video)
 - Podcast feed generation (RSS/Atom) for audio and video
 - Optional transcoding via ffmpeg
 - Extractive summarization from subtitles
 - Bookmarklet for one-click media ingestion
 - Admin interface for managing downloads
-- API endpoint protected by API key
+- Django commands for management via CLI instead of web
+
+### Non-features
+
+- Subscribing to playlists. For that use [TubeSync](https://github.com/meeb/tubesync) or [Podsync](https://github.com/mxpv/podsync).
 
 ## Web view screenshot
 
@@ -21,9 +29,8 @@ A single-user Django application for downloading online media (audio/video) for 
 ## Requirements
 
 - Python 3.13+
-- SQLite
 - yt-dlp
-- ffmpeg (for transcoding and subtitle conversion)
+- ffmpeg
 
 ## Installation
 

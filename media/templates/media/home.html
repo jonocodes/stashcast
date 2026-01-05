@@ -1,0 +1,295 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StashCast</title>
+    <link rel="icon" type="image/x-icon" href="{% static 'media/favicon.ico' %}">
+    <style>
+        :root {
+            --surface: #0f172a;
+            --panel: #0b223f;
+            --text: #e5e7eb;
+            --muted: #9ca3af;
+            --accent: #4fb3ff;
+            --accent-strong: #2d8fe0;
+        }
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at 20% 20%, #1b2b4a, #0a1120 50%), radial-gradient(circle at 80% 0%, #15325e, transparent 40%), #0a1120;
+            color: var(--text);
+            font-family: "Helvetica Neue", "Segoe UI", sans-serif;
+            padding: 24px;
+        }
+        .panel {
+            background: linear-gradient(135deg, var(--panel), #0c1b33);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 18px;
+            padding: 28px;
+            width: min(720px, 100%);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+        }
+        .hero {
+            display: grid;
+            grid-template-columns: 1fr 200px;
+            gap: 18px;
+            align-items: center;
+        }
+        @media (max-width: 720px) {
+            .hero {
+                grid-template-columns: 1fr;
+            }
+        }
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 12px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-size: 11px;
+            color: var(--muted);
+        }
+        .logo-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent);
+            box-shadow: 0 0 0 6px rgba(79, 179, 255, 0.18);
+        }
+        h1 {
+            margin: 16px 0 8px;
+            font-size: 34px;
+            letter-spacing: -0.02em;
+            color: white;
+        }
+        p.lede {
+            margin: 0 0 20px;
+            font-size: 16px;
+            line-height: 1.6;
+            color: var(--muted);
+        }
+        .cta-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin: 22px 0 12px;
+        }
+        .cta {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 20px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+            color: #0b1220;
+            font-weight: 700;
+            text-decoration: none;
+            box-shadow: 0 12px 30px rgba(79, 179, 255, 0.25);
+            transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease;
+        }
+        .cta:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 18px 38px rgba(79, 179, 255, 0.35);
+            filter: brightness(1.03);
+        }
+        .note {
+            font-size: 13px;
+            color: var(--muted);
+        }
+        .links {
+            margin-top: 18px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+        }
+        .link-card {
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text);
+            text-decoration: none;
+            transition: border-color 120ms ease, transform 120ms ease, background 120ms ease;
+        }
+        .link-card:hover {
+            border-color: rgba(79, 179, 255, 0.4);
+            background: rgba(79, 179, 255, 0.05);
+            transform: translateY(-1px);
+        }
+        .link-card strong {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 14px;
+        }
+        .link-card span {
+            color: var(--muted);
+            font-size: 13px;
+        }
+        .logo-card {
+            width: 100%;
+            height: 100%;
+            display: grid;
+            place-items: center;
+            padding: 14px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+        }
+        .logo-card img {
+            max-width: 100%;
+            height: auto;
+            filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.35));
+        }
+        .feeds {
+            margin-top: 22px;
+            display: grid;
+            gap: 14px;
+        }
+        .feed-card {
+            display: grid;
+            grid-template-columns: 140px 1fr;
+            gap: 16px;
+            padding: 16px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.02);
+            align-items: center;
+        }
+        @media (max-width: 640px) {
+            .feed-card {
+                grid-template-columns: 1fr;
+            }
+        }
+        .feed-card img {
+            width: 100%;
+            max-width: 220px;
+            border-radius: 10px;
+            background: #0c1b33;
+            padding: 8px;
+        }
+        .feed-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--text);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 13px;
+            transition: border-color 120ms ease, background 120ms ease, transform 120ms ease;
+        }
+        .pill:hover {
+            border-color: rgba(79, 179, 255, 0.4);
+            background: rgba(79, 179, 255, 0.06);
+            transform: translateY(-1px);
+        }
+        .copy-btn {
+            cursor: pointer;
+        }
+        .copy-btn:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <main class="panel">
+        <div class="hero">
+            <div>
+                <div class="eyebrow">
+                    <span class="logo-dot" aria-hidden="true"></span>
+                    <span>StashCast Console</span>
+                </div>
+                <h1>Capture, stash, and stream your media.</h1>
+                <p class="lede">
+                    Drop in any URL supported by yt-dlp and StashCast will download, process, and publish it to your feeds.
+                    Jump straight to the add form to start a new download.
+                </p>
+                <div class="cta-row">
+                    <a class="cta" href="{% url 'admin_stash_form' %}">Add</a>
+                    <span class="note">Requires an admin login.</span>
+                </div>
+            </div>
+            <div class="logo-card">
+                <img src="{% static 'media/feed-logo-combined.png' %}" alt="StashCast logo">
+            </div>
+        </div>
+        <div class="feeds">
+            <div class="feed-card">
+                <img src="{% static 'media/feed-logo-audio.png' %}" alt="Audio feed">
+                <div class="feed-links">
+                    <a class="pill" href="/admin/tools/grid/?type=audio">Grid view</a>
+                    <a class="pill" href="/admin/tools/list/?type=audio">List view</a>
+                    <!-- <a class="pill" href="/feeds/audio.xml">Subscribe</a> -->
+                    <button class="pill copy-btn" data-url="/feeds/audio.xml" type="button">Copy subscribe URL</button>
+                    <a class="pill" href="/feeds/audio-view.xml">View RSS feed XML</a>
+                    <a class="pill" href="/admin/media/mediaitem/?media_type=audio">Manage</a>
+                </div>
+            </div>
+            <div class="feed-card">
+                <img src="{% static 'media/feed-logo-video.png' %}" alt="Video feed">
+                <div class="feed-links">
+                    <a class="pill" href="/admin/tools/grid/?type=video">Grid view</a>
+                    <a class="pill" href="/admin/tools/list/?type=video">List view</a>
+                    <!-- <a class="pill" href="/feeds/video.xml">Subscribe</a> -->
+                    <button class="pill copy-btn" data-url="/feeds/video.xml" type="button">Copy subscribe URL</button>
+                    <a class="pill" href="/feeds/video-view.xml">View RSS feed XML</a>
+                    <a class="pill" href="/admin/media/mediaitem/?media_type=video">Manage</a>
+                </div>
+            </div>
+            <div class="feed-card">
+                <img src="{% static 'media/feed-logo-combined.png' %}" alt="Combined feed">
+                <div class="feed-links">
+                    <a class="pill" href="/admin/tools/grid/?type=all">Grid view</a>
+                    <a class="pill" href="/admin/tools/list/?type=all">List view</a>
+                    <!-- <a class="pill" href="/feeds/combined.xml">Subscribe</a> -->
+                    <button class="pill copy-btn" data-url="/feeds/combined.xml" type="button">Copy subscribe URL</button>
+                    <a class="pill" href="/feeds/combined-view.xml">View RSS feed XML</a>
+                    <a class="pill" href="/admin/media/mediaitem/">Manage</a>
+                </div>
+            </div>
+        </div>
+        <div class="links">
+            <a class="link-card" href="/admin/">
+                <strong>Admin dashboard</strong>
+                <span>Manage media items and jobs</span>
+            </a>
+        </div>
+    </main>
+    <script>
+        document.querySelectorAll('.copy-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const url = btn.dataset.url;
+                try {
+                    await navigator.clipboard.writeText(new URL(url, window.location.origin).href);
+                    btn.textContent = 'Copied!';
+                    setTimeout(() => btn.textContent = 'Copy subscribe URL', 1400);
+                } catch (e) {
+                    btn.textContent = 'Copy failed';
+                    setTimeout(() => btn.textContent = 'Copy subscribe URL', 1400);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

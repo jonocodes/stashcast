@@ -458,6 +458,85 @@ class FeedTest(TestCase):
         self.assertContains(video_response, "video/my-content/content.mp4")
 
 
+@override_settings(STASHCAST_MEDIA_BASE_URL='')
+class FeedAbsoluteUrlTest(TestCase):
+    """Ensure feed channel images and item links are absolute URLs."""
+
+    def setUp(self):
+        self.client = Client()
+
+    def test_audio_feed_absolute_urls(self):
+        item = MediaItem.objects.create(
+            source_url="https://example.com/audio",
+            requested_type=MediaItem.REQUESTED_TYPE_AUDIO,
+            slug="audio-item",
+            title="Audio Item",
+            media_type=MediaItem.MEDIA_TYPE_AUDIO,
+            status=MediaItem.STATUS_READY,
+            content_path="audio.m4a"
+        )
+
+        response = self.client.get('/feeds/audio.xml')
+        xml = response.content.decode()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("http://testserver/feeds/audio.xml", xml)
+        self.assertIn("http://testserver/static/media/feed-logo-audio.png", xml)
+        self.assertIn(f"http://testserver/items/{item.guid}/", xml)
+        self.assertIn("http://testserver/media/files/audio/audio-item/audio.m4a", xml)
+
+    def test_video_feed_absolute_urls(self):
+        item = MediaItem.objects.create(
+            source_url="https://example.com/video",
+            requested_type=MediaItem.REQUESTED_TYPE_VIDEO,
+            slug="video-item",
+            title="Video Item",
+            media_type=MediaItem.MEDIA_TYPE_VIDEO,
+            status=MediaItem.STATUS_READY,
+            content_path="video.mp4"
+        )
+
+        response = self.client.get('/feeds/video.xml')
+        xml = response.content.decode()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("http://testserver/feeds/video.xml", xml)
+        self.assertIn("http://testserver/static/media/feed-logo-video.png", xml)
+        self.assertIn(f"http://testserver/items/{item.guid}/", xml)
+        self.assertIn("http://testserver/media/files/video/video-item/video.mp4", xml)
+
+    def test_combined_feed_absolute_urls(self):
+        audio_item = MediaItem.objects.create(
+            source_url="https://example.com/audio",
+            requested_type=MediaItem.REQUESTED_TYPE_AUDIO,
+            slug="audio-combined",
+            title="Audio Combined",
+            media_type=MediaItem.MEDIA_TYPE_AUDIO,
+            status=MediaItem.STATUS_READY,
+            content_path="track.m4a"
+        )
+        video_item = MediaItem.objects.create(
+            source_url="https://example.com/video",
+            requested_type=MediaItem.REQUESTED_TYPE_VIDEO,
+            slug="video-combined",
+            title="Video Combined",
+            media_type=MediaItem.MEDIA_TYPE_VIDEO,
+            status=MediaItem.STATUS_READY,
+            content_path="clip.mp4"
+        )
+
+        response = self.client.get('/feeds/combined.xml')
+        xml = response.content.decode()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("http://testserver/feeds/combined.xml", xml)
+        self.assertIn("http://testserver/static/media/feed-logo-combined.png", xml)
+        self.assertIn(f"http://testserver/items/{audio_item.guid}/", xml)
+        self.assertIn(f"http://testserver/items/{video_item.guid}/", xml)
+        self.assertIn("http://testserver/media/files/audio/audio-combined/track.m4a", xml)
+        self.assertIn("http://testserver/media/files/video/video-combined/clip.mp4", xml)
+
+
 class HTMLMediaExtractorTest(TestCase):
     """Test the HTML media extractor fallback"""
 
