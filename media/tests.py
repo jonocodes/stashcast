@@ -1,8 +1,10 @@
-from django.test import TestCase, Client, override_settings
+from unittest.mock import MagicMock, patch
+
 from django.conf import settings
+from django.test import Client, TestCase, override_settings
+
 from media.models import MediaItem
-from media.utils import generate_slug, ensure_unique_slug
-from unittest.mock import patch, MagicMock
+from media.utils import ensure_unique_slug, generate_slug
 
 
 class MediaItemModelTest(TestCase):
@@ -93,7 +95,7 @@ class MediaItemModelTest(TestCase):
             slug="test-video",
             media_type=MediaItem.MEDIA_TYPE_VIDEO,
             content_path="content.mp4",
-            thumbnail_path="thumbnail.webp",
+            thumbnail_path="thumbnail.png",
             subtitle_path="subtitles.vtt",
             log_path="download.log"
         )
@@ -104,7 +106,7 @@ class MediaItemModelTest(TestCase):
 
         thumbnail_path = item.get_absolute_thumbnail_path()
         self.assertIsNotNone(thumbnail_path)
-        self.assertTrue(str(thumbnail_path).endswith("test-video/thumbnail.webp"))
+        self.assertTrue(str(thumbnail_path).endswith("test-video/thumbnail.png"))
 
         subtitle_path = item.get_absolute_subtitle_path()
         self.assertIsNotNone(subtitle_path)
@@ -473,17 +475,20 @@ class FeedAbsoluteUrlTest(TestCase):
             title="Audio Item",
             media_type=MediaItem.MEDIA_TYPE_AUDIO,
             status=MediaItem.STATUS_READY,
-            content_path="audio.m4a"
+            content_path="audio.m4a",
+            thumbnail_path="thumbnail.jpg",
         )
 
         response = self.client.get('/feeds/audio.xml')
         xml = response.content.decode()
 
         self.assertEqual(response.status_code, 200)
+        self.assertIn('xmlns:media="http://search.yahoo.com/mrss/"', xml)
         self.assertIn("http://testserver/feeds/audio.xml", xml)
         self.assertIn("http://testserver/static/media/feed-logo-audio.png", xml)
         self.assertIn(f"http://testserver/items/{item.guid}/", xml)
         self.assertIn("http://testserver/media/files/audio/audio-item/audio.m4a", xml)
+        self.assertIn('media:thumbnail url="http://testserver/media/files/audio/audio-item/thumbnail.jpg"', xml)
 
     def test_video_feed_absolute_urls(self):
         item = MediaItem.objects.create(
@@ -493,17 +498,25 @@ class FeedAbsoluteUrlTest(TestCase):
             title="Video Item",
             media_type=MediaItem.MEDIA_TYPE_VIDEO,
             status=MediaItem.STATUS_READY,
-            content_path="video.mp4"
+            content_path="video.mp4",
+            thumbnail_path="thumb.png",
         )
 
         response = self.client.get('/feeds/video.xml')
         xml = response.content.decode()
 
         self.assertEqual(response.status_code, 200)
+        self.assertIn('xmlns:media="http://search.yahoo.com/mrss/"', xml)
         self.assertIn("http://testserver/feeds/video.xml", xml)
         self.assertIn("http://testserver/static/media/feed-logo-video.png", xml)
         self.assertIn(f"http://testserver/items/{item.guid}/", xml)
         self.assertIn("http://testserver/media/files/video/video-item/video.mp4", xml)
+        self.assertIn('media:thumbnail url="http://testserver/media/files/video/video-item/thumb.png"', xml)
+        # Check that media:content element exists with correct attributes (order may vary)
+        self.assertIn('<media:content', xml)
+        self.assertIn('url="http://testserver/media/files/video/video-item/video.mp4"', xml)
+        self.assertIn('type="video/mp4"', xml)
+        self.assertIn('medium="video"', xml)
 
     def test_combined_feed_absolute_urls(self):
         audio_item = MediaItem.objects.create(
@@ -513,7 +526,8 @@ class FeedAbsoluteUrlTest(TestCase):
             title="Audio Combined",
             media_type=MediaItem.MEDIA_TYPE_AUDIO,
             status=MediaItem.STATUS_READY,
-            content_path="track.m4a"
+            content_path="track.m4a",
+            thumbnail_path="a-thumb.jpg",
         )
         video_item = MediaItem.objects.create(
             source_url="https://example.com/video",
@@ -522,7 +536,8 @@ class FeedAbsoluteUrlTest(TestCase):
             title="Video Combined",
             media_type=MediaItem.MEDIA_TYPE_VIDEO,
             status=MediaItem.STATUS_READY,
-            content_path="clip.mp4"
+            content_path="clip.mp4",
+            thumbnail_path="v-thumb.png",
         )
 
         response = self.client.get('/feeds/combined.xml')
@@ -535,6 +550,13 @@ class FeedAbsoluteUrlTest(TestCase):
         self.assertIn(f"http://testserver/items/{video_item.guid}/", xml)
         self.assertIn("http://testserver/media/files/audio/audio-combined/track.m4a", xml)
         self.assertIn("http://testserver/media/files/video/video-combined/clip.mp4", xml)
+        self.assertIn('media:thumbnail url="http://testserver/media/files/audio/audio-combined/a-thumb.jpg"', xml)
+        self.assertIn('media:thumbnail url="http://testserver/media/files/video/video-combined/v-thumb.png"', xml)
+        # Check that media:content element exists with correct attributes (order may vary)
+        self.assertIn('<media:content', xml)
+        self.assertIn('url="http://testserver/media/files/video/video-combined/clip.mp4"', xml)
+        self.assertIn('type="video/mp4"', xml)
+        self.assertIn('medium="video"', xml)
 
 
 class HTMLMediaExtractorTest(TestCase):
@@ -542,9 +564,10 @@ class HTMLMediaExtractorTest(TestCase):
 
     def test_extract_audio_tag_with_src(self):
         """Test extracting <audio src='...'> tag"""
-        from media.processing import extract_media_from_html
-        from unittest.mock import patch, Mock
+        from unittest.mock import Mock, patch
+
         from media.models import MediaItem
+        from media.processing import extract_media_from_html
 
         html = """
         <!DOCTYPE html>
@@ -568,9 +591,10 @@ class HTMLMediaExtractorTest(TestCase):
 
     def test_extract_video_tag_with_src(self):
         """Test extracting <video src='...'> tag"""
-        from media.processing import extract_media_from_html
-        from unittest.mock import patch, Mock
+        from unittest.mock import Mock, patch
+
         from media.models import MediaItem
+        from media.processing import extract_media_from_html
 
         html = """
         <!DOCTYPE html>
@@ -594,9 +618,10 @@ class HTMLMediaExtractorTest(TestCase):
 
     def test_extract_source_tag_inside_audio(self):
         """Test extracting <source> tag inside <audio>"""
-        from media.processing import extract_media_from_html
-        from unittest.mock import patch, Mock
+        from unittest.mock import Mock, patch
+
         from media.models import MediaItem
+        from media.processing import extract_media_from_html
 
         html = """
         <!DOCTYPE html>
@@ -621,8 +646,9 @@ class HTMLMediaExtractorTest(TestCase):
 
     def test_no_media_found(self):
         """Test when no media is found in HTML"""
+        from unittest.mock import Mock, patch
+
         from media.processing import extract_media_from_html
-        from unittest.mock import patch, Mock
 
         html = """
         <!DOCTYPE html>
@@ -649,9 +675,11 @@ class WorkerTimeoutTest(TestCase):
 
     def test_worker_timeout_detection(self):
         """Test that items stuck in PREFETCHING for >30s get timeout error"""
-        from media.tasks import process_media
-        from django.utils import timezone
         from datetime import timedelta
+
+        from django.utils import timezone
+
+        from media.tasks import process_media
 
         # Create item with old timestamp (simulating stuck item)
         old_time = timezone.now() - timedelta(seconds=35)
@@ -679,8 +707,9 @@ class WorkerTimeoutTest(TestCase):
 
     def test_worker_timeout_not_triggered_for_recent_items(self):
         """Test that recently created items don't trigger timeout"""
-        from media.tasks import process_media
         from unittest.mock import patch
+
+        from media.tasks import process_media
 
         # Create item that's been PREFETCHING for only 5 seconds (recent)
         item = MediaItem.objects.create(
@@ -713,10 +742,11 @@ class SummaryGenerationTest(TestCase):
     @override_settings(STASHCAST_SUMMARY_SENTENCES=0)
     def test_summary_generation_skipped_when_zero(self):
         """Test that summary generation is skipped when STASHCAST_SUMMARY_SENTENCES is 0"""
-        from media.tasks import generate_summary
-        from media.models import MediaItem
         import tempfile
         from pathlib import Path
+
+        from media.models import MediaItem
+        from media.tasks import generate_summary
 
         # Create a test item with subtitles
         item = MediaItem.objects.create(
@@ -745,9 +775,10 @@ class SummaryGenerationTest(TestCase):
     @override_settings(STASHCAST_SUMMARY_SENTENCES=3)
     def test_summary_generation_runs_when_positive(self):
         """Test that summary generation runs when STASHCAST_SUMMARY_SENTENCES > 0"""
-        from media.tasks import generate_summary
-        from media.models import MediaItem
         from pathlib import Path
+
+        from media.models import MediaItem
+        from media.tasks import generate_summary
 
         # Create a test item with subtitles
         item = MediaItem.objects.create(
@@ -794,12 +825,13 @@ class MetadataEmbeddingTest(TestCase):
 
     def test_metadata_embedded_in_file(self):
         """Test that metadata is embedded in media files"""
-        from media.service.process import add_metadata_without_transcode
-        from pathlib import Path
-        import tempfile
+        import json
         import shutil
         import subprocess
-        import json
+        import tempfile
+        from pathlib import Path
+
+        from media.service.process import add_metadata_without_transcode
 
         # Create a temporary directory
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -839,10 +871,11 @@ class MetadataEmbeddingTest(TestCase):
 
     def test_metadata_without_transcode_no_quality_loss(self):
         """Test that metadata embedding doesn't re-encode the file"""
-        from media.service.process import add_metadata_without_transcode
-        from pathlib import Path
-        import tempfile
         import subprocess
+        import tempfile
+        from pathlib import Path
+
+        from media.service.process import add_metadata_without_transcode
 
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_dir = Path(temp_dir)
@@ -947,9 +980,10 @@ class DownloadStrategyTest(TestCase):
 
     def test_local_file_strategy(self):
         """Test that local file paths use file strategy"""
-        from media.service.strategy import choose_download_strategy
         import tempfile
         from pathlib import Path
+
+        from media.service.strategy import choose_download_strategy
 
         with tempfile.NamedTemporaryFile(suffix='.mp4') as tmp:
             strategy = choose_download_strategy(tmp.name)
@@ -957,8 +991,9 @@ class DownloadStrategyTest(TestCase):
 
     def test_html_file_uses_ytdlp_strategy(self):
         """Test that local HTML files use yt-dlp strategy for extraction"""
-        from media.service.strategy import choose_download_strategy
         import tempfile
+
+        from media.service.strategy import choose_download_strategy
 
         with tempfile.NamedTemporaryFile(suffix='.html') as tmp:
             strategy = choose_download_strategy(tmp.name)

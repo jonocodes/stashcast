@@ -245,7 +245,7 @@ def transcode_url_to_dir(
         # Process thumbnail if available
         thumbnail_path = None
         if download_info.thumbnail_path:
-            thumbnail_output = outdir / "thumbnail.webp"
+            thumbnail_output = outdir / "thumbnail.png"
             thumbnail_path = process_thumbnail(
                 download_info.thumbnail_path,
                 thumbnail_output,

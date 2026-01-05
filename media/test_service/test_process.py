@@ -267,7 +267,7 @@ class ProcessServiceTest(TestCase):
             input_thumb = temp_dir / 'thumb.jpg'
             input_thumb.write_bytes(b'fake jpg')
 
-            output_thumb = temp_dir / 'thumb.webp'
+            output_thumb = temp_dir / 'thumb.png'
 
             result = process_thumbnail(input_thumb, output_thumb)
 
@@ -275,21 +275,21 @@ class ProcessServiceTest(TestCase):
             mock_image_open.assert_called_once_with(input_thumb)
             mock_img.save.assert_called_once()
 
-            # Verify WebP format was specified
+            # Verify PNG format was specified
             save_call_args = mock_img.save.call_args
             self.assertEqual(save_call_args[0][0], output_thumb)
-            self.assertEqual(save_call_args[0][1], 'WEBP')
+            self.assertEqual(save_call_args[0][1], 'PNG')
 
             self.assertEqual(result, output_thumb)
 
     def test_process_thumbnail_none_input(self):
         """Test that None thumbnail returns None"""
-        result = process_thumbnail(None, Path('/tmp/out.webp'))
+        result = process_thumbnail(None, Path('/tmp/out.png'))
         self.assertIsNone(result)
 
     def test_process_thumbnail_missing_file(self):
         """Test that missing thumbnail returns None"""
-        result = process_thumbnail(Path('/nonexistent/thumb.jpg'), Path('/tmp/out.webp'))
+        result = process_thumbnail(Path('/nonexistent/thumb.jpg'), Path('/tmp/out.png'))
         self.assertIsNone(result)
 
     @patch('PIL.Image.open')
@@ -305,7 +305,7 @@ class ProcessServiceTest(TestCase):
             temp_dir = Path(temp_dir)
             input_thumb = temp_dir / 'thumb.jpg'
             input_thumb.write_bytes(b'data')
-            output_thumb = temp_dir / 'thumb.webp'
+            output_thumb = temp_dir / 'thumb.png'
 
             process_thumbnail(input_thumb, output_thumb, logger=logger)
 
@@ -322,7 +322,7 @@ class ProcessServiceTest(TestCase):
             temp_dir = Path(temp_dir)
             input_thumb = temp_dir / 'thumb.jpg'
             input_thumb.write_bytes(b'data')
-            output_thumb = temp_dir / 'thumb.webp'
+            output_thumb = temp_dir / 'thumb.png'
 
             result = process_thumbnail(input_thumb, output_thumb)
 

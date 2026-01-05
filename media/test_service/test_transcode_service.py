@@ -259,7 +259,7 @@ class TranscodeServiceTest(TestCase):
 
         def mock_process_thumb_func(thumb_path, output_path, **kwargs):
             output_path = Path(output_path)
-            output_path.write_bytes(b'webp')
+            output_path.write_bytes(b'png')
             return output_path
         mock_process_thumb.side_effect = mock_process_thumb_func
 

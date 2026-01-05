@@ -240,11 +240,11 @@ def add_metadata_without_transcode(input_path, output_path, metadata=None, logge
 
 def process_thumbnail(thumbnail_path, output_path, logger=None):
     """
-    Convert thumbnail to WebP format.
+    Convert thumbnail to PNG format for broad client compatibility.
 
     Args:
         thumbnail_path: Path to input thumbnail
-        output_path: Path for output WebP file
+        output_path: Path for output PNG file
         logger: Optional callable(str) for logging
 
     Returns:
@@ -264,10 +264,12 @@ def process_thumbnail(thumbnail_path, output_path, logger=None):
         output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        log(f"Converting thumbnail to WebP: {thumbnail_path}")
+        log(f"Converting thumbnail to PNG: {thumbnail_path}")
 
         img = Image.open(thumbnail_path)
-        img.save(output_path, 'WEBP', quality=85)
+        if img.mode in ('RGBA', 'P'):
+            img = img.convert('RGB')
+        img.save(output_path, 'PNG', optimize=True)
 
         log(f"Thumbnail saved: {output_path}")
         return output_path

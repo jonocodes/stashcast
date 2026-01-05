@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.contrib.syndication.views import Feed
 from django.templatetags.static import static
+from django.utils import timezone
 from django.utils.feedgenerator import Rss201rev2Feed
 
 from media.models import MediaItem
@@ -12,6 +13,21 @@ class StashcastRSSFeed(Rss201rev2Feed):
     Some podcast clients ignore relative URLs, so we ensure image URLs are absolute.
     """
 
+    def rss_attributes(self):
+        attrs = super().rss_attributes()
+        attrs['xmlns:media'] = 'http://search.yahoo.com/mrss/'
+        attrs['xmlns:itunes'] = 'http://www.itunes.com/dtds/podcast-1.0.dtd'
+        return attrs
+
+    def latest_post_date(self):
+        """Override to always use current time for lastBuildDate."""
+        # Check if we have an explicit lastBuildDate in feed dict
+        last_build = self.feed.get('lastBuildDate')
+        if last_build:
+            return last_build
+        # Otherwise call parent implementation
+        return super().latest_post_date()
+
     def add_root_elements(self, handler):
         super().add_root_elements(handler)
         image = self.feed.get('image')
@@ -21,6 +37,25 @@ class StashcastRSSFeed(Rss201rev2Feed):
             handler.addQuickElement('title', image.get('title', ''))
             handler.addQuickElement('link', image.get('link', ''))
             handler.endElement('image')
+
+    def add_item_elements(self, handler, item):
+        super().add_item_elements(handler, item)
+        thumbnail = item.get('thumbnail')
+        if thumbnail:
+            handler.addQuickElement('media:thumbnail', '', {'url': thumbnail})
+            # Add iTunes-specific image tag for Apple Podcasts
+            handler.addQuickElement('itunes:image', '', {'href': thumbnail})
+        media_content = item.get('media_content')
+        if media_content:
+            handler.addQuickElement(
+                'media:content',
+                '',
+                {
+                    'url': media_content.get('url', ''),
+                    'type': media_content.get('type', ''),
+                    'medium': media_content.get('medium', ''),
+                }
+            )
 
 
 class BaseFeed(Feed):
@@ -52,11 +87,35 @@ class BaseFeed(Feed):
             return self.absolute_link
         return self.absolute_url(self.link)
 
+    def feed_pubdate(self):
+        """Use current time for lastBuildDate/pubDate."""
+        return timezone.now()
+
+    def get_queryset(self):
+        """Base queryset for feed items; subclasses can further filter."""
+        return MediaItem.objects.filter(status=MediaItem.STATUS_READY)
+
     def feed_extra_kwargs(self, obj):
         extra = super().feed_extra_kwargs(obj) or {}
         if self.logo_filename:
             extra['image'] = self._build_feed_image()
+        # Use the most recent updated_at from all items
+        items = self.get_queryset()
+        latest_item = items.order_by('-updated_at').first()
+        if latest_item and latest_item.updated_at:
+            extra['lastBuildDate'] = latest_item.updated_at
+        else:
+            extra['lastBuildDate'] = timezone.now()
         return extra
+
+    def latest_post_date(self, items):
+        """Override to use the most recent updated_at from items."""
+        if items:
+            # Find the most recent updated_at from the items list
+            latest = max((item.updated_at for item in items if hasattr(item, 'updated_at') and item.updated_at), default=None)
+            if latest:
+                return latest
+        return timezone.now()
 
     def _build_feed_image(self):
         """Return dict for RSS image element with absolute URL."""
@@ -67,19 +126,58 @@ class BaseFeed(Feed):
             'link': self.feed_url(),
         }
 
+    def item_extra_kwargs(self, item):
+        extra = super().item_extra_kwargs(item) or {}
+        thumb_url = self._thumbnail_url(item)
+        if thumb_url:
+            extra['thumbnail'] = thumb_url
+        media_content = self._media_content(item)
+        if media_content:
+            extra['media_content'] = media_content
+        return extra
+
+    def _media_content(self, item):
+        """Return media:content dict with medium/type/url for podcast clients."""
+        enclosure_url = self.item_enclosure_url(item)
+        if not enclosure_url:
+            return None
+        return {
+            'url': self.absolute_url(enclosure_url),
+            'type': self.item_enclosure_mime_type(item),
+            'medium': 'video' if item.media_type == MediaItem.MEDIA_TYPE_VIDEO else 'audio',
+        }
+
+    def _thumbnail_url(self, item):
+        """Return absolute thumbnail URL for an item, if available."""
+        if not item.thumbnail_path:
+            return None
+
+        if item.media_type == MediaItem.MEDIA_TYPE_AUDIO:
+            rel_path = f'audio/{item.slug}/{item.thumbnail_path}'
+        else:
+            rel_path = f'video/{item.slug}/{item.thumbnail_path}'
+
+        if settings.STASHCAST_MEDIA_BASE_URL:
+            return f"{settings.STASHCAST_MEDIA_BASE_URL.rstrip('/')}/{rel_path}"
+
+        return self.absolute_url(f"/media/files/{rel_path}")
+
 
 class AudioFeed(BaseFeed):
     """Podcast feed for audio items"""
-    title = "StashCast Audio Feed"
+    title = "StashCast Audio"
     link = "/feeds/audio.xml"
     description = "Downloaded audio content"
     logo_filename = "feed-logo-audio.png"
 
     def items(self):
+        return self.get_queryset().order_by('-publish_date', '-downloaded_at')[:100]
+
+    def get_queryset(self):
         return MediaItem.objects.filter(
             media_type=MediaItem.MEDIA_TYPE_AUDIO,
             status=MediaItem.STATUS_READY
-        ).order_by('-publish_date', '-downloaded_at')[:100]
+        )
 
     def item_title(self, item):
         return item.title
@@ -120,16 +218,19 @@ class AudioFeed(BaseFeed):
 
 class VideoFeed(BaseFeed):
     """Podcast feed for video items"""
-    title = "StashCast Video Feed"
+    title = "StashCast Video"
     link = "/feeds/video.xml"
     description = "Downloaded video content"
     logo_filename = "feed-logo-video.png"
 
     def items(self):
+        return self.get_queryset().order_by('-publish_date', '-downloaded_at')[:100]
+
+    def get_queryset(self):
         return MediaItem.objects.filter(
             media_type=MediaItem.MEDIA_TYPE_VIDEO,
             status=MediaItem.STATUS_READY
-        ).order_by('-publish_date', '-downloaded_at')[:100]
+        )
 
     def item_title(self, item):
         return item.title
@@ -170,15 +271,13 @@ class VideoFeed(BaseFeed):
 
 class CombinedFeed(BaseFeed):
     """Podcast feed for all media items (audio and video)"""
-    title = "StashCast Combined Feed"
+    title = "StashCast"
     link = "/feeds/combined.xml"
     description = "Downloaded audio and video content"
     logo_filename = "feed-logo-combined.png"
 
     def items(self):
-        return MediaItem.objects.filter(
-            status=MediaItem.STATUS_READY
-        ).order_by('-publish_date', '-downloaded_at')[:100]
+        return self.get_queryset().order_by('-publish_date', '-downloaded_at')[:100]
 
     def item_title(self, item):
         return item.title

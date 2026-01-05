@@ -467,7 +467,7 @@ def process_files(item, tmp_dir, log_path):
     Process downloaded files in tmp directory.
 
     - Embeds metadata into content file
-    - Converts thumbnail to WebP
+    - Converts thumbnail to PNG
     - Converts subtitles to VTT
     - Sets MIME type
 
@@ -515,15 +515,15 @@ def process_files(item, tmp_dir, log_path):
 
     # Process thumbnail
     for thumb_file in tmp_dir.glob('thumbnail_temp*'):
-        webp_path = tmp_dir / 'thumbnail.webp'
+        png_path = tmp_dir / 'thumbnail.png'
         try:
             # Use centralized thumbnail processing
             process_thumbnail(
                 thumb_file,
-                webp_path,
+                png_path,
                 logger=lambda msg: write_log(log_path, msg)
             )
-            item.thumbnail_path = 'thumbnail.webp'
+            item.thumbnail_path = 'thumbnail.png'
             thumb_file.unlink()
         except Exception as e:
             write_log(log_path, f"Thumbnail conversion failed: {e}")
