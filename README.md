@@ -2,6 +2,11 @@
   <img src="./docs/header-transparent.png" alt="StashCast header" width="100%">
 </p>
 
+[![CI](https://github.com/jonocodes/stashcast/actions/workflows/tests.yml/badge.svg)](https://github.com/jonocodes/stashcast/actions/workflows/tests.yml)
+[![Coverage](https://img.shields.io/badge/coverage-local--run-informational)](#development)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+
 StashCast is an application for downloading online media (audio/video) for offline consumption and exposing it via podcast feeds, so you can watch it later. It runs as a single user Django web app.
 
 ## Motivation
@@ -288,8 +293,12 @@ See `.env.example` for all available configuration options.
 ## Development
 
 ```bash
+# Install dev dependencies (adds coverage)
+pip install -r requirements-dev.txt
+
 # Run all tests
-./manage.py test
+coverage run manage.py test
+coverage report -m
 
 # Create and apply database migrations
 ./manage.py makemigrations

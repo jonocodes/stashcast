@@ -1,3 +1,4 @@
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from django.conf import settings
@@ -760,7 +761,10 @@ class SummaryGenerationTest(TestCase):
         self.assertEqual(item.summary, '')
 
     @override_settings(STASHCAST_SUMMARY_SENTENCES=3)
-    def test_summary_generation_runs_when_positive(self):
+    @patch('sumy.nlp.tokenizers.Tokenizer')
+    @patch('sumy.parsers.plaintext.PlaintextParser')
+    @patch('sumy.summarizers.lex_rank.LexRankSummarizer')
+    def test_summary_generation_runs_when_positive(self, mock_summarizer, mock_parser, mock_tokenizer):
         """Test that summary generation runs when STASHCAST_SUMMARY_SENTENCES > 0"""
         from pathlib import Path
 
@@ -795,6 +799,10 @@ And this is a third sentence to provide context.
 Finally we have a fourth sentence to conclude.
 """
         subtitle_file.write_text(subtitle_content)
+
+        # Mock sumy components to avoid NLTK data dependency
+        mock_parser.from_string.return_value = SimpleNamespace(document="doc")
+        mock_summarizer.return_value.return_value = ["First half", "Second half"]
 
         # Call generate_summary
         generate_summary(item.guid)
