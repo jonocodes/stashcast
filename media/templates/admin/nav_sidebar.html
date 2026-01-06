@@ -1,58 +1,43 @@
 {% load i18n %}
 <button class="sticky toggle-nav-sidebar" id="toggle-nav-sidebar" aria-label="{% translate 'Toggle navigation' %}"></button>
 <nav class="sticky" id="nav-sidebar" aria-label="{% translate 'Sidebar' %}">
-  <input type="search" id="nav-filter"
-         placeholder="{% translate 'Start typing to filter…' %}"
-         aria-label="{% translate 'Filter navigation items' %}">
+
+  {# Custom Tools Section #}
+  <div class="app-tools module">
+    <table>
+      <caption>
+        <a href="#" class="section" title="StashCast Tools">Tools</a>
+      </caption>
+      <tr class="model-tools">
+        <th scope="row"><a href="{% url 'admin_stash_form' %}">Add URL</a></th>
+      </tr>
+      <tr class="model-tools">
+        <th scope="row"><a href="{% url 'bookmarklet' %}">Bookmarklet</a></th>
+      </tr>
+      <tr class="model-tools">
+        <th scope="row"><a href="{% url 'grid_view' %}">Grid View</a></th>
+      </tr>
+      <tr class="model-tools">
+        <th scope="row"><a href="{% url 'list_view' %}">List View</a></th>
+      </tr>
+
+      <tr class="model-tools">
+        <th scope="row"><a href="/">Site Home</a></th>
+      </tr>
+
+      <!-- <tr class="model-tools">
+        <th scope="row"><a href="/feeds/audio.xml?view=1" target="_blank">Audio Feed</a></th>
+      </tr>
+      <tr class="model-tools">
+        <th scope="row"><a href="/feeds/video.xml?view=1" target="_blank">Video Feed</a></th>
+      </tr> -->
+      <tr class="model-tools">
+        <th scope="row"><a href="/feeds/combined.xml?view=1" target="_blank">Combined Feed</a></th>
+      </tr>
+    </table>
+  </div>
 
   {# Standard Django apps #}
   {% include 'admin/app_list.html' with app_list=available_apps show_changelinks=False %}
 
-  {# Custom Tools Section #}
-  <div class="app-tools module">
-    <a href="#" class="section" title="StashCast Tools">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-        <path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/>
-      </svg>
-      Tools
-    </a>
-    <a href="{% url 'admin_stash_form' %}">➕ Add URL</a>
-    <a href="{% url 'grid_view' %}">🎬 Grid View</a>
-    <a href="{% url 'list_view' %}">📋 List View</a>
-    <a href="/admin/huey_monitor/taskmodel/">📊 Task Monitor</a>
-    <a href="{% url 'bookmarklet' %}">📥 Bookmarklet</a>
-    <div class="feed-link">
-      <a href="/feeds/audio.xml" target="_blank">🎵 Audio Feed</a>
-      <a href="/feeds/audio-view.xml" target="_blank" class="view-xml">View XML</a>
-    </div>
-    <div class="feed-link">
-      <a href="/feeds/video.xml" target="_blank">🎬 Video Feed</a>
-      <a href="/feeds/video-view.xml" target="_blank" class="view-xml">View XML</a>
-    </div>
-    <div class="feed-link">
-      <a href="/feeds/combined.xml" target="_blank">📺 Combined Feed</a>
-      <a href="/feeds/combined-view.xml" target="_blank" class="view-xml">View XML</a>
-    </div>
-  </div>
 </nav>
-
-<style>
-.app-tools a:not(.section):not(.view-xml) {
-  display: block;
-}
-.app-tools .feed-link {
-  display: block;
-  padding: 5px 16px;
-}
-.app-tools .feed-link a:first-child {
-  display: inline-block;
-}
-.app-tools .feed-link a.view-xml {
-  margin-left: 10px;
-  font-size: 0.85em;
-  opacity: 0.7;
-}
-.app-tools .feed-link a.view-xml:hover {
-  opacity: 1;
-}
-</style>

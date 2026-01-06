@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      STASHCAST_DATA_DIR: ${{ github.workspace }}/data
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Prepare data directory
+        run: mkdir -p "$STASHCAST_DATA_DIR"
+
+      - name: Download NLTK data
+        run: python -c "import nltk; nltk.download('punkt_tab'); nltk.download('stopwords')"
+
+      - name: Run tests
+        run: python manage.py test

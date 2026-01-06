@@ -69,7 +69,13 @@ class BaseFeed(Feed):
         self.request = request
         # Precompute absolute link for the channel
         self.absolute_link = request.build_absolute_uri(self.link)
-        return super().__call__(request, *args, **kwargs)
+        response = super().__call__(request, *args, **kwargs)
+
+        # If ?view=1 is present, force browser to display XML instead of downloading
+        if request.GET.get('view') == '1':
+            response['Content-Type'] = 'text/xml; charset=utf-8'
+
+        return response
 
     def absolute_url(self, url):
         """Convert relative URLs to absolute using the current request."""

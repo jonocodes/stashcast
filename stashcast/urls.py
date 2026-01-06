@@ -30,9 +30,6 @@ from media.views import (
     item_detail_view,
     list_view,
     stash_view,
-    view_audio_feed_xml,
-    view_combined_feed_xml,
-    view_video_feed_xml,
 )
 
 admin.site.site_header = "StashCast Administration"  # default: "Django Administration"
@@ -62,9 +59,6 @@ urlpatterns = [
     path("feeds/audio.xml", AudioFeed(), name="audio_feed"),
     path("feeds/video.xml", VideoFeed(), name="video_feed"),
     path("feeds/combined.xml", CombinedFeed(), name="combined_feed"),
-    path("feeds/audio-view.xml", view_audio_feed_xml, name="audio_feed_view"),
-    path("feeds/video-view.xml", view_video_feed_xml, name="video_feed_view"),
-    path("feeds/combined-view.xml", view_combined_feed_xml, name="combined_feed_view"),
 ]
 
 # Serve media files in development

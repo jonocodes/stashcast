@@ -5,16 +5,28 @@
 
 {% block extrastyle %}
 <style>
+    :root {
+        --sc-panel-bg: var(--body-bg, #ffffff);
+        --sc-panel-fg: var(--body-fg, #222222);
+        --sc-muted: var(--body-quiet-color, #6b7280);
+        --sc-border: var(--hairline-color, #d4d4d4);
+        --sc-border-strong: var(--darkened-bg, rgba(255,255,255,0.08));
+        --sc-primary: var(--primary, #417690);
+        --sc-primary-fg: var(--primary-fg, #ffffff);
+        --sc-surface: var(--darkened-bg, rgba(0,0,0,0.02));
+    }
     .stash-form-container {
         max-width: 800px;
         margin: 20px auto;
         padding: 20px;
     }
     .stash-form {
-        background: white;
+        background: var(--sc-panel-bg);
+        color: var(--sc-panel-fg);
         border-radius: 8px;
         padding: 30px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border: 1px solid var(--sc-border);
     }
     .form-row {
         margin-bottom: 20px;
@@ -23,36 +35,39 @@
         display: block;
         font-weight: bold;
         margin-bottom: 8px;
-        color: #333;
+        color: var(--sc-panel-fg);
     }
     .form-row input[type="url"],
     .form-row select {
         width: 100%;
         padding: 10px;
-        border: 1px solid #ddd;
+        border: 1px solid var(--sc-border);
         border-radius: 4px;
         font-size: 14px;
         box-sizing: border-box;
+        background: var(--sc-surface);
+        color: var(--sc-panel-fg);
     }
     .form-row input[type="url"]:focus,
     .form-row select:focus {
         outline: none;
-        border-color: #417690;
+        border-color: var(--sc-primary);
+        box-shadow: 0 0 0 2px color-mix(in srgb, var(--sc-primary) 25%, transparent);
     }
     .form-row small {
         display: block;
         margin-top: 5px;
-        color: #666;
+        color: var(--sc-muted);
         font-size: 13px;
     }
     .submit-row {
         margin-top: 30px;
         padding-top: 20px;
-        border-top: 1px solid #eee;
+        border-top: 1px solid var(--sc-border);
     }
     .submit-row input[type="submit"] {
-        background: #417690;
-        color: white;
+        background: var(--sc-primary);
+        color: var(--sc-primary-fg);
         padding: 12px 30px;
         border: none;
         border-radius: 4px;
@@ -61,18 +76,20 @@
         cursor: pointer;
     }
     .submit-row input[type="submit"]:hover {
-        background: #305d75;
+        filter: brightness(1.03);
     }
     .recent-items {
         margin-top: 30px;
-        background: white;
+        background: var(--sc-panel-bg);
+        color: var(--sc-panel-fg);
         border-radius: 8px;
         padding: 20px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border: 1px solid var(--sc-border);
     }
     .recent-items h2 {
         margin-top: 0;
-        color: #333;
+        color: var(--sc-panel-fg);
         font-size: 18px;
     }
     .recent-items table {
@@ -82,13 +99,14 @@
     .recent-items th {
         text-align: left;
         padding: 8px;
-        border-bottom: 2px solid #ddd;
+        border-bottom: 2px solid var(--sc-border);
         font-weight: bold;
-        color: #666;
+        color: var(--sc-muted);
     }
     .recent-items td {
         padding: 8px;
-        border-bottom: 1px solid #eee;
+        border-bottom: 1px solid var(--sc-border);
+        color: var(--sc-panel-fg);
     }
     .status-badge {
         display: inline-block;
@@ -103,16 +121,17 @@
     .status-downloading { background: #d1ecf1; color: #0c5460; }
     .status-prefetching { background: #e2e3e5; color: #383d41; }
     .example-urls {
-        background: #f8f9fa;
-        border-left: 4px solid #417690;
+        background: color-mix(in srgb, var(--sc-surface) 70%, transparent);
+        border-left: 4px solid var(--sc-primary);
         padding: 15px;
         margin: 20px 0;
         border-radius: 4px;
+        border: 1px solid var(--sc-border);
     }
     .example-urls h3 {
         margin-top: 0;
         font-size: 14px;
-        color: #417690;
+        color: var(--sc-primary);
     }
     .example-urls ul {
         margin: 10px 0 0 0;
@@ -123,10 +142,11 @@
         font-size: 13px;
     }
     .example-urls code {
-        background: #e9ecef;
+        background: var(--sc-surface);
         padding: 2px 5px;
         border-radius: 3px;
         font-size: 12px;
+        color: var(--sc-panel-fg);
     }
 </style>
 {% endblock %}
@@ -147,8 +167,14 @@
         <div class="example-urls">
             <h3>Example URLs to try:</h3>
             <ul>
-                <li><strong>Test Server:</strong> <code>http://localhost:8001/01_Eragon_001_of_115.mp3</code></li>
-                <li><strong>YouTube:</strong> <code>https://www.youtube.com/watch?v=VIDEO_ID</code></li>
+                <li><strong>YouTube:</strong> <code>https://www.youtube.com/watch?v=Vi039BihSAk</code></li>
+
+                <li><strong>Apple Podcast:</strong> <code>https://podcasts.apple.com/us/podcast/take-a-penny-leave-a-penny-get-rid-of-the-penny/id1320118593?i=1000739741482</code></li>
+
+                <li><strong>Test Server (embeded media):</strong> <code>http://localhost:8001/pecha-kucha-vid/view.html</code></li>
+
+                <li><strong>Test Server (direct media):</strong> <code>http://localhost:8001/pecha-kucha-vid/vid.mp4</code></li>
+
                 <li><strong>Direct media:</strong> Any URL ending in .mp3, .mp4, .m4a, etc.</li>
             </ul>
         </div>

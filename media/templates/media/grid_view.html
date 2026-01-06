@@ -5,6 +5,7 @@
 {% block title %}{{ title }} - StashCast{% endblock %}
 
 {% block extrastyle %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
     .grid-container {
         max-width: 1400px;
@@ -17,16 +18,22 @@
         gap: 15px;
         margin-bottom: 30px;
         padding: 15px;
-        background: white;
+        background: var(--body-bg);
+        border: 1px solid var(--border-color, #ddd);
         border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
 
     .filters select {
         padding: 8px 12px;
-        border: 1px solid #ddd;
+        border: 1px solid var(--border-color, #ddd);
         border-radius: 4px;
         font-size: 14px;
+        background: var(--body-bg);
+        color: var(--body-fg);
+    }
+
+    .filters label {
+        color: var(--body-fg);
     }
 
     .grid {
@@ -36,17 +43,17 @@
     }
 
     .grid-item {
-        background: white;
+        background: var(--body-bg);
+        border: 1px solid var(--border-color, #ddd);
         border-radius: 8px;
         overflow: hidden;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         transition: transform 0.2s, box-shadow 0.2s;
         cursor: pointer;
     }
 
     .grid-item:hover {
         transform: translateY(-4px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     }
 
     .thumbnail {
@@ -88,7 +95,7 @@
         font-size: 14px;
         font-weight: 500;
         margin: 0 0 8px 0;
-        color: #333;
+        color: var(--body-fg);
         display: -webkit-box;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
@@ -98,7 +105,7 @@
 
     .item-meta {
         font-size: 12px;
-        color: #666;
+        color: var(--body-quiet-color, #666);
         display: flex;
         gap: 8px;
         flex-wrap: wrap;
@@ -120,23 +127,22 @@
     .status-prefetching { background: #e2e3e5; color: #383d41; }
 
     .type-badge {
-        background: #e3f2fd;
-        color: #1976d2;
-        padding: 2px 8px;
-        border-radius: 3px;
-        font-size: 11px;
-        font-weight: 500;
+        color: var(--body-quiet-color, #666);
+        font-size: 14px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
     }
 
     .empty-state {
         text-align: center;
         padding: 60px 20px;
-        color: #666;
+        color: var(--body-quiet-color, #666);
     }
 
     .empty-state h2 {
         margin: 0 0 10px 0;
-        color: #999;
+        color: var(--body-quiet-color, #999);
     }
 
     .view-switcher {
@@ -147,21 +153,27 @@
 
     .view-switcher a {
         padding: 8px 16px;
-        background: #f5f5f5;
+        background: var(--darkened-bg);
         border-radius: 4px;
         text-decoration: none;
-        color: #333;
+        color: var(--body-fg);
         font-size: 14px;
         transition: background 0.2s;
     }
 
     .view-switcher a:hover {
-        background: #e0e0e0;
+        background: var(--border-color, #e0e0e0);
     }
 
     .view-switcher a.active {
-        background: #667eea;
-        color: white;
+        background: var(--primary);
+        color: var(--primary-fg);
+    }
+
+    .filters .storage-info {
+        margin-left: auto;
+        font-weight: 500;
+        color: var(--body-fg);
     }
 </style>
 {% endblock %}
@@ -179,24 +191,14 @@
                 <option value="video" {% if media_type_filter == 'video' %}selected{% endif %}>Video</option>
             </select>
 
-            <label for="status">Status:</label>
-            <select name="status" id="status" onchange="this.form.submit()">
-                <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All</option>
-                <option value="READY" {% if status_filter == 'READY' %}selected{% endif %}>Ready</option>
-                <option value="PROCESSING" {% if status_filter == 'PROCESSING' %}selected{% endif %}>Processing</option>
-                <option value="DOWNLOADING" {% if status_filter == 'DOWNLOADING' %}selected{% endif %}>Downloading</option>
-                <option value="PREFETCHING" {% if status_filter == 'PREFETCHING' %}selected{% endif %}>Prefetching</option>
-                <option value="ERROR" {% if status_filter == 'ERROR' %}selected{% endif %}>Error</option>
-            </select>
-
-            <div style="margin-left: auto; font-weight: 500; color: #333;">
+            <div class="storage-info">
                 Total Storage: {{ total_storage_bytes|filesize }}
             </div>
         </form>
 
         <div class="view-switcher">
-            <a href="{% url 'grid_view' %}?type={{ media_type_filter }}&status={{ status_filter }}" class="active">Grid</a>
-            <a href="{% url 'list_view' %}?type={{ media_type_filter }}&status={{ status_filter }}">List</a>
+            <a href="{% url 'grid_view' %}?type={{ media_type_filter }}" class="active">Grid</a>
+            <a href="{% url 'list_view' %}?type={{ media_type_filter }}">List</a>
         </div>
     </div>
 
@@ -217,7 +219,13 @@
             <div class="item-info">
                 <h3 class="item-title">{{ data.item.title|default:"Untitled" }}</h3>
                 <div class="item-meta">
-                    <span class="type-badge">{{ data.item.media_type|upper }}</span>
+                    <span class="type-badge">
+                        {% if data.item.media_type == 'audio' %}
+                            <i class="fa-solid fa-headphones" aria-label="Audio"></i>
+                        {% else %}
+                            <i class="fa-solid fa-video" aria-label="Video"></i>
+                        {% endif %}
+                    </span>
                     {% if data.item.status != 'READY' %}
                         <span class="status-badge status-{{ data.item.status|lower }}">{{ data.item.status }}</span>
                     {% endif %}

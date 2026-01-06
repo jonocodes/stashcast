@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.contrib import admin
 from django.contrib.admin.views.decorators import staff_member_required
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -149,12 +150,11 @@ def bookmarklet_view(request):
 
     Allows configuring and generating bookmarklets for one-click stashing.
     """
-    base_url = request.build_absolute_uri('/').rstrip('/')
-    api_key = settings.STASHCAST_API_KEY
-
     context = {
-        'base_url': base_url,
-        'api_key': api_key,
+        **admin.site.each_context(request),
+        'base_url': request.build_absolute_uri('/').rstrip('/'),
+        'api_key': settings.STASHCAST_API_KEY,
+        'title': 'Bookmarklet',
     }
 
     return render(request, 'media/bookmarklet.html', context)
@@ -217,38 +217,12 @@ def admin_stash_form_view(request):
     recent_items = MediaItem.objects.all().order_by('-created_at')[:10]
 
     context = {
+        **admin.site.each_context(request),
         'recent_items': recent_items,
         'title': 'Add URL to StashCast',
     }
 
     return render(request, 'media/admin_stash_form.html', context)
-
-
-def view_audio_feed_xml(request):
-    """View audio feed XML inline in browser"""
-    from media.feeds import AudioFeed
-    feed = AudioFeed()
-    response = feed(request)
-    response['Content-Type'] = 'text/xml; charset=utf-8'
-    return response
-
-
-def view_video_feed_xml(request):
-    """View video feed XML inline in browser"""
-    from media.feeds import VideoFeed
-    feed = VideoFeed()
-    response = feed(request)
-    response['Content-Type'] = 'text/xml; charset=utf-8'
-    return response
-
-
-def view_combined_feed_xml(request):
-    """View combined feed XML inline in browser"""
-    from media.feeds import CombinedFeed
-    feed = CombinedFeed()
-    response = feed(request)
-    response['Content-Type'] = 'text/xml; charset=utf-8'
-    return response
 
 
 @staff_member_required
@@ -263,16 +237,12 @@ def grid_view(request):
 
     # Get filter parameters
     media_type = request.GET.get('type', 'all')
-    status = request.GET.get('status', 'all')
 
-    # Build queryset
-    items = MediaItem.objects.all().order_by('-created_at')
+    # Build queryset - only show READY items
+    items = MediaItem.objects.filter(status=MediaItem.STATUS_READY).order_by('-created_at')
 
     if media_type != 'all':
         items = items.filter(media_type=media_type)
-
-    if status != 'all':
-        items = items.filter(status=status)
 
     # Calculate total storage used by checking media directories
     total_storage_bytes = 0
@@ -300,9 +270,9 @@ def grid_view(request):
         })
 
     context = {
+        **admin.site.each_context(request),
         'items': items_with_urls,
         'media_type_filter': media_type,
-        'status_filter': status,
         'title': 'Media Grid',
         'total_storage_bytes': total_storage_bytes,
     }
@@ -322,16 +292,12 @@ def list_view(request):
 
     # Get filter parameters
     media_type = request.GET.get('type', 'all')
-    status = request.GET.get('status', 'all')
 
-    # Build queryset
-    items = MediaItem.objects.all().order_by('-created_at')
+    # Build queryset - only show READY items
+    items = MediaItem.objects.filter(status=MediaItem.STATUS_READY).order_by('-created_at')
 
     if media_type != 'all':
         items = items.filter(media_type=media_type)
-
-    if status != 'all':
-        items = items.filter(status=status)
 
     # Calculate total storage used by checking media directories
     total_storage_bytes = 0
@@ -359,9 +325,9 @@ def list_view(request):
         })
 
     context = {
+        **admin.site.each_context(request),
         'items': items_with_urls,
         'media_type_filter': media_type,
-        'status_filter': status,
         'title': 'Media List',
         'total_storage_bytes': total_storage_bytes,
     }

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# First time setup script, but can be run every start to ensure dependencies are met
 
 set -e
 
