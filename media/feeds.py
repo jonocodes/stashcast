@@ -136,6 +136,10 @@ class BaseFeed(Feed):
             extra['media_content'] = media_content
         return extra
 
+    def _relative_media_path(self, item, filename):
+        """Build relative path under MEDIA_ROOT for the given filename."""
+        return item.get_relative_path(filename)
+
     def _media_content(self, item):
         """Return media:content dict with medium/type/url for podcast clients."""
         enclosure_url = self.item_enclosure_url(item)
@@ -149,13 +153,9 @@ class BaseFeed(Feed):
 
     def _thumbnail_url(self, item):
         """Return absolute thumbnail URL for an item, if available."""
-        if not item.thumbnail_path:
+        rel_path = self._relative_media_path(item, item.thumbnail_path)
+        if not rel_path:
             return None
-
-        if item.media_type == MediaItem.MEDIA_TYPE_AUDIO:
-            rel_path = f'audio/{item.slug}/{item.thumbnail_path}'
-        else:
-            rel_path = f'video/{item.slug}/{item.thumbnail_path}'
 
         if settings.STASHCAST_MEDIA_BASE_URL:
             return f"{settings.STASHCAST_MEDIA_BASE_URL.rstrip('/')}/{rel_path}"
@@ -200,14 +200,12 @@ class AudioFeed(BaseFeed):
         return item.author
 
     def item_enclosure_url(self, item):
-        if settings.STASHCAST_MEDIA_BASE_URL and item.content_path:
-            rel_path = f'audio/{item.slug}/{item.content_path}'
+        rel_path = self._relative_media_path(item, item.content_path)
+        if not rel_path:
+            return ""
+        if settings.STASHCAST_MEDIA_BASE_URL:
             return f"{settings.STASHCAST_MEDIA_BASE_URL.rstrip('/')}/{rel_path}"
-        elif item.content_path:
-            # Use Django static files - build relative path from slug and filename
-            rel_path = f'audio/{item.slug}/{item.content_path}'
-            return self.absolute_url(f"/media/files/{rel_path}")
-        return ""
+        return self.absolute_url(f"/media/files/{rel_path}")
 
     def item_enclosure_length(self, item):
         return item.file_size or 0
@@ -253,14 +251,12 @@ class VideoFeed(BaseFeed):
         return item.author
 
     def item_enclosure_url(self, item):
-        if settings.STASHCAST_MEDIA_BASE_URL and item.content_path:
-            rel_path = f'video/{item.slug}/{item.content_path}'
+        rel_path = self._relative_media_path(item, item.content_path)
+        if not rel_path:
+            return ""
+        if settings.STASHCAST_MEDIA_BASE_URL:
             return f"{settings.STASHCAST_MEDIA_BASE_URL.rstrip('/')}/{rel_path}"
-        elif item.content_path:
-            # Use Django static files - build relative path from slug and filename
-            rel_path = f'video/{item.slug}/{item.content_path}'
-            return self.absolute_url(f"/media/files/{rel_path}")
-        return ""
+        return self.absolute_url(f"/media/files/{rel_path}")
 
     def item_enclosure_length(self, item):
         return item.file_size or 0
@@ -300,20 +296,12 @@ class CombinedFeed(BaseFeed):
         return item.author
 
     def item_enclosure_url(self, item):
-        if settings.STASHCAST_MEDIA_BASE_URL and item.content_path:
-            if item.media_type == MediaItem.MEDIA_TYPE_AUDIO:
-                rel_path = f'audio/{item.slug}/{item.content_path}'
-            else:
-                rel_path = f'video/{item.slug}/{item.content_path}'
+        rel_path = self._relative_media_path(item, item.content_path)
+        if not rel_path:
+            return ""
+        if settings.STASHCAST_MEDIA_BASE_URL:
             return f"{settings.STASHCAST_MEDIA_BASE_URL.rstrip('/')}/{rel_path}"
-        elif item.content_path:
-            # Use Django static files - build relative path from slug and filename
-            if item.media_type == MediaItem.MEDIA_TYPE_AUDIO:
-                rel_path = f'audio/{item.slug}/{item.content_path}'
-            else:
-                rel_path = f'video/{item.slug}/{item.content_path}'
-            return self.absolute_url(f"/media/files/{rel_path}")
-        return ""
+        return self.absolute_url(f"/media/files/{rel_path}")
 
     def item_enclosure_length(self, item):
         return item.file_size or 0

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Development runner - uses honcho to manage all services
 
 set -e

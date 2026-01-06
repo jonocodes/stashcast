@@ -38,15 +38,10 @@
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
         }
         .hero {
-            display: grid;
-            grid-template-columns: 1fr 200px;
+            display: flex;
+            flex-direction: column;
             gap: 18px;
-            align-items: center;
-        }
-        @media (max-width: 720px) {
-            .hero {
-                grid-template-columns: 1fr;
-            }
+            align-items: stretch;
         }
         .eyebrow {
             display: inline-flex;
@@ -138,20 +133,23 @@
             color: var(--muted);
             font-size: 13px;
         }
-        .logo-card {
+        .hero-image {
             width: 100%;
             height: 100%;
-            display: grid;
-            place-items: center;
-            padding: 14px;
-            background: rgba(255, 255, 255, 0.03);
+            padding: 10px;
+            background: radial-gradient(circle at 30% 20%, rgba(79, 179, 255, 0.12), transparent 45%), rgba(255, 255, 255, 0.02);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 12px;
+            border-radius: 14px;
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        .logo-card img {
-            max-width: 100%;
+        .hero-image img {
+            width: 100%;
             height: auto;
-            filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.35));
+            border-radius: 10px;
+            filter: drop-shadow(0 10px 25px rgba(0, 0, 0, 0.4));
         }
         .feeds {
             margin-top: 22px;
@@ -215,6 +213,9 @@
 <body>
     <main class="panel">
         <div class="hero">
+            <div class="hero-image">
+                <img src="{% static 'media/header-transparent.png' %}" alt="StashCast illustration">
+            </div>
             <div>
                 <div class="eyebrow">
                     <span class="logo-dot" aria-hidden="true"></span>
@@ -229,9 +230,6 @@
                     <a class="cta" href="{% url 'admin_stash_form' %}">Add</a>
                     <span class="note">Requires an admin login.</span>
                 </div>
-            </div>
-            <div class="logo-card">
-                <img src="{% static 'media/feed-logo-combined.png' %}" alt="StashCast logo">
             </div>
         </div>
         <div class="feeds">

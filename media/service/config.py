@@ -43,14 +43,9 @@ def get_ffmpeg_args_for_type(media_type):
         return ''
 
 
-def get_audio_dir():
-    """Get the audio media directory path"""
-    return settings.STASHCAST_AUDIO_DIR
-
-
-def get_video_dir():
-    """Get the video media directory path"""
-    return settings.STASHCAST_VIDEO_DIR
+def get_media_dir():
+    """Get the media directory path"""
+    return settings.STASHCAST_MEDIA_DIR
 
 
 def get_acceptable_audio_formats():

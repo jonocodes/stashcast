@@ -132,10 +132,13 @@ class MediaItem(models.Model):
         """Get absolute base directory path for this item's files"""
         if not self.slug or self.slug == 'pending':
             return None
-        if self.media_type == self.MEDIA_TYPE_AUDIO:
-            return Path(settings.STASHCAST_AUDIO_DIR) / self.slug
-        else:
-            return Path(settings.STASHCAST_VIDEO_DIR) / self.slug
+        return Path(settings.STASHCAST_MEDIA_DIR) / self.slug
+
+    def get_relative_path(self, filename):
+        """Build relative media path for the given filename"""
+        if not filename or not self.slug or self.slug == 'pending':
+            return None
+        return f"{self.slug}/{filename}"
 
     def get_absolute_content_path(self):
         """Get absolute path to content file"""

@@ -41,17 +41,13 @@ class Command(BaseCommand):
         force = options['force']
         max_age_minutes = options['max_age']
 
-        audio_dir = Path(settings.STASHCAST_AUDIO_DIR)
-        video_dir = Path(settings.STASHCAST_VIDEO_DIR)
+        media_dir = Path(settings.STASHCAST_MEDIA_DIR)
 
         # Find all tmp-* directories
         tmp_dirs = []
 
-        if audio_dir.exists():
-            tmp_dirs.extend([(d, 'audio') for d in audio_dir.glob('tmp-*') if d.is_dir()])
-
-        if video_dir.exists():
-            tmp_dirs.extend([(d, 'video') for d in video_dir.glob('tmp-*') if d.is_dir()])
+        if media_dir.exists():
+            tmp_dirs.extend([(d, 'media') for d in media_dir.glob('tmp-*') if d.is_dir()])
 
         if not tmp_dirs:
             self.stdout.write(self.style.SUCCESS("No tmp directories found"))

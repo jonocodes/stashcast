@@ -58,11 +58,7 @@ def process_media(guid):
 
     try:
         # Determine base media directory (don't know slug yet)
-        if item.media_type == MediaItem.MEDIA_TYPE_AUDIO or item.requested_type == MediaItem.REQUESTED_TYPE_AUDIO:
-            media_base = Path(settings.STASHCAST_AUDIO_DIR)
-        else:
-            media_base = Path(settings.STASHCAST_VIDEO_DIR)
-
+        media_base = Path(settings.STASHCAST_MEDIA_DIR)
         media_base.mkdir(parents=True, exist_ok=True)
 
         # Create tmp directory with GUID

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Simple HTTP server for testing media downloads.
 Serves files from demo_data directory.

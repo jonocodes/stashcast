@@ -1,0 +1,23 @@
+services:
+  web:
+    build: .
+    container_name: stashcast_web
+    ports:
+      - "8000:8000"
+    environment:
+      STASHCAST_DATA_DIR: /app/data_docker
+    volumes:
+      - .:/app
+      - ./data_docker:/app/data_docker
+
+  worker:
+    build: .
+    container_name: stashcast_worker
+    command: python manage.py run_huey
+    depends_on:
+      - web
+    environment:
+      STASHCAST_DATA_DIR: /app/data_docker
+    volumes:
+      - .:/app
+      - ./data_docker:/app/data_docker

@@ -9,6 +9,21 @@ from media.models import MediaItem
 from media.tasks import process_media
 
 
+def _build_media_url(item, filename, request=None):
+    """Build absolute or relative URL for a media file."""
+    rel_path = item.get_relative_path(filename)
+    if not rel_path:
+        return None
+
+    if settings.STASHCAST_MEDIA_BASE_URL:
+        return f"{settings.STASHCAST_MEDIA_BASE_URL.rstrip('/')}/{rel_path}"
+
+    if request:
+        return request.build_absolute_uri(f'/media/files/{rel_path}')
+
+    return f'/media/files/{rel_path}'
+
+
 def home_view(request):
     """Landing page with quick access to add URLs."""
     return render(request, 'media/home.html')
@@ -109,56 +124,13 @@ def item_detail_view(request, guid):
     item = get_object_or_404(MediaItem, guid=guid)
 
     # Build media URL
-    if settings.STASHCAST_MEDIA_BASE_URL and item.content_path:
-        # Use external CDN URL
-        if item.media_type == MediaItem.MEDIA_TYPE_AUDIO:
-            rel_path = f'audio/{item.slug}/{item.content_path}'
-        else:
-            rel_path = f'video/{item.slug}/{item.content_path}'
-        media_url = f"{settings.STASHCAST_MEDIA_BASE_URL.rstrip('/')}/{rel_path}"
-    elif item.content_path:
-        # Use Django static files - build relative path from slug and filename
-        if item.media_type == MediaItem.MEDIA_TYPE_AUDIO:
-            rel_path = f'audio/{item.slug}/{item.content_path}'
-        else:
-            rel_path = f'video/{item.slug}/{item.content_path}'
-        media_url = request.build_absolute_uri(f'/media/files/{rel_path}')
-    else:
-        media_url = None
+    media_url = _build_media_url(item, item.content_path, request)
 
     # Build thumbnail URL
-    if settings.STASHCAST_MEDIA_BASE_URL and item.thumbnail_path:
-        if item.media_type == MediaItem.MEDIA_TYPE_AUDIO:
-            rel_path = f'audio/{item.slug}/{item.thumbnail_path}'
-        else:
-            rel_path = f'video/{item.slug}/{item.thumbnail_path}'
-        thumbnail_url = f"{settings.STASHCAST_MEDIA_BASE_URL.rstrip('/')}/{rel_path}"
-    elif item.thumbnail_path:
-        # Use Django static files - build relative path from slug and filename
-        if item.media_type == MediaItem.MEDIA_TYPE_AUDIO:
-            rel_path = f'audio/{item.slug}/{item.thumbnail_path}'
-        else:
-            rel_path = f'video/{item.slug}/{item.thumbnail_path}'
-        thumbnail_url = request.build_absolute_uri(f'/media/files/{rel_path}')
-    else:
-        thumbnail_url = None
+    thumbnail_url = _build_media_url(item, item.thumbnail_path, request)
 
     # Build subtitle URL
-    if settings.STASHCAST_MEDIA_BASE_URL and item.subtitle_path:
-        if item.media_type == MediaItem.MEDIA_TYPE_AUDIO:
-            rel_path = f'audio/{item.slug}/{item.subtitle_path}'
-        else:
-            rel_path = f'video/{item.slug}/{item.subtitle_path}'
-        subtitle_url = f"{settings.STASHCAST_MEDIA_BASE_URL.rstrip('/')}/{rel_path}"
-    elif item.subtitle_path:
-        # Use Django static files - build relative path from slug and filename
-        if item.media_type == MediaItem.MEDIA_TYPE_AUDIO:
-            rel_path = f'audio/{item.slug}/{item.subtitle_path}'
-        else:
-            rel_path = f'video/{item.slug}/{item.subtitle_path}'
-        subtitle_url = request.build_absolute_uri(f'/media/files/{rel_path}')
-    else:
-        subtitle_url = None
+    subtitle_url = _build_media_url(item, item.subtitle_path, request)
 
     context = {
         'item': item,
@@ -305,36 +277,22 @@ def grid_view(request):
     # Calculate total storage used by checking media directories
     total_storage_bytes = 0
     media_root = Path(settings.MEDIA_ROOT)
-    audio_dir = media_root / 'audio'
-    video_dir = media_root / 'video'
 
-    for directory in [audio_dir, video_dir]:
-        if directory.exists():
-            for dirpath, dirnames, filenames in os.walk(directory):
-                for filename in filenames:
-                    filepath = Path(dirpath) / filename
-                    try:
-                        total_storage_bytes += filepath.stat().st_size
-                    except (OSError, FileNotFoundError):
-                        pass
+    if media_root.exists():
+        for dirpath, dirnames, filenames in os.walk(media_root):
+            for filename in filenames:
+                filepath = Path(dirpath) / filename
+                try:
+                    total_storage_bytes += filepath.stat().st_size
+                except (OSError, FileNotFoundError):
+                    pass
 
     # Build thumbnail URLs for each item
     items_with_urls = []
     for item in items:
         thumbnail_url = None
         if item.thumbnail_path:
-            if settings.STASHCAST_MEDIA_BASE_URL:
-                if item.media_type == MediaItem.MEDIA_TYPE_AUDIO:
-                    rel_path = f'audio/{item.slug}/{item.thumbnail_path}'
-                else:
-                    rel_path = f'video/{item.slug}/{item.thumbnail_path}'
-                thumbnail_url = f"{settings.STASHCAST_MEDIA_BASE_URL.rstrip('/')}/{rel_path}"
-            else:
-                if item.media_type == MediaItem.MEDIA_TYPE_AUDIO:
-                    rel_path = f'audio/{item.slug}/{item.thumbnail_path}'
-                else:
-                    rel_path = f'video/{item.slug}/{item.thumbnail_path}'
-                thumbnail_url = f'/media/files/{rel_path}'
+            thumbnail_url = _build_media_url(item, item.thumbnail_path, request)
 
         items_with_urls.append({
             'item': item,
@@ -378,36 +336,22 @@ def list_view(request):
     # Calculate total storage used by checking media directories
     total_storage_bytes = 0
     media_root = Path(settings.MEDIA_ROOT)
-    audio_dir = media_root / 'audio'
-    video_dir = media_root / 'video'
 
-    for directory in [audio_dir, video_dir]:
-        if directory.exists():
-            for dirpath, dirnames, filenames in os.walk(directory):
-                for filename in filenames:
-                    filepath = Path(dirpath) / filename
-                    try:
-                        total_storage_bytes += filepath.stat().st_size
-                    except (OSError, FileNotFoundError):
-                        pass
+    if media_root.exists():
+        for dirpath, dirnames, filenames in os.walk(media_root):
+            for filename in filenames:
+                filepath = Path(dirpath) / filename
+                try:
+                    total_storage_bytes += filepath.stat().st_size
+                except (OSError, FileNotFoundError):
+                    pass
 
     # Build thumbnail URLs for each item
     items_with_urls = []
     for item in items:
         thumbnail_url = None
         if item.thumbnail_path:
-            if settings.STASHCAST_MEDIA_BASE_URL:
-                if item.media_type == MediaItem.MEDIA_TYPE_AUDIO:
-                    rel_path = f'audio/{item.slug}/{item.thumbnail_path}'
-                else:
-                    rel_path = f'video/{item.slug}/{item.thumbnail_path}'
-                thumbnail_url = f"{settings.STASHCAST_MEDIA_BASE_URL.rstrip('/')}/{rel_path}"
-            else:
-                if item.media_type == MediaItem.MEDIA_TYPE_AUDIO:
-                    rel_path = f'audio/{item.slug}/{item.thumbnail_path}'
-                else:
-                    rel_path = f'video/{item.slug}/{item.thumbnail_path}'
-                thumbnail_url = f'/media/files/{rel_path}'
+            thumbnail_url = _build_media_url(item, item.thumbnail_path, request)
 
         items_with_urls.append({
             'item': item,

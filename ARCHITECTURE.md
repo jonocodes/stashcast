@@ -511,8 +511,8 @@ All configuration is centralized in Django settings (via environment variables):
 
 ```python
 # Required
-STASHCAST_AUDIO_DIR = '/path/to/audio'
-STASHCAST_VIDEO_DIR = '/path/to/video'
+STASHCAST_DATA_DIR = '/path/to/data'
+STASHCAST_MEDIA_DIR = STASHCAST_DATA_DIR / 'media'
 STASHCAST_API_KEY = 'secret'
 
 # Optional
@@ -596,16 +596,11 @@ flowchart TD
 
 ### Web App Output
 
-Files are organized by media type and slug:
+Files are organized by slug under the unified media directory:
 
 ```
-/audio/<slug>/
-  content.m4a OR content.mp3
-  thumbnail.webp (if available)
-  subtitles.vtt (if available)
-
-/video/<slug>/
-  content.mp4
+/media/<slug>/
+  content.m4a OR content.mp3 OR content.mp4
   thumbnail.webp (if available)
   subtitles.vtt (if available)
 ```

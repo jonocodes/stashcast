@@ -95,13 +95,8 @@ Key characteristics:
 ### Filesystem layout
 
 ```
-/audio/<slug>/
-  content.m4a OR content.mp3
-  thumbnail.webp (if available)
-  subtitles.vtt (if available)
-
-/video/<slug>/
-  content.mp4
+/media/<slug>/
+  content.m4a OR content.mp3 OR content.mp4
   thumbnail.webp (if available)
   subtitles.vtt (if available)
 ```
@@ -114,8 +109,7 @@ Fixed filenames are mandatory.
 
 ### Required
 
-* `STASHCAST_AUDIO_DIR=/path/to/audio`
-* `STASHCAST_VIDEO_DIR=/path/to/video`
+* `STASHCAST_DATA_DIR=/path/to/data` (media stored in `STASHCAST_DATA_DIR/media`, default `./data`)
 * `STASHCAST_API_KEY=<random string>`
 
 ### Optional
@@ -417,4 +411,3 @@ If you want, next steps could be:
 * turning this into a **directory/module layout**
 * drafting **initial migrations**
 * or writing the **admin bookmarklet template + JS** first to bootstrap UI quickly
-

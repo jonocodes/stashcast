@@ -1,4 +1,6 @@
-![screenshot](./docs/header-transparent.png)
+<p align="center">
+  <img src="./docs/header-transparent.png" alt="StashCast header" width="100%">
+</p>
 
 StashCast is an application for downloading online media (audio/video) for offline consumption and exposing it via podcast feeds, so you can watch it later. It runs as a single user Django web app.
 
@@ -32,11 +34,28 @@ I created this since friends and family often send me links to listen to a singl
 - yt-dlp
 - ffmpeg
 
-## Installation
+## Run in docker
+
+Start the service.
+
+```bash
+docker compose up
+```
+
+Then create an admin user so you can add media
+
+```bash
+docker compose run web python manage.py createsuperuser
+```
+
+Now visit http://localhost:8000
+
+
+## Installation (without docker)
 
 ### 1. Set up environment
 
-First install yt-dlp and ffmpeg to your system.
+First install yt-dlp and ffmpeg to your system however you need to, probably using your package manager.
 
 ```bash
 
@@ -48,7 +67,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 2. Configure environment variables
+### 2. Configure environment variables (optional)
 
 ```bash
 # Copy example environment file
@@ -56,8 +75,7 @@ cp .env.example .env
 
 # Edit .env and set your values
 # At minimum, set:
-# - STASHCAST_AUDIO_DIR
-# - STASHCAST_VIDEO_DIR
+# - STASHCAST_DATA_DIR (base path; media is stored in STASHCAST_DATA_DIR/media)
 # - STASHCAST_API_KEY
 ```
 
@@ -70,8 +88,8 @@ python -c "import nltk; nltk.download('punkt_tab'); nltk.download('stopwords')"
 ### 4. Initialize database
 
 ```bash
-python manage.py migrate
-python manage.py createsuperuser
+./manage.py migrate
+./manage.py createsuperuser
 ```
 
 ### 5. Run the application
@@ -90,10 +108,10 @@ You need to run three processes:
 
 ```bash
 # Terminal 1: Django development server
-python manage.py runserver
+./manage.py runserver
 
 # Terminal 2: Huey worker (for background tasks)
-python manage.py run_huey
+./manage.py run_huey
 
 # Terminal 3: Test media server (optional, for testing)
 python test_server.py
@@ -171,16 +189,16 @@ Download media and add it to your podcast feed (same as web interface but runs i
 
 ```bash
 # Stash a URL
-python manage.py stash https://example.com/video.mp4
+./manage.py stash https://example.com/video.mp4
 
 # Specify media type (default: auto)
-python manage.py stash https://example.com/audio.mp3 --type audio
+./manage.py stash https://example.com/audio.mp3 --type audio
 
 # Verbose output (shows all processing steps)
-python manage.py stash https://example.com/video.mp4 --verbose
+./manage.py stash https://example.com/video.mp4 --verbose
 
 # JSON output (machine-readable)
-python manage.py stash https://example.com/video.mp4 --json
+./manage.py stash https://example.com/video.mp4 --json
 ```
 
 This command performs the same pipeline as the web app's `/stash/` endpoint but runs synchronously in the foreground. Files are saved to the configured media directories and added to your podcast feeds.
@@ -191,25 +209,25 @@ Download and transcode media from URLs or local files to a custom output directo
 
 ```bash
 # Transcode from a URL
-python manage.py transcode https://example.com/video.mp4 --outdir ./output
+./manage.py transcode https://example.com/video.mp4 --outdir ./output
 
 # Transcode from a local file
-python manage.py transcode /path/to/video.mp4 --outdir ./output
+./manage.py transcode /path/to/video.mp4 --outdir ./output
 
 # The output file will be named using a slug generated from the title
 # For example, "My Video.mp4" becomes "my-video.mp4"
 
 # Download only, skip transcoding
-python manage.py transcode https://example.com/audio.mp3 --download-only
+./manage.py transcode https://example.com/audio.mp3 --download-only
 
 # Specify media type (default: auto)
-python manage.py transcode https://example.com/media --type audio
+./manage.py transcode https://example.com/media --type audio
 
 # Verbose output
-python manage.py transcode https://example.com/video.mp4 --verbose
+./manage.py transcode https://example.com/video.mp4 --verbose
 
 # JSON output
-python manage.py transcode https://example.com/video.mp4 --json
+./manage.py transcode https://example.com/video.mp4 --json
 ```
 
 This command is for standalone transcoding without adding to podcast feeds.
@@ -220,16 +238,16 @@ Generate summaries from VTT subtitle files:
 
 ```bash
 # Summarize a local VTT file
-python manage.py summarize demo_data/carpool/subtitles.vtt
+./manage.py summarize demo_data/carpool/subtitles.vtt
 
 # Summarize from a URL
-python manage.py summarize http://example.com/subtitles.vtt
+./manage.py summarize http://example.com/subtitles.vtt
 
 # Custom number of sentences (default: 3)
-python manage.py summarize demo_data/carpool/subtitles.vtt --sentences 5
+./manage.py summarize demo_data/carpool/subtitles.vtt --sentences 5
 
 # Different algorithms: lexrank (default), textrank, luhn
-python manage.py summarize demo_data/carpool/subtitles.vtt --algorithm luhn
+./manage.py summarize demo_data/carpool/subtitles.vtt --algorithm luhn
 ```
 
 See `EXAMPLES.md` for more usage examples.
@@ -254,8 +272,7 @@ See `.env.example` for all available configuration options.
 
 #### Required
 
-- `STASHCAST_AUDIO_DIR`: Directory for audio files
-- `STASHCAST_VIDEO_DIR`: Directory for video files
+- `STASHCAST_DATA_DIR`: Base directory for application data (media is stored in `STASHCAST_DATA_DIR/media`; default: `./data`)
 - `STASHCAST_API_KEY`: API key for stash endpoint
 
 #### Optional
@@ -272,11 +289,11 @@ See `.env.example` for all available configuration options.
 
 ```bash
 # Run all tests
-python manage.py test
+./manage.py test
 
 # Create and apply database migrations
-python manage.py makemigrations
-python manage.py migrate
+./manage.py makemigrations
+./manage.py migrate
 ```
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for more details on the codebase structure and testing strategy.

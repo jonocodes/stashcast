@@ -11,14 +11,14 @@ ENV/
 
 # Django
 *.log
-db.sqlite3
-db.sqlite3-journal
-huey.db
-huey.db-*
+# db.sqlite3
+# db.sqlite3-journal
+# huey.db
+# huey.db-*
 
-# Media files
-media_files/
-logs/
+# Data files
+data/
+data_docker/
 
 # Environment
 .env

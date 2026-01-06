@@ -5,8 +5,7 @@ from django.test import TestCase, override_settings
 from media.service.config import (
     get_ytdlp_args_for_type,
     get_ffmpeg_args_for_type,
-    get_audio_dir,
-    get_video_dir,
+    get_media_dir,
     get_acceptable_audio_formats,
     get_acceptable_video_formats,
     get_target_audio_format,
@@ -52,19 +51,11 @@ class ConfigServiceTest(TestCase):
         args = get_ffmpeg_args_for_type('invalid')
         self.assertEqual(args, '')
 
-    def test_get_audio_dir(self):
-        """Test getting audio directory"""
-        audio_dir = get_audio_dir()
-        self.assertIsNotNone(audio_dir)
-        # Should contain 'audio' somewhere in the path
-        self.assertIn('audio', str(audio_dir).lower())
-
-    def test_get_video_dir(self):
-        """Test getting video directory"""
-        video_dir = get_video_dir()
-        self.assertIsNotNone(video_dir)
-        # Should contain 'video' somewhere in the path
-        self.assertIn('video', str(video_dir).lower())
+    def test_get_media_dir(self):
+        """Test getting media directory"""
+        media_dir = get_media_dir()
+        self.assertIsNotNone(media_dir)
+        self.assertIn('media', str(media_dir).lower())
 
     def test_get_acceptable_audio_formats(self):
         """Test getting acceptable audio formats"""

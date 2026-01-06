@@ -46,11 +46,7 @@ def generate_slug(title, max_words=None, max_chars=None):
 
 def ensure_unique_slug(slug, source_url, existing_item=None, media_type=None):
     """
-    Ensure slug is unique for the given media_type, handling same URL reuse and conflicts.
-
-    Uniqueness is enforced on (slug, media_type) combination, not slug alone.
-    This allows the same slug to be used for both audio and video versions,
-    with files stored in separate directories (audio/{slug}/ vs video/{slug}/).
+    Ensure slug is unique across all media types, handling same URL reuse and conflicts.
 
     Args:
         slug: The proposed slug
@@ -59,7 +55,7 @@ def ensure_unique_slug(slug, source_url, existing_item=None, media_type=None):
         media_type: The media type (audio/video) to differentiate same URL downloads
 
     Returns:
-        A unique slug for this media_type
+        A unique slug
     """
     from media.models import MediaItem
 
@@ -67,21 +63,20 @@ def ensure_unique_slug(slug, source_url, existing_item=None, media_type=None):
     if existing_item:
         return existing_item.slug
 
-    # Check if this slug + media_type combination already exists
-    if media_type:
-        existing = MediaItem.objects.filter(slug=slug, media_type=media_type).first()
-    else:
-        existing = MediaItem.objects.filter(slug=slug).first()
+    existing_qs = MediaItem.objects.filter(slug=slug)
 
-    if not existing:
-        # Slug is unique for this media_type
+    if not existing_qs.exists():
+        # Slug is unique
         return slug
 
-    if existing.source_url == source_url and existing.media_type == media_type:
+    if existing_qs.filter(source_url=source_url, media_type=media_type).exists():
         # Same URL and same type, reuse the slug
         return slug
 
-    # Different URL but same slug+type conflict, append NanoID
+    # Slug collision: append NanoID suffix until unique
     alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-    nano_suffix = generate(alphabet, size=8)
-    return f"{slug}-{nano_suffix}"
+    while True:
+        nano_suffix = generate(alphabet, size=8)
+        new_slug = f"{slug}-{nano_suffix}"
+        if not MediaItem.objects.filter(slug=new_slug).exists():
+            return new_slug

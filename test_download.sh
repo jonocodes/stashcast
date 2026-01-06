@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Test script to demonstrate downloading from the test server
 
 set -e
@@ -75,6 +75,5 @@ echo "  Audio feed: $BASE_URL/feeds/audio.xml"
 echo "  Video feed: $BASE_URL/feeds/video.xml"
 echo ""
 echo "Downloaded files should be in:"
-echo "  Audio: media_files/audio/"
-echo "  Video: media_files/video/"
+echo "  Media: data/media/"
 echo ""

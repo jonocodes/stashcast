@@ -31,30 +31,26 @@ class MediaItemModelTest(TestCase):
         # Should only contain A-Z a-z 0-9
         self.assertTrue(item.guid.isalnum())
 
-    def test_same_slug_different_media_type_allowed(self):
-        """Test that same slug can be used for audio and video"""
-        # Create video item
-        video_item = MediaItem.objects.create(
+    def test_same_slug_different_media_type_suffixes(self):
+        """Test that same slug across media types gets a unique suffix"""
+        MediaItem.objects.create(
             source_url="https://example.com/content",
             requested_type=MediaItem.REQUESTED_TYPE_VIDEO,
             slug="my-content",
             media_type=MediaItem.MEDIA_TYPE_VIDEO
         )
 
-        # Create audio item with same slug - should succeed
-        audio_item = MediaItem.objects.create(
-            source_url="https://example.com/content",
-            requested_type=MediaItem.REQUESTED_TYPE_AUDIO,
-            slug="my-content",
+        new_slug = ensure_unique_slug(
+            "my-content",
+            "https://example.com/content",
             media_type=MediaItem.MEDIA_TYPE_AUDIO
         )
 
-        self.assertEqual(video_item.slug, audio_item.slug)
-        self.assertNotEqual(video_item.guid, audio_item.guid)
-        self.assertEqual(MediaItem.objects.filter(slug="my-content").count(), 2)
+        self.assertNotEqual(new_slug, "my-content")
+        self.assertTrue(new_slug.startswith("my-content-"))
 
-    def test_get_base_dir_audio(self):
-        """Test get_base_dir for audio items"""
+    def test_get_base_dir(self):
+        """Test get_base_dir for items"""
         item = MediaItem.objects.create(
             source_url="https://example.com/audio",
             requested_type=MediaItem.REQUESTED_TYPE_AUDIO,
@@ -63,19 +59,7 @@ class MediaItemModelTest(TestCase):
         )
         base_dir = item.get_base_dir()
         self.assertIsNotNone(base_dir)
-        self.assertTrue(str(base_dir).endswith("audio/test-audio"))
-
-    def test_get_base_dir_video(self):
-        """Test get_base_dir for video items"""
-        item = MediaItem.objects.create(
-            source_url="https://example.com/video",
-            requested_type=MediaItem.REQUESTED_TYPE_VIDEO,
-            slug="test-video",
-            media_type=MediaItem.MEDIA_TYPE_VIDEO
-        )
-        base_dir = item.get_base_dir()
-        self.assertIsNotNone(base_dir)
-        self.assertTrue(str(base_dir).endswith("video/test-video"))
+        self.assertTrue(str(base_dir).endswith("media/test-audio"))
 
     def test_get_base_dir_pending_slug(self):
         """Test get_base_dir returns None for pending slug"""
@@ -196,13 +180,14 @@ class SlugUtilsTest(TestCase):
             media_type=MediaItem.MEDIA_TYPE_VIDEO
         )
 
-        # Request audio from same URL - should reuse same slug (different media_type allows this)
+        # Request audio from same URL - should create unique slug
         slug = ensure_unique_slug(
             "my-content",
             "https://example.com/content",
             media_type=MediaItem.MEDIA_TYPE_AUDIO
         )
-        self.assertEqual(slug, "my-content")
+        self.assertNotEqual(slug, "my-content")
+        self.assertTrue(slug.startswith("my-content-"))
 
     def test_ensure_unique_slug_same_url_video_after_audio(self):
         """Test slug generation when video is requested after audio"""
@@ -214,13 +199,14 @@ class SlugUtilsTest(TestCase):
             media_type=MediaItem.MEDIA_TYPE_AUDIO
         )
 
-        # Request video from same URL - should reuse same slug (different media_type allows this)
+        # Request video from same URL - should create unique slug
         slug = ensure_unique_slug(
             "my-content",
             "https://example.com/content",
             media_type=MediaItem.MEDIA_TYPE_VIDEO
         )
-        self.assertEqual(slug, "my-content")
+        self.assertNotEqual(slug, "my-content")
+        self.assertTrue(slug.startswith("my-content-"))
 
     def test_ensure_unique_slug_reuse_same_type(self):
         """Test slug reuse when same URL and type already exists"""
@@ -423,13 +409,12 @@ class FeedTest(TestCase):
         self.assertEqual(response['Content-Type'], 'application/rss+xml; charset=utf-8')
         self.assertContains(response, "Test Video")
 
-    def test_feeds_separate_same_slug(self):
-        """Test that audio and video feeds correctly separate items with same slug"""
-        # Create audio and video items with same slug
+    def test_feeds_separate_media_types(self):
+        """Test that audio and video feeds contain only their media types"""
         audio_item = MediaItem.objects.create(
             source_url="https://example.com/content",
             requested_type=MediaItem.REQUESTED_TYPE_AUDIO,
-            slug="my-content",
+            slug="my-content-audio",
             title="My Content (Audio)",
             media_type=MediaItem.MEDIA_TYPE_AUDIO,
             status=MediaItem.STATUS_READY,
@@ -438,7 +423,7 @@ class FeedTest(TestCase):
         video_item = MediaItem.objects.create(
             source_url="https://example.com/content",
             requested_type=MediaItem.REQUESTED_TYPE_VIDEO,
-            slug="my-content",
+            slug="my-content-video",
             title="My Content (Video)",
             media_type=MediaItem.MEDIA_TYPE_VIDEO,
             status=MediaItem.STATUS_READY,
@@ -450,14 +435,16 @@ class FeedTest(TestCase):
         self.assertEqual(audio_response.status_code, 200)
         self.assertContains(audio_response, "My Content (Audio)")
         self.assertNotContains(audio_response, "My Content (Video)")
-        self.assertContains(audio_response, "audio/my-content/content.m4a")
+        self.assertContains(audio_response, "my-content-audio/content.m4a")
+        self.assertNotContains(audio_response, "my-content-video/content.mp4")
 
         # Check video feed only contains video item
         video_response = self.client.get('/feeds/video.xml')
         self.assertEqual(video_response.status_code, 200)
         self.assertContains(video_response, "My Content (Video)")
         self.assertNotContains(video_response, "My Content (Audio)")
-        self.assertContains(video_response, "video/my-content/content.mp4")
+        self.assertContains(video_response, "my-content-video/content.mp4")
+        self.assertNotContains(video_response, "my-content-audio/content.m4a")
 
 
 @override_settings(STASHCAST_MEDIA_BASE_URL='')
@@ -487,8 +474,8 @@ class FeedAbsoluteUrlTest(TestCase):
         self.assertIn("http://testserver/feeds/audio.xml", xml)
         self.assertIn("http://testserver/static/media/feed-logo-audio.png", xml)
         self.assertIn(f"http://testserver/items/{item.guid}/", xml)
-        self.assertIn("http://testserver/media/files/audio/audio-item/audio.m4a", xml)
-        self.assertIn('media:thumbnail url="http://testserver/media/files/audio/audio-item/thumbnail.jpg"', xml)
+        self.assertIn("http://testserver/media/files/audio-item/audio.m4a", xml)
+        self.assertIn('media:thumbnail url="http://testserver/media/files/audio-item/thumbnail.jpg"', xml)
 
     def test_video_feed_absolute_urls(self):
         item = MediaItem.objects.create(
@@ -510,11 +497,11 @@ class FeedAbsoluteUrlTest(TestCase):
         self.assertIn("http://testserver/feeds/video.xml", xml)
         self.assertIn("http://testserver/static/media/feed-logo-video.png", xml)
         self.assertIn(f"http://testserver/items/{item.guid}/", xml)
-        self.assertIn("http://testserver/media/files/video/video-item/video.mp4", xml)
-        self.assertIn('media:thumbnail url="http://testserver/media/files/video/video-item/thumb.png"', xml)
+        self.assertIn("http://testserver/media/files/video-item/video.mp4", xml)
+        self.assertIn('media:thumbnail url="http://testserver/media/files/video-item/thumb.png"', xml)
         # Check that media:content element exists with correct attributes (order may vary)
         self.assertIn('<media:content', xml)
-        self.assertIn('url="http://testserver/media/files/video/video-item/video.mp4"', xml)
+        self.assertIn('url="http://testserver/media/files/video-item/video.mp4"', xml)
         self.assertIn('type="video/mp4"', xml)
         self.assertIn('medium="video"', xml)
 
@@ -548,13 +535,13 @@ class FeedAbsoluteUrlTest(TestCase):
         self.assertIn("http://testserver/static/media/feed-logo-combined.png", xml)
         self.assertIn(f"http://testserver/items/{audio_item.guid}/", xml)
         self.assertIn(f"http://testserver/items/{video_item.guid}/", xml)
-        self.assertIn("http://testserver/media/files/audio/audio-combined/track.m4a", xml)
-        self.assertIn("http://testserver/media/files/video/video-combined/clip.mp4", xml)
-        self.assertIn('media:thumbnail url="http://testserver/media/files/audio/audio-combined/a-thumb.jpg"', xml)
-        self.assertIn('media:thumbnail url="http://testserver/media/files/video/video-combined/v-thumb.png"', xml)
+        self.assertIn("http://testserver/media/files/audio-combined/track.m4a", xml)
+        self.assertIn("http://testserver/media/files/video-combined/clip.mp4", xml)
+        self.assertIn('media:thumbnail url="http://testserver/media/files/audio-combined/a-thumb.jpg"', xml)
+        self.assertIn('media:thumbnail url="http://testserver/media/files/video-combined/v-thumb.png"', xml)
         # Check that media:content element exists with correct attributes (order may vary)
         self.assertIn('<media:content', xml)
-        self.assertIn('url="http://testserver/media/files/video/video-combined/clip.mp4"', xml)
+        self.assertIn('url="http://testserver/media/files/video-combined/clip.mp4"', xml)
         self.assertIn('type="video/mp4"', xml)
         self.assertIn('medium="video"', xml)
 
@@ -938,13 +925,13 @@ class SlugPathSecurityTest(TestCase):
 
         base_dir = item.get_base_dir()
 
-        # Verify the path is still within the audio directory
-        audio_dir = Path(settings.STASHCAST_AUDIO_DIR)
+        # Verify the path is still within the media directory
+        media_dir = Path(settings.STASHCAST_MEDIA_DIR)
         try:
-            # This will raise ValueError if base_dir is not relative to audio_dir
-            base_dir.relative_to(audio_dir)
+            # This will raise ValueError if base_dir is not relative to media_dir
+            base_dir.relative_to(media_dir)
         except ValueError:
-            self.fail("get_base_dir allowed path traversal outside audio directory")
+            self.fail("get_base_dir allowed path traversal outside media directory")
 
 
 class DownloadStrategyTest(TestCase):

@@ -85,12 +85,7 @@ class Command(BaseCommand):
                 self.stdout.write(f"Created new item: {item.guid}")
 
         # Determine base media directory (don't know slug yet)
-        if requested_type == MediaItem.REQUESTED_TYPE_AUDIO:
-            media_base = Path(settings.STASHCAST_AUDIO_DIR)
-        else:
-            # For auto and video, default to video directory
-            media_base = Path(settings.STASHCAST_VIDEO_DIR)
-
+        media_base = Path(settings.STASHCAST_MEDIA_DIR)
         media_base.mkdir(parents=True, exist_ok=True)
 
         # Create tmp directory with GUID
@@ -160,25 +155,6 @@ class Command(BaseCommand):
                 raise
 
             log(f"Direct media URL: {is_direct}")
-
-            # Update media_base if type changed during prefetch
-            item.refresh_from_db()
-            if item.media_type == MediaItem.MEDIA_TYPE_AUDIO:
-                new_media_base = Path(settings.STASHCAST_AUDIO_DIR)
-            else:
-                new_media_base = Path(settings.STASHCAST_VIDEO_DIR)
-
-            # If media base changed, move tmp directory
-            if new_media_base != media_base:
-                new_media_base.mkdir(parents=True, exist_ok=True)
-                new_tmp_dir = new_media_base / f"tmp-{item.guid}"
-                if new_tmp_dir.exists():
-                    shutil.rmtree(new_tmp_dir)
-                shutil.move(str(tmp_dir), str(new_tmp_dir))
-                tmp_dir = new_tmp_dir
-                log_path = tmp_dir / 'download.log'
-                media_base = new_media_base
-                log(f"Moved to new media base: {media_base}")
 
             # DOWNLOADING
             item.status = MediaItem.STATUS_DOWNLOADING
