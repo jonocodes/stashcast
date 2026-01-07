@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StashCast - Processing Media</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+
+        .status-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+
+        .status-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #999;
+            margin-bottom: 8px;
+        }
+
+        .status-value {
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .status-value.prefetching {
+            color: #667eea;
+        }
+
+        .status-value.downloading {
+            color: #28a745;
+        }
+
+        .status-value.processing {
+            color: #ffc107;
+        }
+
+        .status-value.ready {
+            color: #28a745;
+        }
+
+        .status-value.error {
+            color: #dc3545;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #e9ecef;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 15px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s ease;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .info-value {
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+            text-align: left;
+            display: none;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            margin-top: 20px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: none;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(102, 126, 234, 0.3);
+            border-radius: 50%;
+            border-top-color: #667eea;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading {
+            display: inline-flex;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">📥</div>
+        <h1>StashCast</h1>
+        <p class="subtitle">Processing your media...</p>
+
+        <div class="status-card">
+            <div class="status-label">Status</div>
+            <div class="status-value prefetching" id="status-value">
+                <span class="loading">
+                    <span id="status-text">Initializing</span>
+                    <span class="spinner"></span>
+                </span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+        </div>
+
+        <div class="info-row">
+            <span class="info-label">Title</span>
+            <span class="info-value" id="title-value">Loading...</span>
+        </div>
+
+        <div class="info-row">
+            <span class="info-label">Media Type</span>
+            <span class="info-value" id="media-type-value">--</span>
+        </div>
+
+        <div class="info-row">
+            <span class="info-label">Item ID</span>
+            <span class="info-value" id="guid-value">{{ guid }}</span>
+        </div>
+
+        <div class="error-message" id="error-message"></div>
+        <div class="success-message" id="success-message">
+            Your media is ready!
+        </div>
+
+        <a href="#" class="btn" id="view-btn">View Media</a>
+    </div>
+
+    <script>
+        const guid = '{{ guid }}';
+        const statusText = document.getElementById('status-text');
+        const statusValue = document.getElementById('status-value');
+        const progressFill = document.getElementById('progress-fill');
+        const titleValue = document.getElementById('title-value');
+        const mediaTypeValue = document.getElementById('media-type-value');
+        const errorMessage = document.getElementById('error-message');
+        const successMessage = document.getElementById('success-message');
+        const viewBtn = document.getElementById('view-btn');
+
+        // Status display mapping
+        const statusDisplay = {
+            'PREFETCHING': 'Prefetching',
+            'DOWNLOADING': 'Downloading',
+            'PROCESSING': 'Processing',
+            'READY': 'Ready',
+            'ERROR': 'Error'
+        };
+
+        // Progress percentage mapping
+        const statusProgress = {
+            'PREFETCHING': 10,
+            'DOWNLOADING': 40,
+            'PROCESSING': 70,
+            'READY': 100,
+            'ERROR': 0
+        };
+
+        // Connect to SSE endpoint
+        const eventSource = new EventSource(`/stash/${guid}/stream/`);
+
+        eventSource.addEventListener('message', function(event) {
+            const data = JSON.parse(event.data);
+            
+            // Update status
+            if (data.status) {
+                const displayStatus = statusDisplay[data.status] || data.status;
+                statusText.textContent = displayStatus;
+                
+                // Update status value styling
+                statusValue.className = `status-value ${data.status.toLowerCase()}`;
+                
+                // Update progress bar
+                progressFill.style.width = `${statusProgress[data.status] || 0}%`;
+                
+                // Hide spinner if ready or error
+                if (data.status === 'READY' || data.status === 'ERROR') {
+                    const spinner = statusValue.querySelector('.spinner');
+                    if (spinner) {
+                        spinner.remove();
+                    }
+                    statusValue.classList.remove('loading');
+                }
+            }
+            
+            // Update title
+            if (data.title) {
+                titleValue.textContent = data.title;
+            }
+            
+            // Update media type
+            if (data.media_type) {
+                mediaTypeValue.textContent = data.media_type || '--';
+            }
+            
+            // Handle error
+            if (data.has_error && data.error_message) {
+                errorMessage.textContent = data.error_message;
+                errorMessage.style.display = 'block';
+                progressFill.style.background = '#dc3545';
+            }
+            
+            // Handle success
+            if (data.is_ready) {
+                successMessage.style.display = 'block';
+                viewBtn.style.display = 'inline-block';
+                viewBtn.href = data.detail_url;
+                progressFill.style.background = '#28a745';
+            }
+        });
+
+        eventSource.addEventListener('complete', function() {
+            eventSource.close();
+        });
+
+        eventSource.addEventListener('error', function(event) {
+            console.error('SSE Error:', event);
+            eventSource.close();
+            
+            statusText.textContent = 'Connection Error';
+            statusValue.className = 'status-value error';
+            progressFill.style.background = '#dc3545';
+            
+            const spinner = statusValue.querySelector('.spinner');
+            if (spinner) {
+                spinner.remove();
+            }
+            statusValue.classList.remove('loading');
+        });
+
+        // Handle page unload
+        window.addEventListener('beforeunload', function() {
+            eventSource.close();
+        });
+    </script>
+</body>
+</html>

@@ -29,6 +29,8 @@ from media.views import (
     home_view,
     item_detail_view,
     list_view,
+    stash_progress_view,
+    stash_status_stream,
     stash_view,
 )
 
@@ -55,6 +57,8 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     # Public endpoints
     path("stash/", stash_view, name="stash"),
+    path("stash/<str:guid>/progress/", stash_progress_view, name="stash_progress"),
+    path("stash/<str:guid>/stream/", stash_status_stream, name="stash_status_stream"),
     path("items/<str:guid>/", item_detail_view, name="item_detail"),
     path("feeds/audio.xml", AudioFeed(), name="audio_feed"),
     path("feeds/video.xml", VideoFeed(), name="video_feed"),

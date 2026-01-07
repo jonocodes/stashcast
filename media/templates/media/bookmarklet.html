@@ -193,11 +193,17 @@
             window.open(stashUrl, '_blank');
         })();`;
 
+        const progressCode = `javascript:(function(){
+            const url = encodeURIComponent(window.location.href);
+            const stashUrl = '${baseUrl}/stash/?apikey=${apiKey}&url=' + url + '&type=${mediaType}&redirect=progress';
+            window.open(stashUrl, '_blank');
+        })();`;
+
         const bookmarklet = document.getElementById('bookmarklet');
         const codeTextarea = document.getElementById('bookmarklet-code');
 
-        bookmarklet.href = code;
-        codeTextarea.value = code;
+        bookmarklet.href = progressCode;
+        codeTextarea.value = progressCode;
     }
 
     function copyCode() {
