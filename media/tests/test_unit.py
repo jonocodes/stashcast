@@ -1,3 +1,4 @@
+import tempfile
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -6,6 +7,7 @@ from django.test import Client, TestCase, override_settings
 from django.utils import timezone
 
 from media.models import MediaItem
+from media.service.resolve import PrefetchResult
 from media.utils import ensure_unique_slug, generate_slug
 
 
@@ -32,6 +34,161 @@ class MediaItemModelTest(TestCase):
         self.assertEqual(len(item.guid), 21)
         # Should only contain A-Z a-z 0-9
         self.assertTrue(item.guid.isalnum())
+
+
+class PrefetchProcessingTest(TestCase):
+    def _prefetch_result(self):
+        result = PrefetchResult()
+        result.title = 'Test Title'
+        result.description = 'Test description'
+        result.author = 'Test Author'
+        result.duration_seconds = 42
+        result.has_audio_streams = True
+        result.has_video_streams = False
+        result.extractor = 'unit-test'
+        result.external_id = 'abc123'
+        return result
+
+    @patch('media.processing.service_prefetch')
+    def test_prefetch_file_uses_file_strategy(self, mock_prefetch):
+        from media.processing import prefetch_file
+
+        mock_prefetch.return_value = self._prefetch_result()
+        item = MediaItem.objects.create(
+            source_url='file:///tmp/test.mp3',
+            requested_type=MediaItem.REQUESTED_TYPE_AUTO,
+            slug='pending',
+        )
+
+        prefetch_file(item, None, None)
+
+        self.assertEqual(mock_prefetch.call_args[0][1], 'file')
+        item.refresh_from_db()
+        self.assertEqual(item.media_type, MediaItem.MEDIA_TYPE_AUDIO)
+        self.assertEqual(item.slug, 'test-title')
+
+    @patch('media.processing.service_prefetch')
+    def test_prefetch_direct_uses_direct_strategy(self, mock_prefetch):
+        from media.processing import prefetch_direct
+
+        mock_prefetch.return_value = self._prefetch_result()
+        item = MediaItem.objects.create(
+            source_url='https://example.com/test.mp3',
+            requested_type=MediaItem.REQUESTED_TYPE_AUTO,
+            slug='pending',
+        )
+
+        prefetch_direct(item, None, None)
+
+        self.assertEqual(mock_prefetch.call_args[0][1], 'direct')
+        item.refresh_from_db()
+        self.assertEqual(item.media_type, MediaItem.MEDIA_TYPE_AUDIO)
+        self.assertEqual(item.slug, 'test-title')
+
+
+class DownloadProcessingTest(TestCase):
+    @patch('media.processing.extract_metadata_with_ffprobe')
+    @patch('media.processing.service_download_direct')
+    def test_download_direct_updates_fields(self, mock_download, mock_extract):
+        from pathlib import Path
+
+        from media.processing import download_direct
+        from media.service.download import DownloadedFileInfo
+
+        mock_download.return_value = DownloadedFileInfo(
+            path=Path('/tmp/content.mp3'),
+            file_size=1234,
+            extension='.mp3',
+            mime_type='audio/mpeg',
+        )
+
+        item = MediaItem.objects.create(
+            source_url='https://example.com/audio.mp3',
+            requested_type=MediaItem.REQUESTED_TYPE_AUTO,
+            media_type=MediaItem.MEDIA_TYPE_AUDIO,
+            slug='pending',
+        )
+        tmp_dir = Path('/tmp')
+
+        download_direct(item, tmp_dir, None)
+
+        item.refresh_from_db()
+        self.assertEqual(item.content_path, 'content.mp3')
+        self.assertEqual(item.file_size, 1234)
+        self.assertEqual(item.mime_type, 'audio/mpeg')
+        mock_extract.assert_called_once()
+
+    @patch('media.processing.service_download_ytdlp')
+    def test_download_ytdlp_updates_fields(self, mock_download):
+        from pathlib import Path
+
+        from media.processing import download_ytdlp
+        from media.service.download import DownloadedFileInfo
+
+        with tempfile.TemporaryDirectory() as tmp_dir_str:
+            tmp_dir = Path(tmp_dir_str)
+            content_path = tmp_dir / 'download.mp3'
+            thumb_path = tmp_dir / 'thumb.jpg'
+            sub_path = tmp_dir / 'subs.vtt'
+            content_path.write_bytes(b'data')
+            thumb_path.write_bytes(b'thumb')
+            sub_path.write_bytes(b'subs')
+
+            mock_download.return_value = DownloadedFileInfo(
+                path=content_path,
+                file_size=4,  # Size of 'data' bytes
+                extension='.mp3',
+                thumbnail_path=thumb_path,
+                subtitle_path=sub_path,
+            )
+
+            item = MediaItem.objects.create(
+                source_url='https://example.com/audio',
+                requested_type=MediaItem.REQUESTED_TYPE_AUDIO,
+                media_type=MediaItem.MEDIA_TYPE_AUDIO,
+                slug='pending',
+            )
+
+            download_ytdlp(item, tmp_dir, None)
+
+            item.refresh_from_db()
+            self.assertEqual(item.content_path, 'content.mp3')
+            self.assertEqual(item.file_size, content_path.stat().st_size)
+            self.assertTrue((tmp_dir / 'thumbnail_temp.jpg').exists())
+            self.assertTrue((tmp_dir / 'subtitles_temp.vtt').exists())
+
+    @patch('media.processing.get_title_from_metadata', return_value='Real Title')
+    @patch('media.processing.add_metadata_without_transcode')
+    def test_process_files_updates_title_and_slug(self, mock_add_metadata, _mock_title):
+        from pathlib import Path
+
+        from media.processing import process_files
+
+        def mock_add_metadata_func(input_path, output_path, metadata=None, logger=None):
+            output_path = Path(output_path)
+            output_path.write_bytes(b'output data')
+
+        mock_add_metadata.side_effect = mock_add_metadata_func
+
+        with tempfile.TemporaryDirectory() as tmp_dir_str:
+            tmp_dir = Path(tmp_dir_str)
+            content_path = tmp_dir / 'content.mp3'
+            content_path.write_bytes(b'data')
+
+            item = MediaItem.objects.create(
+                source_url='https://example.com/audio.mp3',
+                requested_type=MediaItem.REQUESTED_TYPE_AUDIO,
+                media_type=MediaItem.MEDIA_TYPE_AUDIO,
+                title='content',
+                slug='content',
+                content_path='content.mp3',
+            )
+
+            process_files(item, tmp_dir, None)
+
+            item.refresh_from_db()
+            self.assertEqual(item.title, 'Real Title')
+            self.assertEqual(item.slug, 'real-title')
 
     def test_same_slug_different_media_type_suffixes(self):
         """Test that same slug across media types gets a unique suffix"""
@@ -703,9 +860,13 @@ class WorkerTimeoutTest(TestCase):
         )
 
         # Mock the actual processing to prevent real download
-        with patch('media.tasks.prefetch_direct') as mock_prefetch:
+        with (
+            patch('media.tasks.prefetch_direct') as mock_prefetch,
+            patch('media.tasks.prefetch_file') as mock_prefetch_file,
+        ):
             # Make it fail quickly so we can test timeout didn't trigger
             mock_prefetch.side_effect = Exception('Test error')
+            mock_prefetch_file.side_effect = Exception('Test error')
 
             try:
                 process_media.call_local(item.guid)

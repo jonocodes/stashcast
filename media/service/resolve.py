@@ -10,7 +10,7 @@ from urllib.parse import urlparse
 from pathlib import Path
 import yt_dlp
 
-from media.service.constants import AUDIO_EXTENSIONS
+from media.service.media_info import get_streams_from_extension
 
 
 class PlaylistNotSupported(Exception):
@@ -77,13 +77,7 @@ def _prefetch_file(file_path, logger=None):
     result.file_extension = ext
 
     # Determine if it's audio or video based on extension
-    audio_exts = ['.mp3', '.m4a', '.ogg', '.wav', '.aac', '.flac', '.opus']
-    if ext in audio_exts:
-        result.has_audio_streams = True
-        result.has_video_streams = False
-    else:
-        result.has_video_streams = True
-        result.has_audio_streams = True  # Videos usually have audio too
+    result.has_audio_streams, result.has_video_streams = get_streams_from_extension(ext)
 
     if logger:
         logger(f'Local file detected: {file_path}')
@@ -104,13 +98,7 @@ def _prefetch_direct(url, logger=None):
     result.file_extension = ext
 
     # Determine if it's audio or video based on extension
-    audio_exts = ['.mp3', '.m4a', '.ogg', '.wav', '.aac', '.flac', '.opus']
-    if ext in audio_exts:
-        result.has_audio_streams = True
-        result.has_video_streams = False
-    else:
-        result.has_video_streams = True
-        result.has_audio_streams = True  # Videos usually have audio too
+    result.has_audio_streams, result.has_video_streams = get_streams_from_extension(ext)
 
     if logger:
         logger(f'Direct URL detected: {url}')
@@ -215,21 +203,6 @@ def _prefetch_html(url, logger=None):
 
     except Exception as e:
         raise Exception(f'HTML extraction failed: {str(e)}')
-
-
-def get_media_type_from_extension(extension):
-    """
-    Determine if a file extension is audio or video.
-
-    Args:
-        extension: File extension (e.g., '.mp3', '.mp4')
-
-    Returns:
-        str: 'audio' or 'video'
-    """
-    if extension.lower() in AUDIO_EXTENSIONS:
-        return 'audio'
-    return 'video'
 
 
 def resolve_media_type(requested_type, prefetch_result):

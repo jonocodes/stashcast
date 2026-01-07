@@ -1,10 +1,59 @@
 from django.contrib import admin
+from django.core.exceptions import PermissionDenied
 from django.urls import reverse
-from django.utils.html import format_html
-from django.utils.safestring import mark_safe
+from django.utils.html import format_html, mark_safe
 
 from media.models import MediaItem
 from media.tasks import generate_summary, process_media
+
+DEMO_GROUP = 'DemoReadOnly'
+
+
+def is_demo_readonly(user):
+    return user.is_authenticated and user.groups.filter(name=DEMO_GROUP).exists()
+
+
+class DemoReadOnlyAdminMixin:
+    """
+    Allows viewing change pages with normal UI, but blocks any POST that would write.
+    """
+
+    def has_add_permission(self, request):
+        # Returning True keeps "Add" buttons visible in the app index/list pages.
+        # They'll still be blocked on POST by add_view.
+        return True
+
+    def has_change_permission(self, request, obj=None):
+        # True so they can open the change form and see Save buttons.
+        return True
+
+    def has_delete_permission(self, request, obj=None):
+        # True so delete UI can show, but delete_view will block POST.
+        return True
+
+    def add_view(self, request, form_url='', extra_context=None):
+        if is_demo_readonly(request.user) and request.method == 'POST':
+            raise PermissionDenied('Demo users are not allowed to add objects.')
+        return super().add_view(request, form_url, extra_context)
+
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        if is_demo_readonly(request.user) and request.method == 'POST':
+            raise PermissionDenied('Demo users are not allowed to change objects.')
+        return super().change_view(request, object_id, form_url, extra_context)
+
+    def delete_view(self, request, object_id, extra_context=None):
+        if is_demo_readonly(request.user) and request.method == 'POST':
+            raise PermissionDenied('Demo users are not allowed to delete objects.')
+        return super().delete_view(request, object_id, extra_context)
+
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+        # Optional: keep actions visible if you want; but most actions write.
+        # If you want them visible-but-fail, leave them. If you want to hide:
+        if is_demo_readonly(request.user):
+            # Prevent bulk delete and other write actions
+            actions.pop('delete_selected', None)
+        return actions
 
 
 @admin.register(MediaItem)
@@ -120,7 +169,8 @@ class MediaItemAdmin(admin.ModelAdmin):
 
         view_url = reverse('item_detail', args=[obj.guid])
         return format_html(
-            '<iframe src="{}" width="100%" height="600" frameborder="0"></iframe>', view_url
+            '<iframe src="{}" width="100%" height="600" frameborder="0"></iframe>',
+            view_url,
         )
 
     preview_display.short_description = 'Preview'

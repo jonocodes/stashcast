@@ -8,13 +8,23 @@ setenv := '. ".envrc"'
 help:
     just --list
 
-# install python dependencies
+# setup the db etc
 setup:
     ./setup.sh
+
+# install python dependencies and then the db
+setup-with-packages:
+    ./setup.sh --with-packages
 
 # clean up dev dependencies
 clean:
     rm -rf __pycache__
+
+# remove all the data
+clean-data:
+    # rm -rf data
+    rm -rf data_docker
+    just setup
 
 # run the django server
 dev-web:
@@ -43,4 +53,8 @@ test *args:
 
 # alias for django manage command
 manage *args:
+    ./manage.py {{ args }}
+
+# alias to manage
+m *args:
     ./manage.py {{ args }}

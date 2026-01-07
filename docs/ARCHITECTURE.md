@@ -158,12 +158,26 @@ def prefetch(url, strategy, logger=None) -> PrefetchResult:
 
 def resolve_media_type(requested_type, prefetch_result) -> str:
     """Determine 'audio' or 'video' from metadata"""
-
-def get_media_type_from_extension(extension) -> str:
-    """Determine media type from file extension"""
 ```
 
 **Used by**: CLI transcode command, web app prefetch tasks
+
+### `media/service/media_info.py`
+
+Centralized media helpers:
+
+```python
+def get_media_type_from_extension(extension) -> str:
+    """Determine media type from file extension"""
+
+def get_streams_from_extension(extension) -> tuple[bool, bool]:
+    """Infer audio/video presence from file extension"""
+
+def extract_ffprobe_metadata(file_path) -> dict:
+    """Parse ffprobe metadata (duration, tags)"""
+```
+
+**Used by**: resolve, processing, transcode service
 
 ### `media/service/download.py`
 
@@ -272,6 +286,9 @@ def write_log(log_path, message):
 def prefetch_direct(item, tmp_dir, log_path):
     """Prefetch metadata for direct URL - updates MediaItem"""
 
+def prefetch_file(item, tmp_dir, log_path):
+    """Prefetch metadata for local file path - updates MediaItem"""
+
 def prefetch_ytdlp(item, tmp_dir, log_path):
     """Prefetch metadata using yt-dlp - updates MediaItem"""
 
@@ -310,7 +327,7 @@ Huey background tasks for the web application:
 @db_task()
 def process_media(guid):
     """Main processing task"""
-    # 1. PREFETCHING - calls prefetch_direct() or prefetch_ytdlp()
+    # 1. PREFETCHING - calls prefetch_direct(), prefetch_file(), or prefetch_ytdlp()
     # 2. DOWNLOADING - calls download_direct() or download_ytdlp()
     # 3. PROCESSING - calls process_files()
     # 4. READY - moves from tmp to final directory

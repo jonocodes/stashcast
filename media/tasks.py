@@ -10,6 +10,7 @@ from media.models import MediaItem
 from media.processing import (
     download_direct,
     download_ytdlp,
+    prefetch_file,
     prefetch_direct,
     prefetch_ytdlp,
     process_files,
@@ -87,7 +88,10 @@ def process_media(guid):
 
         if is_direct:
             # Direct download - minimal metadata
-            prefetch_direct(item, tmp_dir, log_path)
+            if Path(item.source_url).exists():
+                prefetch_file(item, tmp_dir, log_path)
+            else:
+                prefetch_direct(item, tmp_dir, log_path)
         else:
             # Use yt-dlp to extract metadata (may fallback to HTML extractor)
             prefetch_ytdlp(item, tmp_dir, log_path)

@@ -18,7 +18,7 @@ Since flox is a personal detail, dont add it to the readme.
 ```bash
 python -m venv venv
 source venv/bin/activate
-just setup
+just setup-with-packages
 ./manage.py createsuperuser
 just dev
 ```

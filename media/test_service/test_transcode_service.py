@@ -86,6 +86,60 @@ class TranscodeServiceTest(TestCase):
             self.assertTrue(result.output_path.exists())
             self.assertEqual(result.output_path.name, 'test-audio.mp3')
 
+    @patch('media.service.transcode_service.get_title_from_metadata', return_value='Real Title')
+    @patch('media.service.transcode_service.add_metadata_without_transcode')
+    @patch('media.service.transcode_service.needs_transcode', return_value=False)
+    @patch('media.service.transcode_service.download_direct')
+    @patch('media.service.transcode_service.prefetch')
+    @patch('media.service.transcode_service.choose_download_strategy')
+    def test_transcode_updates_title_from_metadata(
+        self,
+        mock_strategy,
+        mock_prefetch,
+        mock_download,
+        _mock_needs_transcode,
+        mock_add_metadata,
+        _mock_title,
+    ):
+        """Test transcode updates title/slug when prefetch title is generic."""
+        mock_strategy.return_value = 'direct'
+
+        from media.service.resolve import PrefetchResult
+
+        prefetch_result = PrefetchResult()
+        prefetch_result.title = 'content'
+        prefetch_result.has_audio_streams = True
+        prefetch_result.file_extension = '.mp3'
+        mock_prefetch.return_value = prefetch_result
+
+        def mock_download_func(url, out_path, logger=None):
+            out_path = Path(out_path)
+            out_path.write_bytes(b'fake mp3 data')
+            from media.service.download import DownloadedFileInfo
+
+            return DownloadedFileInfo(
+                path=out_path,
+                file_size=len(b'fake mp3 data'),
+                extension='.mp3',
+                mime_type='audio/mpeg',
+            )
+
+        def mock_add_metadata_func(input_path, output_path, metadata=None, logger=None):
+            output_path = Path(output_path)
+            output_path.write_bytes(b'output data')
+
+        mock_download.side_effect = mock_download_func
+        mock_add_metadata.side_effect = mock_add_metadata_func
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            result = transcode_url_to_dir(
+                url='https://example.com/audio.mp3', outdir=temp_dir, requested_type='auto'
+            )
+
+            self.assertEqual(result.title, 'Real Title')
+            self.assertEqual(result.slug, 'real-title')
+            self.assertEqual(result.output_path.name, 'real-title.mp3')
+
     @patch('media.service.transcode_service.needs_transcode')
     @patch('media.service.transcode_service.download_direct')
     @patch('media.service.transcode_service.prefetch')

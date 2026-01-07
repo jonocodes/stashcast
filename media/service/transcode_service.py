@@ -14,6 +14,7 @@ import shutil
 
 from media.service.strategy import choose_download_strategy
 from media.service.resolve import prefetch, resolve_media_type
+from media.service.media_info import extract_ffprobe_metadata, get_title_from_metadata
 from media.service.download import download_direct, download_ytdlp, download_file
 from media.service.process import (
     needs_transcode,
@@ -29,8 +30,6 @@ from media.service.config import (
     get_target_video_format,
 )
 from media.utils import generate_slug
-import subprocess
-import json
 
 
 def extract_duration(file_path):
@@ -40,22 +39,8 @@ def extract_duration(file_path):
     Returns:
         int: Duration in seconds, or None if extraction fails
     """
-    try:
-        result = subprocess.run(
-            ['ffprobe', '-v', 'quiet', '-print_format', 'json', '-show_format', str(file_path)],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-
-        metadata = json.loads(result.stdout)
-
-        if 'format' in metadata and 'duration' in metadata['format']:
-            return int(float(metadata['format']['duration']))
-
-        return None
-    except (subprocess.CalledProcessError, ValueError, KeyError):
-        return None
+    metadata = extract_ffprobe_metadata(file_path) or {}
+    return metadata.get('duration_seconds')
 
 
 @dataclass
@@ -205,6 +190,15 @@ def transcode_url_to_dir(
             )
 
         logger(f'Downloaded: {download_info.path} ({download_info.file_size} bytes)')
+
+        # If the title is still generic, try to use embedded media metadata
+        if prefetch_result.title in ('content', 'downloaded-media', 'untitled'):
+            meta_title = get_title_from_metadata(download_info.path)
+            if meta_title:
+                prefetch_result.title = meta_title
+                slug = generate_slug(prefetch_result.title)
+                logger(f'Updated title from metadata: {prefetch_result.title}')
+                logger(f'Updated slug: {slug}')
 
         # Determine output filename using slug
         if download_only:

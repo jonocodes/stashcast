@@ -34,7 +34,12 @@ I created this since friends and family often send me links to listen to a singl
 
 ### Non-features
 
-- Subscribing to playlists. For that use [TubeSync](https://github.com/meeb/tubesync) or [Podsync](https://github.com/mxpv/podsync).
+- Downloading non audio/video content. For that you may check out our sister project [Savr](https://github.com/jonocodes/savr).
+- Only downloading youtube videos. yt-dlp supports thousands of of different websites.
+- Subscribing to playlists. For that you could checkout [TubeSync](https://github.com/meeb/tubesync) or [Podsync](https://github.com/mxpv/podsync).
+- Long term archiving. While this may work for you there are other tools perhaps more suited for this. See [ArchiveBox](https://github.com/ArchiveBox/ArchiveBox) or [Tube Archivist](https://github.com/tubearchivist/tubearchivist)
+- A playback tool. The grid and list view are good ways to view your content, but StashCast's best experience would be to use a Podcast app for playback.
+
 
 ## Web view screenshot
 
@@ -47,8 +52,9 @@ I created this since friends and family often send me links to listen to a singl
 - ffmpeg
 
 ### For development
-- just
-- ruff
+
+- just (for running commands)
+- ruff (for linting)
 
 
 ## Run in docker
@@ -96,7 +102,7 @@ cp .env.example .env
 ### 3. Download the dependencies and setup the db
 
 ```bash
-just setup
+just setup-with-packages
 ```
 
 ### 4. Create an admin user (required)

@@ -15,6 +15,7 @@ from django.utils import timezone
 from media.models import MediaItem
 from media.processing import (
     write_log,
+    prefetch_file,
     prefetch_direct,
     prefetch_ytdlp,
     download_direct,
@@ -109,7 +110,10 @@ class Command(BaseCommand):
             try:
                 if is_direct:
                     # Direct download - minimal metadata
-                    prefetch_direct(item, tmp_dir, log_path)
+                    if Path(item.source_url).exists():
+                        prefetch_file(item, tmp_dir, log_path)
+                    else:
+                        prefetch_direct(item, tmp_dir, log_path)
                 else:
                     # Use yt-dlp to extract metadata (may fallback to HTML extractor)
                     prefetch_ytdlp(item, tmp_dir, log_path)

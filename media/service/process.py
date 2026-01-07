@@ -14,6 +14,7 @@ from media.service.config import (
     get_acceptable_video_formats,
     get_ffmpeg_args_for_type,
 )
+from media.service.media_info import extract_ffprobe_metadata
 
 
 @dataclass
@@ -61,27 +62,13 @@ def get_existing_metadata(file_path):
     Returns:
         dict with keys: title, artist, comment
     """
-    try:
-        result = subprocess.run(
-            ['ffprobe', '-v', 'quiet', '-show_format', '-of', 'json', str(file_path)],
-            capture_output=True,
-            text=True,
-            timeout=10,
-        )
-        if result.returncode == 0:
-            import json
-
-            data = json.loads(result.stdout)
-            tags = data.get('format', {}).get('tags', {})
-            # ffprobe returns tags in lowercase
-            return {
-                'title': tags.get('title'),
-                'artist': tags.get('artist'),
-                'comment': tags.get('comment'),
-            }
-    except Exception:
-        pass
-    return {}
+    metadata = extract_ffprobe_metadata(file_path) or {}
+    tags = metadata.get('tags', {}) or {}
+    return {
+        'title': tags.get('title'),
+        'artist': tags.get('artist'),
+        'comment': tags.get('comment'),
+    }
 
 
 def transcode_to_playable(

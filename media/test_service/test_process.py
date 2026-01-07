@@ -2,17 +2,18 @@
 Tests for service/process.py
 """
 
-from django.test import TestCase
-from unittest.mock import patch, MagicMock
-from pathlib import Path
 import tempfile
+from pathlib import Path
+from unittest.mock import MagicMock, patch
+
+from django.test import TestCase
 
 from media.service.process import (
-    needs_transcode,
-    transcode_to_playable,
-    process_thumbnail,
-    process_subtitle,
     ProcessedFileInfo,
+    needs_transcode,
+    process_subtitle,
+    process_thumbnail,
+    transcode_to_playable,
 )
 
 
@@ -22,7 +23,10 @@ class ProcessServiceTest(TestCase):
     def test_processed_file_info_dataclass(self):
         """Test ProcessedFileInfo dataclass"""
         info = ProcessedFileInfo(
-            path=Path('/tmp/test.mp4'), file_size=2048, extension='.mp4', was_transcoded=True
+            path=Path('/tmp/test.mp4'),
+            file_size=2048,
+            extension='.mp4',
+            was_transcoded=True,
         )
         self.assertEqual(info.path, Path('/tmp/test.mp4'))
         self.assertEqual(info.file_size, 2048)
@@ -94,8 +98,9 @@ class ProcessServiceTest(TestCase):
             needs = needs_transcode(f.name, 'audio')
             self.assertFalse(needs)
 
+    @patch('media.service.process.extract_ffprobe_metadata', return_value={})
     @patch('media.service.process.subprocess.run')
-    def test_transcode_to_playable_success(self, mock_run):
+    def test_transcode_to_playable_success(self, mock_run, _mock_metadata):
         """Test successful transcoding"""
 
         def mock_ffmpeg(cmd, **kwargs):
@@ -121,24 +126,19 @@ class ProcessServiceTest(TestCase):
 
             result = transcode_to_playable(input_file, 'audio', output_file)
 
-            # Verify subprocess.run was called twice (ffprobe for metadata, then ffmpeg for transcode)
-            self.assertEqual(mock_run.call_count, 2)
-
-            # First call should be ffprobe
-            first_call_args = mock_run.call_args_list[0][0][0]
-            self.assertIn('ffprobe', first_call_args[0])
-
-            # Second call should be ffmpeg
-            second_call_args = mock_run.call_args_list[1][0][0]
-            self.assertIn('ffmpeg', second_call_args[0])
-            self.assertIn(str(input_file), second_call_args)
-            self.assertIn(str(output_file), second_call_args)
+            # Verify subprocess.run was called for ffmpeg
+            self.assertEqual(mock_run.call_count, 1)
+            call_args = mock_run.call_args_list[0][0][0]
+            self.assertIn('ffmpeg', call_args[0])
+            self.assertIn(str(input_file), call_args)
+            self.assertIn(str(output_file), call_args)
 
             # Verify result
             self.assertTrue(result.was_transcoded)
 
+    @patch('media.service.process.extract_ffprobe_metadata', return_value={})
     @patch('media.service.process.subprocess.run')
-    def test_transcode_to_playable_with_logger(self, mock_run):
+    def test_transcode_to_playable_with_logger(self, mock_run, _mock_metadata):
         """Test transcoding with logger callback"""
 
         def mock_ffmpeg(cmd, **kwargs):
@@ -166,8 +166,9 @@ class ProcessServiceTest(TestCase):
             self.assertTrue(len(logs) > 0)
             self.assertTrue(any('Transcoding' in log for log in logs))
 
+    @patch('media.service.process.extract_ffprobe_metadata', return_value={})
     @patch('media.service.process.subprocess.run')
-    def test_transcode_to_playable_ffmpeg_error(self, mock_run):
+    def test_transcode_to_playable_ffmpeg_error(self, mock_run, _mock_metadata):
         """Test that ffmpeg errors are raised"""
         mock_result = MagicMock()
         mock_result.returncode = 1
@@ -185,8 +186,9 @@ class ProcessServiceTest(TestCase):
 
             self.assertIn('ffmpeg failed', str(ctx.exception))
 
+    @patch('media.service.process.extract_ffprobe_metadata', return_value={})
     @patch('media.service.process.subprocess.run')
-    def test_transcode_to_playable_creates_parent_dir(self, mock_run):
+    def test_transcode_to_playable_creates_parent_dir(self, mock_run, _mock_metadata):
         """Test that transcoding creates parent directory"""
 
         def mock_ffmpeg(cmd, **kwargs):
@@ -209,8 +211,9 @@ class ProcessServiceTest(TestCase):
 
             self.assertTrue(output_file.parent.exists())
 
+    @patch('media.service.process.extract_ffprobe_metadata', return_value={})
     @patch('media.service.process.subprocess.run')
-    def test_transcode_audio_uses_audio_settings(self, mock_run):
+    def test_transcode_audio_uses_audio_settings(self, mock_run, _mock_metadata):
         """Test that audio transcoding uses audio ffmpeg settings"""
 
         def mock_ffmpeg(cmd, **kwargs):
@@ -234,8 +237,9 @@ class ProcessServiceTest(TestCase):
             # Should contain AAC codec for audio
             self.assertTrue(any('aac' in str(arg).lower() for arg in call_args))
 
+    @patch('media.service.process.extract_ffprobe_metadata', return_value={})
     @patch('media.service.process.subprocess.run')
-    def test_transcode_video_uses_video_settings(self, mock_run):
+    def test_transcode_video_uses_video_settings(self, mock_run, _mock_metadata):
         """Test that video transcoding uses video ffmpeg settings"""
 
         def mock_ffmpeg(cmd, **kwargs):
