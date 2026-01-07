@@ -6,18 +6,14 @@ Usage:
     ./manage.py summarize http://example.com/subtitles.vtt
 """
 
-import os
 import re
-import tempfile
 from pathlib import Path
-from urllib.parse import urlparse
 
 import requests
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from sumy.parsers.plaintext import PlaintextParser
 from sumy.nlp.tokenizers import Tokenizer
-from sumy.summarizers.lex_rank import LexRankSummarizer
 
 
 class Command(BaseCommand):
@@ -110,10 +106,10 @@ class Command(BaseCommand):
                 not line.startswith('WEBVTT')
                 and not line.startswith('Kind:')
                 and not line.startswith('Language:')
-                and not '-->' in line
+                and '-->' not in line
                 and not re.match(r'^\d+$', line.strip())
-                and not 'align:' in line
-                and not 'position:' in line
+                and 'align:' not in line
+                and 'position:' not in line
                 and line.strip()
             ):
                 # Remove timing tags like <00:00:00.400> and <c>

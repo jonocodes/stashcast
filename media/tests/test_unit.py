@@ -1,6 +1,5 @@
-import unittest
 from types import SimpleNamespace
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from django.conf import settings
 from django.test import Client, TestCase, override_settings
@@ -397,7 +396,7 @@ class FeedTest(TestCase):
 
     def test_feeds_separate_media_types(self):
         """Test that audio and video feeds contain only their media types"""
-        audio_item = MediaItem.objects.create(
+        MediaItem.objects.create(
             source_url='https://example.com/content',
             requested_type=MediaItem.REQUESTED_TYPE_AUDIO,
             slug='my-content-audio',
@@ -406,7 +405,7 @@ class FeedTest(TestCase):
             status=MediaItem.STATUS_READY,
             content_path='content.m4a',
         )
-        video_item = MediaItem.objects.create(
+        MediaItem.objects.create(
             source_url='https://example.com/content',
             requested_type=MediaItem.REQUESTED_TYPE_VIDEO,
             slug='my-content-video',
@@ -663,8 +662,6 @@ class WorkerTimeoutTest(TestCase):
         """Test that items stuck in PREFETCHING for >30s get timeout error"""
         from datetime import timedelta
 
-        from django.utils import timezone
-
         from media.tasks import process_media
 
         # Create item with old timestamp (simulating stuck item)
@@ -728,8 +725,6 @@ class SummaryGenerationTest(TestCase):
     @override_settings(STASHCAST_SUMMARY_SENTENCES=0)
     def test_summary_generation_skipped_when_zero(self):
         """Test that summary generation is skipped when STASHCAST_SUMMARY_SENTENCES is 0"""
-        import tempfile
-        from pathlib import Path
 
         from media.models import MediaItem
         from media.tasks import generate_summary
@@ -766,7 +761,6 @@ class SummaryGenerationTest(TestCase):
         self, mock_summarizer, mock_parser, mock_tokenizer
     ):
         """Test that summary generation runs when STASHCAST_SUMMARY_SENTENCES > 0"""
-        from pathlib import Path
 
         from media.models import MediaItem
         from media.tasks import generate_summary
@@ -821,7 +815,6 @@ class MetadataEmbeddingTest(TestCase):
     def test_metadata_embedded_in_file(self):
         """Test that metadata is embedded in media files"""
         import json
-        import shutil
         import subprocess
         import tempfile
         from pathlib import Path
@@ -1011,7 +1004,6 @@ class DownloadStrategyTest(TestCase):
     def test_local_file_strategy(self):
         """Test that local file paths use file strategy"""
         import tempfile
-        from pathlib import Path
 
         from media.service.strategy import choose_download_strategy
 

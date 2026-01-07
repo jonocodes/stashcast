@@ -8,7 +8,6 @@ from dataclasses import dataclass
 from typing import Optional
 from urllib.parse import urlparse
 from pathlib import Path
-import requests
 import yt_dlp
 
 from media.service.constants import AUDIO_EXTENSIONS

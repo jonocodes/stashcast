@@ -8,11 +8,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 import shutil
-import tempfile
 import requests
 import yt_dlp
 
-from media.service.config import get_ytdlp_args_for_type, parse_ytdlp_extra_args
+from media.service.config import parse_ytdlp_extra_args
 
 
 @dataclass

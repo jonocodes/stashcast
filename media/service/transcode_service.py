@@ -13,7 +13,7 @@ import tempfile
 import shutil
 
 from media.service.strategy import choose_download_strategy
-from media.service.resolve import prefetch, resolve_media_type, PlaylistNotSupported
+from media.service.resolve import prefetch, resolve_media_type
 from media.service.download import download_direct, download_ytdlp, download_file
 from media.service.process import (
     needs_transcode,

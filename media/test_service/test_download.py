@@ -3,10 +3,9 @@ Tests for service/download.py
 """
 
 from django.test import TestCase
-from unittest.mock import patch, MagicMock, mock_open
+from unittest.mock import patch, MagicMock
 from pathlib import Path
 import tempfile
-import os
 
 from media.service.download import download_direct, download_ytdlp, DownloadedFileInfo
 
@@ -50,7 +49,7 @@ class DownloadServiceTest(TestCase):
 
         with tempfile.TemporaryDirectory() as temp_dir:
             out_path = Path(temp_dir) / 'subdir' / 'nested' / 'test.mp3'
-            result = download_direct('https://example.com/audio.mp3', out_path)
+            download_direct('https://example.com/audio.mp3', out_path)
 
             self.assertTrue(out_path.exists())
             self.assertTrue(out_path.parent.exists())
@@ -64,7 +63,9 @@ class DownloadServiceTest(TestCase):
         mock_get.return_value = mock_response
 
         logs = []
-        logger = lambda msg: logs.append(msg)
+
+        def logger(msg):
+            return logs.append(msg)
 
         with tempfile.TemporaryDirectory() as temp_dir:
             out_path = Path(temp_dir) / 'test.mp3'
@@ -194,7 +195,9 @@ class DownloadServiceTest(TestCase):
         mock_ytdlp_class.return_value.__enter__.return_value = mock_ydl
 
         logs = []
-        logger = lambda msg: logs.append(msg)
+
+        def logger(msg):
+            return logs.append(msg)
 
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_dir = Path(temp_dir)

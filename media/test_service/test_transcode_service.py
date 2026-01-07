@@ -5,11 +5,10 @@ Integration tests for the main transcode service entrypoint.
 """
 
 from django.test import TestCase
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from pathlib import Path
 import tempfile
 import io
-import sys
 
 from media.service.transcode_service import transcode_url_to_dir, TranscodeResult
 from media.service.resolve import PlaylistNotSupported
@@ -360,7 +359,7 @@ class TranscodeServiceTest(TestCase):
                         # Suppress stdout to prevent leaked output during tests
                         with self._suppress_stdout():
                             # This should pass logger to download functions
-                            result = transcode_url_to_dir(
+                            transcode_url_to_dir(
                                 url='https://example.com/audio.mp3', outdir=temp_dir, verbose=True
                             )
 

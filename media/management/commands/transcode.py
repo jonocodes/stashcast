@@ -6,7 +6,6 @@ This is a thin CLI wrapper around the transcode_service.
 
 import json
 import sys
-from pathlib import Path
 from django.core.management.base import BaseCommand, CommandError
 
 from media.service.transcode_service import transcode_url_to_dir

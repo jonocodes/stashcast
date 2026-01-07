@@ -79,10 +79,12 @@ class ResolveServiceTest(TestCase):
     def test_prefetch_direct_with_logger(self):
         """Test prefetch with logger callback"""
         logs = []
-        logger = lambda msg: logs.append(msg)
+
+        def logger(msg):
+            return logs.append(msg)
 
         url = 'https://example.com/audio.mp3'
-        result = prefetch(url, 'direct', logger=logger)
+        prefetch(url, 'direct', logger=logger)
 
         self.assertTrue(len(logs) > 0)
         self.assertTrue(any('Direct URL' in log for log in logs))

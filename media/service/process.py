@@ -13,8 +13,6 @@ from media.service.config import (
     get_acceptable_audio_formats,
     get_acceptable_video_formats,
     get_ffmpeg_args_for_type,
-    get_target_audio_format,
-    get_target_video_format,
 )
 
 
@@ -308,7 +306,7 @@ def add_metadata_without_transcode(input_path, output_path, metadata=None, logge
     result = subprocess.run(cmd, capture_output=True, text=True)
 
     if result.returncode != 0:
-        log(f'ffmpeg metadata add failed, falling back to simple copy')
+        log('ffmpeg metadata add failed, falling back to simple copy')
         log(f'ffmpeg stderr: {result.stderr}')
         # Fallback to simple copy
         shutil.copy2(input_path, output_path)
@@ -399,7 +397,7 @@ def process_subtitle(subtitle_path, output_path, logger=None):
         result = subprocess.run(cmd, capture_output=True, text=True)
 
         if result.returncode != 0:
-            log(f'Subtitle conversion failed, copying original')
+            log('Subtitle conversion failed, copying original')
             shutil.copy2(subtitle_path, output_path)
 
         log(f'Subtitle saved: {output_path}')

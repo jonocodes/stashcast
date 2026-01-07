@@ -41,7 +41,7 @@ if __name__ == '__main__':
     print(f'TEST SERVER - Serving files from {DIRECTORY}/')
     print(f'{"=" * 60}')
     print(f'\nServer running on: http://localhost:{PORT}/')
-    print(f'\nAvailable test URLs:')
+    print('\nAvailable test URLs:')
 
     demo_path = Path(DIRECTORY)
     for file in sorted(demo_path.iterdir()):

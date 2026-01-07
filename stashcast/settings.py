@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 import os
+import sys
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -174,7 +175,6 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = STASHCAST_MEDIA_DIR
 
 # Huey configuration (SQLite backend)
-import sys
 
 HUEY = {
     'huey_class': 'huey.SqliteHuey',

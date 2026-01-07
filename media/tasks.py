@@ -216,10 +216,10 @@ def generate_summary(guid):
                 not line.startswith('WEBVTT')
                 and not line.startswith('Kind:')
                 and not line.startswith('Language:')
-                and not '-->' in line
+                and '-->' not in line
                 and not re.match(r'^\d+$', line.strip())
-                and not 'align:' in line
-                and not 'position:' in line
+                and 'align:' not in line
+                and 'position:' not in line
                 and line.strip()
             ):
                 # Remove timing tags like <00:00:00.400> and <c>

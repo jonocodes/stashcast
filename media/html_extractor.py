@@ -5,7 +5,7 @@ Provides functions to extract embedded audio/video from HTML pages.
 """
 
 from pathlib import Path
-from urllib.parse import urljoin, urlparse, unquote
+from urllib.parse import urljoin
 import requests
 from bs4 import BeautifulSoup
 

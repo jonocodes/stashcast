@@ -4,7 +4,7 @@ import time
 from django.conf import settings
 from django.contrib import admin
 from django.contrib.admin.views.decorators import staff_member_required
-from django.http import HttpResponse, JsonResponse, StreamingHttpResponse
+from django.http import JsonResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
@@ -93,7 +93,7 @@ def stash_view(request):
 
         log_path = item.get_absolute_log_path()
         if log_path:
-            write_log(log_path, f'=== OVERWRITE REQUEST ===')
+            write_log(log_path, '=== OVERWRITE REQUEST ===')
             write_log(log_path, f'Re-fetching URL with type: {requested_type}')
     else:
         # Create new item

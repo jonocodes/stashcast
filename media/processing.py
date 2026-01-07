@@ -35,7 +35,6 @@ from media.service.process import (
     process_thumbnail,
 )
 from media.service.resolve import get_media_type_from_extension
-from media.service.strategy import choose_download_strategy
 from media.utils import ensure_unique_slug, generate_slug
 
 
@@ -110,7 +109,7 @@ def extract_media_from_html(url):
         result = extract_media_from_html_page(url)
         return (result['media_url'], result['media_type'], result['title'])
 
-    except Exception as e:
+    except Exception:
         # Return None if extraction fails
         return (None, None, None)
 
@@ -545,7 +544,6 @@ def process_files(item, tmp_dir, log_path):
         tmp_dir: Temporary directory path
         log_path: Path to log file
     """
-    from media.service.process import transcode_to_playable
 
     # Add metadata to content file
     if item.content_path:

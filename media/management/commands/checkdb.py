@@ -46,7 +46,7 @@ class Command(BaseCommand):
         all_orphaned_dirs = dir_slugs - db_slugs
 
         # Output results
-        self.stdout.write(f'\nDatabase Consistency Check')
+        self.stdout.write('\nDatabase Consistency Check')
         self.stdout.write(f'{"=" * 50}')
         self.stdout.write(f'\nDatabase items: {total_db_items}')
         self.stdout.write(f'\nMedia directories: {total_dirs}')

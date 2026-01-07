@@ -151,7 +151,9 @@ class ProcessServiceTest(TestCase):
         mock_run.side_effect = mock_ffmpeg
 
         logs = []
-        logger = lambda msg: logs.append(msg)
+
+        def logger(msg):
+            return logs.append(msg)
 
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_dir = Path(temp_dir)
@@ -302,7 +304,9 @@ class ProcessServiceTest(TestCase):
         mock_image_open.return_value = mock_img
 
         logs = []
-        logger = lambda msg: logs.append(msg)
+
+        def logger(msg):
+            return logs.append(msg)
 
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_dir = Path(temp_dir)
@@ -365,7 +369,7 @@ class ProcessServiceTest(TestCase):
 
             output_sub = temp_dir / 'output.vtt'
 
-            result = process_subtitle(input_sub, output_sub)
+            process_subtitle(input_sub, output_sub)
 
             # Verify ffmpeg was called for conversion
             mock_run.assert_called_once()
@@ -392,7 +396,9 @@ class ProcessServiceTest(TestCase):
         mock_run.return_value = mock_result
 
         logs = []
-        logger = lambda msg: logs.append(msg)
+
+        def logger(msg):
+            return logs.append(msg)
 
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_dir = Path(temp_dir)
@@ -419,7 +425,7 @@ class ProcessServiceTest(TestCase):
             input_sub.write_text('subtitle')
             output_sub = temp_dir / 'out.vtt'
 
-            result = process_subtitle(input_sub, output_sub)
+            process_subtitle(input_sub, output_sub)
 
             # Should have fallen back to copy
             mock_copy.assert_called()
