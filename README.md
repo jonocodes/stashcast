@@ -1,11 +1,18 @@
 <p align="center">
-  <img src="./docs/header-transparent.png" alt="StashCast header" width="100%">
+  <img src="./docs/header-transparent.png" alt="StashCast header" width="80%">
 </p>
 
-[![CI](https://github.com/jonocodes/stashcast/actions/workflows/tests.yml/badge.svg)](https://github.com/jonocodes/stashcast/actions/workflows/tests.yml)
-[![Coverage](https://img.shields.io/badge/coverage-local--run-informational)](#development)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+<p align="center">
+  <a href="https://github.com/jonocodes/stashcast/actions/workflows/tests.yml">
+    <img src="https://github.com/jonocodes/stashcast/actions/workflows/tests.yml/badge.svg" alt="CI">
+  </a>
+  <a href="http://makeapullrequest.com">
+    <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square" alt="PRs Welcome">
+  </a>
+  <a href="https://www.gnu.org/licenses/gpl-3.0">
+    <img src="https://img.shields.io/badge/License-GPLv3-blue.svg" alt="License: GPL v3">
+  </a>
+</p>
 
 StashCast is an application for downloading online media (audio/video) for offline consumption and exposing it via podcast feeds, so you can watch it later. It runs as a single user Django web app.
 
@@ -176,25 +183,29 @@ cp /path/to/test.mp4 demo_data/
 Then test stashing them:
 
 ```bash
-# Stash the audio file
-curl "http://localhost:8000/stash/?apikey=dev-api-key-change-in-production&url=http://localhost:8001/test.mp3&type=auto"
+# Stash a direct video file
+curl "http://localhost:8000/stash/?apikey=dev-api-key-change-in-production&url=http://localhost:8001/pecha-kucha-vid/vid.mp4&type=auto"
 
-# Stash the video file
-curl "http://localhost:8000/stash/?apikey=dev-api-key-change-in-production&url=http://localhost:8001/test.mp4&type=auto"
+# Stash from HTML page with embedded video (StashCast will extract the video automatically)
+curl "http://localhost:8000/stash/?apikey=dev-api-key-change-in-production&url=http://localhost:8001/pecha-kucha-vid/view.html&type=auto"
 ```
 
 Your current test files:
 
-- Audio: `http://localhost:8001/01_Eragon_001_of_115.mp3` (4.0 MB)
-- Video: `http://localhost:8001/dji_fly_20250723_094842_13_1753459195176_quickshot.mp4` (53.7 MB)
+- Audio (direct): `http://localhost:8001/pecha-kucha-aud/aud.mp3`
+- Video (direct): `http://localhost:8001/pecha-kucha-vid/vid.mp4`
+- Video (HTML page): `http://localhost:8001/pecha-kucha-vid/view.html` - Example of extracting embedded media from HTML
 
 ### Stash Command
 
 Download media and add it to your podcast feed (same as web interface but runs in foreground):
 
 ```bash
-# Stash a URL
+# Stash a direct media URL
 ./manage.py stash https://example.com/video.mp4
+
+# Stash from HTML page with embedded media (auto-extracts video/audio)
+./manage.py stash http://localhost:8001/pecha-kucha-vid/view.html
 
 # Specify media type (default: auto)
 ./manage.py stash https://example.com/audio.mp3 --type audio
@@ -206,24 +217,24 @@ Download media and add it to your podcast feed (same as web interface but runs i
 ./manage.py stash https://example.com/video.mp4 --json
 ```
 
-This command performs the same pipeline as the web app's `/stash/` endpoint but runs synchronously in the foreground. Files are saved to the configured media directories and added to your podcast feeds.
+This command performs the same pipeline as the web app's `/stash/` endpoint but runs synchronously in the foreground. Supports direct media URLs, yt-dlp compatible URLs, and HTML pages with embedded media. Files are saved to the configured media directories and added to your podcast feeds.
 
 ### Transcode Command
 
 Download and transcode media from URLs or local files to a custom output directory:
 
 ```bash
-# Transcode from a URL
+# Transcode from a direct URL
 ./manage.py transcode https://example.com/video.mp4 --outdir ./output
+
+# Transcode from HTML page with embedded media
+./manage.py transcode http://localhost:8001/pecha-kucha-vid/view.html --outdir ./output
 
 # Transcode from a local file
 ./manage.py transcode /path/to/video.mp4 --outdir ./output
 
 # The output file will be named using a slug generated from the title
 # For example, "My Video.mp4" becomes "my-video.mp4"
-
-# Download only, skip transcoding
-./manage.py transcode https://example.com/audio.mp3 --download-only
 
 # Specify media type (default: auto)
 ./manage.py transcode https://example.com/media --type audio
@@ -235,7 +246,7 @@ Download and transcode media from URLs or local files to a custom output directo
 ./manage.py transcode https://example.com/video.mp4 --json
 ```
 
-This command is for standalone transcoding without adding to podcast feeds.
+This command is for standalone transcoding without adding to podcast feeds. Supports the same URL types as the stash command (direct media, yt-dlp URLs, and HTML pages with embedded media).
 
 ### Summarize Command
 

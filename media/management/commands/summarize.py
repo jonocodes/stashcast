@@ -2,8 +2,8 @@
 Django management command to summarize VTT subtitle files.
 
 Usage:
-    python manage.py summarize /path/to/file.vtt
-    python manage.py summarize http://example.com/subtitles.vtt
+    ./manage.py summarize /path/to/file.vtt
+    ./manage.py summarize http://example.com/subtitles.vtt
 """
 import os
 import re

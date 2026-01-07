@@ -28,6 +28,34 @@ from media.service.config import (
     get_target_video_format
 )
 from media.utils import generate_slug
+import subprocess
+import json
+
+
+def extract_duration(file_path):
+    """
+    Extract duration from media file using ffprobe.
+
+    Returns:
+        int: Duration in seconds, or None if extraction fails
+    """
+    try:
+        result = subprocess.run([
+            'ffprobe',
+            '-v', 'quiet',
+            '-print_format', 'json',
+            '-show_format',
+            str(file_path)
+        ], capture_output=True, text=True, check=True)
+
+        metadata = json.loads(result.stdout)
+
+        if 'format' in metadata and 'duration' in metadata['format']:
+            return int(float(metadata['format']['duration']))
+
+        return None
+    except (subprocess.CalledProcessError, ValueError, KeyError):
+        return None
 
 
 @dataclass
@@ -43,6 +71,7 @@ class TranscodeResult:
     output_path: Path
     transcoded: bool
     file_size: int
+    duration_seconds: Optional[int] = None
     thumbnail_path: Optional[Path] = None
     subtitle_path: Optional[Path] = None
 
@@ -262,6 +291,9 @@ def transcode_url_to_dir(
                 logger=logger
             )
 
+        # Extract duration from output file
+        duration_seconds = extract_duration(output_path)
+
         # Create result
         result = TranscodeResult(
             url=url,
@@ -274,6 +306,7 @@ def transcode_url_to_dir(
             output_path=output_path,
             transcoded=transcoded,
             file_size=output_path.stat().st_size,
+            duration_seconds=duration_seconds,
             thumbnail_path=thumbnail_path,
             subtitle_path=subtitle_path
         )

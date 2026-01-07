@@ -8,16 +8,16 @@ The `transcode` management command downloads and transcodes media from URLs or l
 
 Transcode from a URL:
 ```bash
-python manage.py transcode https://example.com/video.mp4 --outdir ./output
+./manage.py transcode https://example.com/video.mp4 --outdir ./output
 ```
 
 Transcode from a local file path:
 ```bash
 # Video file
-python manage.py transcode demo_data/carpool/vid.mp4 --outdir ./output
+./manage.py transcode demo_data/carpool/vid.mp4 --outdir ./output
 
 # Audio file
-python manage.py transcode /path/to/audio.mp3 --outdir ./output
+./manage.py transcode /path/to/audio.mp3 --outdir ./output
 ```
 
 ### Output Files
@@ -36,31 +36,31 @@ The transcode command creates files with slug-based names:
 
 #### Download only (skip transcoding)
 ```bash
-python manage.py transcode https://example.com/audio.mp3 --download-only
+./manage.py transcode https://example.com/audio.mp3 --download-only
 ```
 
 #### Specify media type
 ```bash
 # Force audio extraction from a video
-python manage.py transcode https://example.com/video.mp4 --type audio
+./manage.py transcode https://example.com/video.mp4 --type audio
 
 # Force video (default is auto-detect)
-python manage.py transcode https://example.com/media --type video
+./manage.py transcode https://example.com/media --type video
 ```
 
 #### Custom output directory
 ```bash
-python manage.py transcode https://example.com/video.mp4 --outdir /tmp/videos
+./manage.py transcode https://example.com/video.mp4 --outdir /tmp/videos
 ```
 
 #### Verbose output
 ```bash
-python manage.py transcode https://example.com/video.mp4 --verbose
+./manage.py transcode https://example.com/video.mp4 --verbose
 ```
 
 #### JSON output
 ```bash
-python manage.py transcode https://example.com/video.mp4 --json
+./manage.py transcode https://example.com/video.mp4 --json
 ```
 
 ### Example Output
@@ -85,12 +85,12 @@ The `summarize` management command generates summaries from VTT subtitle files.
 
 Summarize a local VTT file:
 ```bash
-python manage.py summarize demo_data/carpool/subtitles.vtt
+./manage.py summarize demo_data/carpool/subtitles.vtt
 ```
 
 Summarize a VTT file from a URL:
 ```bash
-python manage.py summarize http://example.com/subtitles.vtt
+./manage.py summarize http://example.com/subtitles.vtt
 ```
 
 ### Options
@@ -98,27 +98,27 @@ python manage.py summarize http://example.com/subtitles.vtt
 #### Custom number of sentences
 ```bash
 # 5-sentence summary
-python manage.py summarize demo_data/carpool/subtitles.vtt --sentences 5
+./manage.py summarize demo_data/carpool/subtitles.vtt --sentences 5
 
 # Single sentence summary
-python manage.py summarize demo_data/carpool/subtitles.vtt --sentences 1
+./manage.py summarize demo_data/carpool/subtitles.vtt --sentences 1
 ```
 
 #### Different algorithms
 ```bash
 # LexRank (default) - graph-based ranking
-python manage.py summarize demo_data/carpool/subtitles.vtt --algorithm lexrank
+./manage.py summarize demo_data/carpool/subtitles.vtt --algorithm lexrank
 
 # TextRank - similar to PageRank
-python manage.py summarize demo_data/carpool/subtitles.vtt --algorithm textrank
+./manage.py summarize demo_data/carpool/subtitles.vtt --algorithm textrank
 
 # Luhn - frequency-based
-python manage.py summarize demo_data/carpool/subtitles.vtt --algorithm luhn
+./manage.py summarize demo_data/carpool/subtitles.vtt --algorithm luhn
 ```
 
 #### Combined options
 ```bash
-python manage.py summarize demo_data/carpool/subtitles.vtt --sentences 5 --algorithm luhn
+./manage.py summarize demo_data/carpool/subtitles.vtt --sentences 5 --algorithm luhn
 ```
 
 ### Example Output
@@ -146,10 +146,10 @@ This makes it easy to find help and resources when you need them.
 
 ```bash
 # Stash audio file
-curl "http://localhost:8000/stash/?apikey=dev-api-key-change-in-production&url=http://localhost:8001/01_Eragon_001_of_115.mp3&type=auto"
+curl "http://localhost:8000/stash/?apikey=dev-api-key-change-in-production&url=http://localhost:8001/pecha-kucha-aud/aud.mp3&type=auto"
 
 # Stash video file
-curl "http://localhost:8000/stash/?apikey=dev-api-key-change-in-production&url=http://localhost:8001/dji_fly_20250723_094842_13_1753459195176_quickshot.mp4&type=auto"
+curl "http://localhost:8000/stash/?apikey=dev-api-key-change-in-production&url=http://localhost:8001/pecha-kucha-vid/vid.mp4&type=auto"
 ```
 
 ### From YouTube (requires yt-dlp)

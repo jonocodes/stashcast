@@ -119,6 +119,19 @@ def _prefetch_direct(url, logger=None):
 
 def _prefetch_ytdlp(url, logger=None):
     """Prefetch metadata using yt-dlp"""
+    # For HTML pages, try HTML extraction first to avoid yt-dlp issues
+    from urllib.parse import urlparse
+    parsed = urlparse(url)
+    is_html_page = parsed.path.lower().endswith(('.html', '.htm'))
+
+    if is_html_page:
+        if logger:
+            logger("Detected HTML page, trying HTML extraction first...")
+        html_result = _prefetch_html(url, logger=logger)
+        if html_result and html_result.extracted_media_url:
+            return html_result
+
+    # Fall back to yt-dlp for non-HTML URLs or if HTML extraction failed
     ydl_opts = {
         'quiet': True,
         'no_warnings': True,
@@ -174,88 +187,25 @@ def _prefetch_html(url, logger=None):
     Looks for <audio>, <video>, and <source> tags.
     """
     try:
-        from bs4 import BeautifulSoup
-        from urllib.parse import urljoin
+        from media.html_extractor import extract_media_from_html_page
 
-        # Fetch the HTML
-        if url.startswith('file://'):
-            # Read from local file
-            file_path = Path(url.replace('file://', ''))
-            with open(file_path, 'r', encoding='utf-8') as f:
-                html_content = f.read()
-            # For file URLs, use the file path as base for relative URLs
-            base_url = url
-        else:
-            # Fetch from HTTP
-            response = requests.get(url, timeout=10)
-            response.raise_for_status()
-            html_content = response.text
-            base_url = url
+        extraction = extract_media_from_html_page(url)
 
-        soup = BeautifulSoup(html_content, 'html.parser')
+        if not extraction['media_url']:
+            raise Exception("No embedded media found in HTML")
 
-        # Look for <audio> tags with src
-        audio_tag = soup.find('audio', src=True)
-        if audio_tag:
-            media_url = urljoin(base_url, audio_tag['src'])
-            if logger:
-                logger(f"Found audio tag: {media_url}")
-            result = PrefetchResult()
-            result.title = "content"
-            result.webpage_url = base_url
-            result.extracted_media_url = media_url
-            result.has_audio_streams = True
-            result.has_video_streams = False
-            return result
+        if logger:
+            media_type_str = "audio" if extraction['media_type'] == 'audio' else "video"
+            logger(f"Found {media_type_str} source: {extraction['media_url']}")
 
-        # Look for <video> tags with src
-        video_tag = soup.find('video', src=True)
-        if video_tag:
-            media_url = urljoin(base_url, video_tag['src'])
-            if logger:
-                logger(f"Found video tag: {media_url}")
-            result = PrefetchResult()
-            result.title = "content"
-            result.webpage_url = base_url
-            result.extracted_media_url = media_url
-            result.has_video_streams = True
-            result.has_audio_streams = True
-            return result
+        result = PrefetchResult()
+        result.title = extraction['title']
+        result.webpage_url = extraction['webpage_url']
+        result.extracted_media_url = extraction['media_url']
+        result.has_audio_streams = extraction['media_type'] == 'audio'
+        result.has_video_streams = extraction['media_type'] == 'video'
 
-        # Look for <source> tags inside <audio>
-        audio_with_source = soup.find('audio')
-        if audio_with_source:
-            source_tag = audio_with_source.find('source', src=True)
-            if source_tag:
-                media_url = urljoin(base_url, source_tag['src'])
-                if logger:
-                    logger(f"Found audio source: {media_url}")
-                result = PrefetchResult()
-                result.title = "content"
-                result.webpage_url = base_url
-                result.extracted_media_url = media_url
-                result.has_audio_streams = True
-                result.has_video_streams = False
-                return result
-
-        # Look for <source> tags inside <video>
-        video_with_source = soup.find('video')
-        if video_with_source:
-            source_tag = video_with_source.find('source', src=True)
-            if source_tag:
-                media_url = urljoin(base_url, source_tag['src'])
-                if logger:
-                    logger(f"Found video source: {media_url}")
-                result = PrefetchResult()
-                result.title = "content"
-                result.webpage_url = base_url
-                result.extracted_media_url = media_url
-                result.has_video_streams = True
-                result.has_audio_streams = True
-                return result
-
-        # No media found
-        raise Exception("No embedded media found in HTML")
+        return result
 
     except Exception as e:
         raise Exception(f"HTML extraction failed: {str(e)}")

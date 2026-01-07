@@ -140,9 +140,12 @@ class Command(BaseCommand):
                 self.stdout.write(f"  Title: {result.title}")
                 self.stdout.write(f"  Slug: {result.slug}")
                 self.stdout.write(f"  Type: {result.resolved_type}")
-                self.stdout.write(f"  Strategy: {result.strategy}")
                 self.stdout.write(f"  Output: {result.output_path}")
                 self.stdout.write(f"  Size: {result.file_size:,} bytes")
+                if result.duration_seconds:
+                    mins = result.duration_seconds // 60
+                    secs = result.duration_seconds % 60
+                    self.stdout.write(f"  Duration: {mins}:{secs:02d}")
                 self.stdout.write(f"  Transcoded: {'Yes' if result.transcoded else 'No'}")
 
                 if result.thumbnail_path:

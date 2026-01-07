@@ -26,7 +26,12 @@ import yt_dlp
 from media.models import MediaItem
 from media.utils import generate_slug, ensure_unique_slug
 from media.service.config import parse_ytdlp_extra_args
-from media.service.process import add_metadata_without_transcode, process_thumbnail, process_subtitle
+from media.service.process import (
+    add_metadata_without_transcode,
+    get_existing_metadata,
+    process_thumbnail,
+    process_subtitle
+)
 from media.service.strategy import choose_download_strategy
 from media.service.resolve import get_media_type_from_extension
 
@@ -90,52 +95,17 @@ def extract_media_from_html(url):
         url: URL of the HTML page
 
     Returns:
-        tuple: (media_url, media_type) or (None, None) if no media found
+        tuple: (media_url, media_type, title) or (None, None, None) if no media found
     """
     try:
-        from bs4 import BeautifulSoup
-        from urllib.parse import urljoin
+        from media.html_extractor import extract_media_from_html_page
 
-        # Fetch the HTML
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()
-
-        soup = BeautifulSoup(response.text, 'html.parser')
-
-        # Look for <audio> tags with src
-        audio_tag = soup.find('audio', src=True)
-        if audio_tag:
-            media_url = urljoin(url, audio_tag['src'])
-            return (media_url, MediaItem.MEDIA_TYPE_AUDIO)
-
-        # Look for <video> tags with src
-        video_tag = soup.find('video', src=True)
-        if video_tag:
-            media_url = urljoin(url, video_tag['src'])
-            return (media_url, MediaItem.MEDIA_TYPE_VIDEO)
-
-        # Look for <source> tags inside <audio>
-        audio_with_source = soup.find('audio')
-        if audio_with_source:
-            source_tag = audio_with_source.find('source', src=True)
-            if source_tag:
-                media_url = urljoin(url, source_tag['src'])
-                return (media_url, MediaItem.MEDIA_TYPE_AUDIO)
-
-        # Look for <source> tags inside <video>
-        video_with_source = soup.find('video')
-        if video_with_source:
-            source_tag = video_with_source.find('source', src=True)
-            if source_tag:
-                media_url = urljoin(url, source_tag['src'])
-                return (media_url, MediaItem.MEDIA_TYPE_VIDEO)
-
-        # No media found
-        return (None, None)
+        result = extract_media_from_html_page(url)
+        return (result['media_url'], result['media_type'], result['title'])
 
     except Exception as e:
         # Return None if extraction fails
-        return (None, None)
+        return (None, None, None)
 
 
 def prefetch_ytdlp(item, tmp_dir, log_path):
@@ -150,6 +120,50 @@ def prefetch_ytdlp(item, tmp_dir, log_path):
         tmp_dir: Temporary directory path (unused, for consistency)
         log_path: Path to log file
     """
+    # For HTML pages, try HTML extraction first to avoid yt-dlp issues
+    from urllib.parse import urlparse
+    parsed = urlparse(item.source_url)
+    is_html_page = parsed.path.lower().endswith(('.html', '.htm'))
+
+    if is_html_page:
+        write_log(log_path, "Detected HTML page, trying HTML extraction first...")
+        media_url, detected_media_type, extracted_title = extract_media_from_html(item.source_url)
+
+        if media_url:
+            # Found embedded media - treat as direct download
+            write_log(log_path, f"Found embedded media: {media_url}")
+
+            # Update the source URL to the extracted media URL
+            original_url = item.source_url
+            item.source_url = media_url
+            item.webpage_url = original_url
+
+            # Determine media type
+            if item.requested_type == MediaItem.REQUESTED_TYPE_AUTO:
+                item.media_type = detected_media_type
+            else:
+                item.media_type = item.requested_type
+
+            # Use extracted title from HTML
+            item.title = extracted_title
+
+            # Generate slug
+            existing = MediaItem.objects.filter(webpage_url=original_url, media_type=item.media_type).exclude(guid=item.guid).first()
+            slug = generate_slug(item.title)
+            item.slug = ensure_unique_slug(slug, original_url, existing, item.media_type)
+
+            # Set log path (relative) - will be in final directory after move
+            item.log_path = 'download.log'
+
+            item.save()
+            write_log(log_path, f"HTML extractor found media: {media_url}")
+            write_log(log_path, f"Original page: {original_url}")
+            write_log(log_path, f"Title: {item.title}")
+            write_log(log_path, f"Media type: {item.media_type}")
+            write_log(log_path, f"Slug: {item.slug}")
+            return  # Early return - don't use yt-dlp
+
+    # Fall back to yt-dlp for non-HTML URLs or if HTML extraction failed
     ydl_opts = {
         'quiet': True,
         'no_warnings': True,
@@ -210,7 +224,7 @@ def prefetch_ytdlp(item, tmp_dir, log_path):
         write_log(log_path, f"yt-dlp extraction failed: {str(e)}")
         write_log(log_path, "Attempting to extract media from HTML...")
 
-        media_url, detected_media_type = extract_media_from_html(item.source_url)
+        media_url, detected_media_type, extracted_title = extract_media_from_html(item.source_url)
 
         if media_url:
             # Found embedded media - treat as direct download
@@ -227,10 +241,8 @@ def prefetch_ytdlp(item, tmp_dir, log_path):
             else:
                 item.media_type = item.requested_type
 
-            # Use the original page URL for title/slug generation
-            parsed = urlparse(original_url)
-            page_title = Path(parsed.path).stem or "embedded-media"
-            item.title = page_title
+            # Use extracted title from HTML
+            item.title = extracted_title
 
             # Generate slug
             existing = MediaItem.objects.filter(webpage_url=original_url, media_type=item.media_type).exclude(guid=item.guid).first()
@@ -290,11 +302,13 @@ def extract_metadata_with_ffprobe(item, file_path, log_path):
             tags = metadata['format']['tags']
 
             # Title (try various tag names)
-            for tag_name in ['title', 'Title', 'TITLE']:
-                if tag_name in tags:
-                    item.title = tags[tag_name]
-                    write_log(log_path, f"Title: {item.title}")
-                    break
+            # Only update title if webpage_url is not set (i.e., not extracted from HTML)
+            if not item.webpage_url:
+                for tag_name in ['title', 'Title', 'TITLE']:
+                    if tag_name in tags:
+                        item.title = tags[tag_name]
+                        write_log(log_path, f"Title: {item.title}")
+                        break
 
             # Artist/Author (try various tag names)
             for tag_name in ['artist', 'Artist', 'ARTIST', 'author', 'Author']:
@@ -386,11 +400,14 @@ def download_ytdlp(item, tmp_dir, log_path):
         log_path: Path to log file
     """
     # Prepare yt-dlp options
+    # Use simpler format specs that work better with HTML extraction
+    # These fallback to 'best' which works with generic HTML5 video/audio elements
     if item.media_type == MediaItem.MEDIA_TYPE_AUDIO:
         format_spec = 'bestaudio/best'
         ytdlp_args = settings.STASHCAST_DEFAULT_YTDLP_ARGS_AUDIO
     else:
-        format_spec = 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best'
+        # More lenient format spec that falls back gracefully for HTML extraction
+        format_spec = 'bestvideo+bestaudio/best'
         ytdlp_args = settings.STASHCAST_DEFAULT_YTDLP_ARGS_VIDEO
 
     # Download directly to tmp directory
@@ -480,6 +497,27 @@ def process_files(item, tmp_dir, log_path):
     if item.content_path:
         content_file = tmp_dir / item.content_path
         if content_file.exists():
+            # If title is still a generic fallback, try to read from media metadata
+            if item.title in ('content', 'downloaded-media', 'untitled', None):
+                media_meta = get_existing_metadata(content_file)
+                meta_title = media_meta.get('title')
+                if meta_title:
+                    item.title = meta_title
+                    write_log(log_path, f"Updated title from media metadata: {meta_title}")
+                else:
+                    filename_title = content_file.stem
+                    if filename_title:
+                        item.title = filename_title
+                        write_log(log_path, f"Updated title from filename: {filename_title}")
+
+                # Update slug to match the resolved title
+                if item.title:
+                    new_slug = generate_slug(item.title)
+                    if new_slug and new_slug != item.slug:
+                        item.slug = ensure_unique_slug(new_slug, item.source_url, None, item.media_type)
+                        write_log(log_path, f"Updated slug: {item.slug}")
+                item.save()
+
             # Create metadata dict
             metadata = {}
             if item.title:

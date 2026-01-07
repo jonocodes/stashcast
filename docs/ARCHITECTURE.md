@@ -331,7 +331,7 @@ def generate_summary(guid):
 CLI command for foreground stashing (no Huey):
 
 ```python
-python manage.py stash <url> [--type auto|audio|video] [--verbose] [--json]
+./manage.py stash <url> [--type auto|audio|video] [--verbose] [--json]
 ```
 
 **Features**:
@@ -378,7 +378,7 @@ sequenceDiagram
     participant Process as process.py
     participant Disk as File System
 
-    User->>CLI: python manage.py transcode <url>
+    User->>CLI: ./manage.py transcode <url>
     CLI->>TS: transcode_url(url, outdir, type)
     TS->>Strat: choose_download_strategy(url)
     Strat-->>TS: 'direct' | 'ytdlp' | 'file'
@@ -648,16 +648,16 @@ The architecture is designed to support:
 
 ```bash
 # All tests (165 total: 121 service + 44 app)
-python manage.py test media
+./manage.py test media
 
 # Service layer only (121 tests)
-python manage.py test media.test_service
+./manage.py test media.test_service
 
 # App integration tests only (44 tests)
-python manage.py test media.tests
+./manage.py test media.tests
 
 # Parallel execution for faster results
-python manage.py test media --parallel
+./manage.py test media --parallel
 ```
 
 ### Adding New Features

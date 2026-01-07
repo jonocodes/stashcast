@@ -212,20 +212,21 @@ class Command(BaseCommand):
                 }
                 self.stdout.write(json.dumps(result, indent=2))
             else:
-                self.stdout.write(self.style.SUCCESS(f"\n✓ Successfully stashed: {item.title}"))
-                self.stdout.write(f"  GUID: {item.guid}")
+                self.stdout.write(self.style.SUCCESS("✓ Stash complete"))
+                self.stdout.write(f"  URL: {url}")
+                self.stdout.write(f"  Title: {item.title}")
                 self.stdout.write(f"  Slug: {item.slug}")
                 self.stdout.write(f"  Type: {item.media_type}")
-                self.stdout.write(f"  Directory: {final_dir}")
+                self.stdout.write(f"  GUID: {item.guid}")
                 if item.content_path:
-                    self.stdout.write(f"  Content: {item.get_absolute_content_path()}")
+                    self.stdout.write(f"  Output: {item.get_absolute_content_path()}")
                 if item.file_size:
-                    size_mb = item.file_size / (1024 * 1024)
-                    self.stdout.write(f"  Size: {size_mb:.1f} MB")
+                    self.stdout.write(f"  Size: {item.file_size:,} bytes")
                 if item.duration_seconds:
                     mins = item.duration_seconds // 60
                     secs = item.duration_seconds % 60
                     self.stdout.write(f"  Duration: {mins}:{secs:02d}")
+                self.stdout.write(f"  Directory: {final_dir}")
 
         except Exception as e:
             # ERROR
