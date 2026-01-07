@@ -1,10 +1,10 @@
-from django.conf import settings
 from django.contrib.syndication.views import Feed
 from django.templatetags.static import static
 from django.utils import timezone
 from django.utils.feedgenerator import Rss201rev2Feed
 
 from media.models import MediaItem
+from media.utils import build_media_url
 
 
 class StashcastRSSFeed(Rss201rev2Feed):
@@ -150,10 +150,6 @@ class BaseFeed(Feed):
             extra['media_content'] = media_content
         return extra
 
-    def _relative_media_path(self, item, filename):
-        """Build relative path under MEDIA_ROOT for the given filename."""
-        return item.get_relative_path(filename)
-
     def _media_content(self, item):
         """Return media:content dict with medium/type/url for podcast clients."""
         enclosure_url = self.item_enclosure_url(item)
@@ -167,14 +163,43 @@ class BaseFeed(Feed):
 
     def _thumbnail_url(self, item):
         """Return absolute thumbnail URL for an item, if available."""
-        rel_path = self._relative_media_path(item, item.thumbnail_path)
-        if not rel_path:
-            return None
+        return build_media_url(item, item.thumbnail_path, absolute_builder=self.absolute_url)
 
-        if settings.STASHCAST_MEDIA_BASE_URL:
-            return f'{settings.STASHCAST_MEDIA_BASE_URL.rstrip("/")}/{rel_path}'
+    def item_title(self, item):
+        return item.title
 
-        return self.absolute_url(f'/media/files/{rel_path}')
+    def item_description(self, item):
+        if item.summary:
+            return f'{item.summary}\n\n{item.description}'
+        return item.description
+
+    def item_link(self, item):
+        return self.absolute_url(f'/admin/tools/item/{item.guid}/')
+
+    def item_guid(self, item):
+        return item.guid
+
+    def item_pubdate(self, item):
+        return item.publish_date or item.downloaded_at
+
+    def item_author_name(self, item):
+        return item.author
+
+    def item_enclosure_url(self, item):
+        url = build_media_url(item, item.content_path, absolute_builder=self.absolute_url)
+        return url or ''
+
+    def item_enclosure_length(self, item):
+        return item.file_size or 0
+
+    def item_enclosure_mime_type(self, item):
+        if item.mime_type:
+            return item.mime_type
+        if item.media_type == MediaItem.MEDIA_TYPE_AUDIO:
+            return 'audio/mp4'
+        if item.media_type == MediaItem.MEDIA_TYPE_VIDEO:
+            return 'video/mp4'
+        return 'application/octet-stream'
 
 
 class AudioFeed(BaseFeed):
@@ -193,40 +218,6 @@ class AudioFeed(BaseFeed):
             media_type=MediaItem.MEDIA_TYPE_AUDIO, status=MediaItem.STATUS_READY
         )
 
-    def item_title(self, item):
-        return item.title
-
-    def item_description(self, item):
-        if item.summary:
-            return f'{item.summary}\n\n{item.description}'
-        return item.description
-
-    def item_link(self, item):
-        return self.absolute_url(f'/admin/tools/item/{item.guid}/')
-
-    def item_guid(self, item):
-        return item.guid
-
-    def item_pubdate(self, item):
-        return item.publish_date or item.downloaded_at
-
-    def item_author_name(self, item):
-        return item.author
-
-    def item_enclosure_url(self, item):
-        rel_path = self._relative_media_path(item, item.content_path)
-        if not rel_path:
-            return ''
-        if settings.STASHCAST_MEDIA_BASE_URL:
-            return f'{settings.STASHCAST_MEDIA_BASE_URL.rstrip("/")}/{rel_path}'
-        return self.absolute_url(f'/media/files/{rel_path}')
-
-    def item_enclosure_length(self, item):
-        return item.file_size or 0
-
-    def item_enclosure_mime_type(self, item):
-        return item.mime_type or 'audio/mp4'
-
 
 class VideoFeed(BaseFeed):
     """Podcast feed for video items"""
@@ -244,40 +235,6 @@ class VideoFeed(BaseFeed):
             media_type=MediaItem.MEDIA_TYPE_VIDEO, status=MediaItem.STATUS_READY
         )
 
-    def item_title(self, item):
-        return item.title
-
-    def item_description(self, item):
-        if item.summary:
-            return f'{item.summary}\n\n{item.description}'
-        return item.description
-
-    def item_link(self, item):
-        return self.absolute_url(f'/admin/tools/item/{item.guid}/')
-
-    def item_guid(self, item):
-        return item.guid
-
-    def item_pubdate(self, item):
-        return item.publish_date or item.downloaded_at
-
-    def item_author_name(self, item):
-        return item.author
-
-    def item_enclosure_url(self, item):
-        rel_path = self._relative_media_path(item, item.content_path)
-        if not rel_path:
-            return ''
-        if settings.STASHCAST_MEDIA_BASE_URL:
-            return f'{settings.STASHCAST_MEDIA_BASE_URL.rstrip("/")}/{rel_path}'
-        return self.absolute_url(f'/media/files/{rel_path}')
-
-    def item_enclosure_length(self, item):
-        return item.file_size or 0
-
-    def item_enclosure_mime_type(self, item):
-        return item.mime_type or 'video/mp4'
-
 
 class CombinedFeed(BaseFeed):
     """Podcast feed for all media items (audio and video)"""
@@ -289,40 +246,3 @@ class CombinedFeed(BaseFeed):
 
     def items(self):
         return self.get_queryset().order_by('-publish_date', '-downloaded_at')[:100]
-
-    def item_title(self, item):
-        return item.title
-
-    def item_description(self, item):
-        if item.summary:
-            return f'{item.summary}\n\n{item.description}'
-        return item.description
-
-    def item_link(self, item):
-        return self.absolute_url(f'/admin/tools/item/{item.guid}/')
-
-    def item_guid(self, item):
-        return item.guid
-
-    def item_pubdate(self, item):
-        return item.publish_date or item.downloaded_at
-
-    def item_author_name(self, item):
-        return item.author
-
-    def item_enclosure_url(self, item):
-        rel_path = self._relative_media_path(item, item.content_path)
-        if not rel_path:
-            return ''
-        if settings.STASHCAST_MEDIA_BASE_URL:
-            return f'{settings.STASHCAST_MEDIA_BASE_URL.rstrip("/")}/{rel_path}'
-        return self.absolute_url(f'/media/files/{rel_path}')
-
-    def item_enclosure_length(self, item):
-        return item.file_size or 0
-
-    def item_enclosure_mime_type(self, item):
-        if item.media_type == MediaItem.MEDIA_TYPE_AUDIO:
-            return item.mime_type or 'audio/mp4'
-        else:
-            return item.mime_type or 'video/mp4'

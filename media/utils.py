@@ -80,3 +80,60 @@ def ensure_unique_slug(slug, source_url, existing_item=None, media_type=None):
         new_slug = f'{slug}-{nano_suffix}'
         if not MediaItem.objects.filter(slug=new_slug).exists():
             return new_slug
+
+
+def build_media_url(item, filename, request=None, absolute_builder=None):
+    """
+    Build a media URL for a file, honoring STASHCAST_MEDIA_BASE_URL when set.
+
+    Args:
+        item: MediaItem instance
+        filename: Path relative to the item directory (e.g., 'content.mp4')
+        request: Optional Django request for absolute URL building
+        absolute_builder: Optional callable for absolute URLs (e.g., feed absolute_url)
+
+    Returns:
+        str | None
+    """
+    rel_path = item.get_relative_path(filename)
+    if not rel_path:
+        return None
+
+    base_url = settings.STASHCAST_MEDIA_BASE_URL
+    if base_url:
+        return f'{base_url.rstrip("/")}/{rel_path}'
+
+    url = f'/media/files/{rel_path}'
+    if absolute_builder:
+        return absolute_builder(url)
+    if request:
+        return request.build_absolute_uri(url)
+    return url
+
+
+def select_existing_item(source_url, webpage_url, media_type, exclude_guid=None):
+    """
+    Locate an existing MediaItem for slug reuse.
+
+    Prefers webpage_url match when available (HTML extraction flow).
+    """
+    from media.models import MediaItem
+
+    if webpage_url:
+        qs = MediaItem.objects.filter(webpage_url=webpage_url, media_type=media_type)
+    else:
+        qs = MediaItem.objects.filter(source_url=source_url, media_type=media_type)
+
+    if exclude_guid:
+        qs = qs.exclude(guid=exclude_guid)
+
+    return qs.first()
+
+
+def log_prefetch_result(log_fn, item):
+    """Log key prefetch fields consistently."""
+    log_fn(f'Title: {item.title}')
+    log_fn(f'Media type: {item.media_type}')
+    log_fn(f'Slug: {item.slug}')
+    if item.duration_seconds:
+        log_fn(f'Duration: {item.duration_seconds}s')

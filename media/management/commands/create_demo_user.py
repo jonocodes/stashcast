@@ -8,13 +8,6 @@ from django.core.management.base import BaseCommand, CommandError
 class Command(BaseCommand):
     help = 'Create or update a demo admin user from env vars (DEMO_PASSWORD required).'
 
-    def add_arguments(self, parser):
-        parser.add_argument(
-            '--grant-view-perms',
-            action='store_true',
-            help='Grant the demo group all view_* permissions for installed models.',
-        )
-
     def handle(self, *args, **options):
         username = os.getenv('DEMO_USERNAME', 'demo')
         email = os.getenv('DEMO_EMAIL', '')
@@ -48,18 +41,10 @@ class Command(BaseCommand):
         group, _ = Group.objects.get_or_create(name=group_name)
         user.groups.add(group)
 
-        if options['grant_view_perms']:
-            self._grant_all_view_perms(group)
+        view_perms = Permission.objects.filter(codename__startswith='view_')
+        group.permissions.add(*view_perms)
 
         action = 'Created' if created else 'Updated'
         self.stdout.write(
             self.style.SUCCESS(f"{action} demo user '{username}' and ensured group '{group_name}'.")
         )
-
-    def _grant_all_view_perms(self, group: Group) -> None:
-        """
-        Grants all view_* permissions (for all content types) to the given group.
-        Safe to run repeatedly.
-        """
-        view_perms = Permission.objects.filter(codename__startswith='view_')
-        group.permissions.add(*view_perms)

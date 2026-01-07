@@ -153,11 +153,12 @@ class DownloadProcessingTest(TestCase):
 
             item.refresh_from_db()
             self.assertEqual(item.content_path, 'content.mp3')
-            self.assertEqual(item.file_size, content_path.stat().st_size)
+            # File has been moved/renamed to content.mp3
+            self.assertEqual(item.file_size, (tmp_dir / 'content.mp3').stat().st_size)
             self.assertTrue((tmp_dir / 'thumbnail_temp.jpg').exists())
             self.assertTrue((tmp_dir / 'subtitles_temp.vtt').exists())
 
-    @patch('media.processing.get_title_from_metadata', return_value='Real Title')
+    @patch('media.processing.resolve_title_from_metadata', return_value='Real Title')
     @patch('media.processing.add_metadata_without_transcode')
     def test_process_files_updates_title_and_slug(self, mock_add_metadata, _mock_title):
         from pathlib import Path
@@ -708,7 +709,7 @@ class HTMLMediaExtractorTest(TestCase):
         from unittest.mock import Mock, patch
 
         from media.models import MediaItem
-        from media.processing import extract_media_from_html
+        from media.html_extractor import extract_media_from_html_page
 
         html = """
         <!DOCTYPE html>
@@ -725,7 +726,12 @@ class HTMLMediaExtractorTest(TestCase):
         mock_response.raise_for_status = Mock()
 
         with patch('media.html_extractor.requests.get', return_value=mock_response):
-            media_url, media_type, title = extract_media_from_html('https://example.com/page.html')
+            result = extract_media_from_html_page('https://example.com/page.html')
+            media_url, media_type, _title = (
+                result['media_url'],
+                result['media_type'],
+                result['title'],
+            )
 
         self.assertEqual(media_url, 'https://example.com/media/audio.mp3')
         self.assertEqual(media_type, MediaItem.MEDIA_TYPE_AUDIO)
@@ -735,7 +741,7 @@ class HTMLMediaExtractorTest(TestCase):
         from unittest.mock import Mock, patch
 
         from media.models import MediaItem
-        from media.processing import extract_media_from_html
+        from media.html_extractor import extract_media_from_html_page
 
         html = """
         <!DOCTYPE html>
@@ -752,7 +758,12 @@ class HTMLMediaExtractorTest(TestCase):
         mock_response.raise_for_status = Mock()
 
         with patch('media.html_extractor.requests.get', return_value=mock_response):
-            media_url, media_type, title = extract_media_from_html('https://example.com/page.html')
+            result = extract_media_from_html_page('https://example.com/page.html')
+            media_url, media_type, _title = (
+                result['media_url'],
+                result['media_type'],
+                result['title'],
+            )
 
         self.assertEqual(media_url, 'https://example.com/media/video.mp4')
         self.assertEqual(media_type, MediaItem.MEDIA_TYPE_VIDEO)
@@ -762,7 +773,7 @@ class HTMLMediaExtractorTest(TestCase):
         from unittest.mock import Mock, patch
 
         from media.models import MediaItem
-        from media.processing import extract_media_from_html
+        from media.html_extractor import extract_media_from_html_page
 
         html = """
         <!DOCTYPE html>
@@ -780,7 +791,12 @@ class HTMLMediaExtractorTest(TestCase):
         mock_response.raise_for_status = Mock()
 
         with patch('media.html_extractor.requests.get', return_value=mock_response):
-            media_url, media_type, title = extract_media_from_html('https://example.com/page.html')
+            result = extract_media_from_html_page('https://example.com/page.html')
+            media_url, media_type, _title = (
+                result['media_url'],
+                result['media_type'],
+                result['title'],
+            )
 
         self.assertEqual(media_url, 'https://cdn.example.com/audio.mp3')
         self.assertEqual(media_type, MediaItem.MEDIA_TYPE_AUDIO)
@@ -789,7 +805,7 @@ class HTMLMediaExtractorTest(TestCase):
         """Test when no media is found in HTML"""
         from unittest.mock import Mock, patch
 
-        from media.processing import extract_media_from_html
+        from media.html_extractor import extract_media_from_html_page
 
         html = """
         <!DOCTYPE html>
@@ -805,7 +821,12 @@ class HTMLMediaExtractorTest(TestCase):
         mock_response.raise_for_status = Mock()
 
         with patch('media.html_extractor.requests.get', return_value=mock_response):
-            media_url, media_type, title = extract_media_from_html('https://example.com/page.html')
+            result = extract_media_from_html_page('https://example.com/page.html')
+            media_url, media_type, title = (
+                result['media_url'],
+                result['media_type'],
+                result['title'],
+            )
 
         self.assertIsNone(media_url)
         self.assertIsNone(media_type)

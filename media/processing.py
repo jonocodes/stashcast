@@ -30,13 +30,17 @@ from media.service.process import (
     process_subtitle,
     process_thumbnail,
 )
-from media.service.media_info import extract_ffprobe_metadata, get_title_from_metadata
+from media.service.media_info import (
+    extract_ffprobe_metadata,
+    get_output_extension,
+    resolve_title_from_metadata,
+)
 from media.service.resolve import (
     PlaylistNotSupported,
     prefetch as service_prefetch,
     resolve_media_type,
 )
-from media.utils import ensure_unique_slug, generate_slug
+from media.utils import ensure_unique_slug, generate_slug, log_prefetch_result, select_existing_item
 
 
 def write_log(log_path, message):
@@ -73,31 +77,20 @@ def _apply_prefetch_result(item, result, log_path):
 
     item.media_type = resolve_media_type(item.requested_type, result)
 
-    if original_url:
-        existing_item = (
-            MediaItem.objects.filter(webpage_url=original_url, media_type=item.media_type)
-            .exclude(guid=item.guid)
-            .first()
-        )
-        slug_source = original_url
-    else:
-        existing_item = (
-            MediaItem.objects.filter(source_url=item.source_url, media_type=item.media_type)
-            .exclude(guid=item.guid)
-            .first()
-        )
-        slug_source = item.source_url
+    existing_item = select_existing_item(
+        item.source_url,
+        original_url,
+        item.media_type,
+        exclude_guid=item.guid,
+    )
+    slug_source = original_url or item.source_url
 
     slug = generate_slug(item.title)
     item.slug = ensure_unique_slug(slug, slug_source, existing_item, item.media_type)
     item.log_path = 'download.log'
     item.save()
 
-    write_log(log_path, f'Title: {item.title}')
-    write_log(log_path, f'Media type: {item.media_type}')
-    write_log(log_path, f'Slug: {item.slug}')
-    if item.duration_seconds:
-        write_log(log_path, f'Duration: {item.duration_seconds}s')
+    log_prefetch_result(lambda m: write_log(log_path, m), item)
 
     return original_url
 
@@ -136,30 +129,6 @@ def prefetch_file(item, tmp_dir, log_path):
         log_path: Path to log file
     """
     _prefetch_with_strategy(item, 'file', log_path)
-
-
-def extract_media_from_html(url):
-    """
-    Extract embedded media URL from an HTML page.
-
-    This is a fallback for pages that yt-dlp doesn't recognize.
-    Looks for <audio>, <video>, and <source> tags.
-
-    Args:
-        url: URL of the HTML page
-
-    Returns:
-        tuple: (media_url, media_type, title) or (None, None, None) if no media found
-    """
-    try:
-        from media.html_extractor import extract_media_from_html_page
-
-        result = extract_media_from_html_page(url)
-        return (result['media_url'], result['media_type'], result['title'])
-
-    except Exception:
-        # Return None if extraction fails
-        return (None, None, None)
 
 
 def prefetch_ytdlp(item, tmp_dir, log_path):
@@ -238,10 +207,8 @@ def download_direct(item, tmp_dir, log_path):
     parsed = urlparse(item.source_url)
     ext = Path(parsed.path).suffix or '.mp4'
 
-    if item.media_type == MediaItem.MEDIA_TYPE_AUDIO:
-        content_file = 'content.mp3' if ext == '.mp3' else 'content.m4a'
-    else:
-        content_file = 'content.mp4'
+    content_ext = get_output_extension(item.media_type, ext)
+    content_file = f'content{content_ext}'
 
     content_path = tmp_dir / content_file
 
@@ -272,6 +239,34 @@ def download_direct(item, tmp_dir, log_path):
         write_log(log_path, f'Could not extract metadata: {e}')
 
 
+def _apply_download_info(item, tmp_dir, download_info, log_path):
+    """Normalize download outputs into fixed filenames and item fields."""
+    content_ext = get_output_extension(item.media_type, download_info.extension)
+    content_file = f'content{content_ext}'
+
+    dest = tmp_dir / content_file
+    shutil.move(str(download_info.path), str(dest))
+    item.content_path = content_file
+    item.file_size = dest.stat().st_size
+    write_log(log_path, f'Content renamed to: {content_file} ({item.file_size} bytes)')
+
+    if download_info.thumbnail_path:
+        thumb_dest = tmp_dir / f'thumbnail_temp{download_info.thumbnail_path.suffix}'
+        shutil.move(str(download_info.thumbnail_path), str(thumb_dest))
+        write_log(
+            log_path, f'Thumbnail renamed to: thumbnail_temp{download_info.thumbnail_path.suffix}'
+        )
+
+    if download_info.subtitle_path:
+        sub_dest = tmp_dir / f'subtitles_temp{download_info.subtitle_path.suffix}'
+        shutil.move(str(download_info.subtitle_path), str(sub_dest))
+        write_log(
+            log_path, f'Subtitles renamed to: subtitles_temp{download_info.subtitle_path.suffix}'
+        )
+
+    item.save()
+
+
 def download_ytdlp(item, tmp_dir, log_path):
     """
     Download media using yt-dlp.
@@ -298,32 +293,7 @@ def download_ytdlp(item, tmp_dir, log_path):
         logger=lambda msg: write_log(log_path, msg),
     )
 
-    if item.media_type == MediaItem.MEDIA_TYPE_AUDIO:
-        content_file = 'content.mp3' if download_info.extension == '.mp3' else 'content.m4a'
-    else:
-        content_file = 'content.mp4'
-
-    dest = tmp_dir / content_file
-    shutil.move(str(download_info.path), str(dest))
-    item.content_path = content_file
-    item.file_size = dest.stat().st_size
-    write_log(log_path, f'Content renamed to: {content_file} ({item.file_size} bytes)')
-
-    if download_info.thumbnail_path:
-        thumb_dest = tmp_dir / f'thumbnail_temp{download_info.thumbnail_path.suffix}'
-        shutil.move(str(download_info.thumbnail_path), str(thumb_dest))
-        write_log(
-            log_path, f'Thumbnail renamed to: thumbnail_temp{download_info.thumbnail_path.suffix}'
-        )
-
-    if download_info.subtitle_path:
-        sub_dest = tmp_dir / f'subtitles_temp{download_info.subtitle_path.suffix}'
-        shutil.move(str(download_info.subtitle_path), str(sub_dest))
-        write_log(
-            log_path, f'Subtitles renamed to: subtitles_temp{download_info.subtitle_path.suffix}'
-        )
-
-    item.save()
+    _apply_download_info(item, tmp_dir, download_info, log_path)
 
 
 def process_files(item, tmp_dir, log_path):
@@ -347,16 +317,21 @@ def process_files(item, tmp_dir, log_path):
         content_file = tmp_dir / item.content_path
         if content_file.exists():
             # If title is still a generic fallback, try to read from media metadata
-            if item.title in ('content', 'downloaded-media', 'untitled', None):
-                meta_title = get_title_from_metadata(content_file)
-                if meta_title:
-                    item.title = meta_title
-                    write_log(log_path, f'Updated title from media metadata: {meta_title}')
-                else:
-                    filename_title = content_file.stem
-                    if filename_title:
-                        item.title = filename_title
-                        write_log(log_path, f'Updated title from filename: {filename_title}')
+            resolved_title = resolve_title_from_metadata(item.title, content_file)
+            if resolved_title and resolved_title != item.title:
+                item.title = resolved_title
+                write_log(log_path, f'Updated title from media metadata: {resolved_title}')
+                # Update slug to match the resolved title
+                new_slug = generate_slug(item.title)
+                if new_slug and new_slug != item.slug:
+                    item.slug = ensure_unique_slug(new_slug, item.source_url, None, item.media_type)
+                    write_log(log_path, f'Updated slug: {item.slug}')
+                item.save()
+            elif item.title in ('content', 'downloaded-media', 'untitled', None):
+                filename_title = content_file.stem
+                if filename_title:
+                    item.title = filename_title
+                    write_log(log_path, f'Updated title from filename: {filename_title}')
 
                 # Update slug to match the resolved title
                 if item.title:

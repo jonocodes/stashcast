@@ -292,9 +292,6 @@ def prefetch_file(item, tmp_dir, log_path):
 def prefetch_ytdlp(item, tmp_dir, log_path):
     """Prefetch metadata using yt-dlp - updates MediaItem"""
 
-def extract_media_from_html(url):
-    """Extract embedded media URL from HTML (fallback for yt-dlp)"""
-
 def extract_metadata_with_ffprobe(item, file_path, log_path):
     """Extract metadata from media file using ffprobe"""
 

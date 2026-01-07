@@ -4,14 +4,15 @@ Tests for service/transcode_service.py
 Integration tests for the main transcode service entrypoint.
 """
 
-from django.test import TestCase
-from unittest.mock import patch
-from pathlib import Path
-import tempfile
 import io
+import tempfile
+from pathlib import Path
+from unittest.mock import patch
 
-from media.service.transcode_service import transcode_url_to_dir, TranscodeResult
+from django.test import TestCase
+
 from media.service.resolve import PlaylistNotSupported
+from media.service.transcode_service import TranscodeResult, transcode_url_to_dir
 
 
 class TranscodeServiceTest(TestCase):
@@ -76,7 +77,9 @@ class TranscodeServiceTest(TestCase):
 
         with tempfile.TemporaryDirectory() as temp_dir:
             result = transcode_url_to_dir(
-                url='https://example.com/audio.mp3', outdir=temp_dir, requested_type='auto'
+                url='https://example.com/audio.mp3',
+                outdir=temp_dir,
+                requested_type='auto',
             )
 
             # Verify result
@@ -86,7 +89,10 @@ class TranscodeServiceTest(TestCase):
             self.assertTrue(result.output_path.exists())
             self.assertEqual(result.output_path.name, 'test-audio.mp3')
 
-    @patch('media.service.transcode_service.get_title_from_metadata', return_value='Real Title')
+    @patch(
+        'media.service.transcode_service.resolve_title_from_metadata',
+        return_value='Real Title',
+    )
     @patch('media.service.transcode_service.add_metadata_without_transcode')
     @patch('media.service.transcode_service.needs_transcode', return_value=False)
     @patch('media.service.transcode_service.download_direct')
@@ -133,7 +139,9 @@ class TranscodeServiceTest(TestCase):
 
         with tempfile.TemporaryDirectory() as temp_dir:
             result = transcode_url_to_dir(
-                url='https://example.com/audio.mp3', outdir=temp_dir, requested_type='auto'
+                url='https://example.com/audio.mp3',
+                outdir=temp_dir,
+                requested_type='auto',
             )
 
             self.assertEqual(result.title, 'Real Title')
@@ -185,7 +193,12 @@ class TranscodeServiceTest(TestCase):
     @patch('media.service.transcode_service.prefetch')
     @patch('media.service.transcode_service.choose_download_strategy')
     def test_transcode_ogg_to_m4a(
-        self, mock_strategy, mock_prefetch, mock_download, mock_needs_transcode, mock_transcode
+        self,
+        mock_strategy,
+        mock_prefetch,
+        mock_download,
+        mock_needs_transcode,
+        mock_transcode,
     ):
         """Test OGG audio transcoding to M4A"""
         mock_strategy.return_value = 'direct'
@@ -298,7 +311,10 @@ class TranscodeServiceTest(TestCase):
             from media.service.download import DownloadedFileInfo
 
             return DownloadedFileInfo(
-                path=content_file, file_size=5, extension='.mp4', thumbnail_path=thumb_file
+                path=content_file,
+                file_size=5,
+                extension='.mp4',
+                thumbnail_path=thumb_file,
             )
 
         mock_download_ytdlp.side_effect = mock_ytdlp_download_func
@@ -414,7 +430,9 @@ class TranscodeServiceTest(TestCase):
                         with self._suppress_stdout():
                             # This should pass logger to download functions
                             transcode_url_to_dir(
-                                url='https://example.com/audio.mp3', outdir=temp_dir, verbose=True
+                                url='https://example.com/audio.mp3',
+                                outdir=temp_dir,
+                                verbose=True,
                             )
 
     @patch('media.service.transcode_service.needs_transcode')

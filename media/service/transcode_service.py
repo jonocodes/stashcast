@@ -14,7 +14,11 @@ import shutil
 
 from media.service.strategy import choose_download_strategy
 from media.service.resolve import prefetch, resolve_media_type
-from media.service.media_info import extract_ffprobe_metadata, get_title_from_metadata
+from media.service.media_info import (
+    extract_ffprobe_metadata,
+    get_output_extension,
+    resolve_title_from_metadata,
+)
 from media.service.download import download_direct, download_ytdlp, download_file
 from media.service.process import (
     needs_transcode,
@@ -192,13 +196,12 @@ def transcode_url_to_dir(
         logger(f'Downloaded: {download_info.path} ({download_info.file_size} bytes)')
 
         # If the title is still generic, try to use embedded media metadata
-        if prefetch_result.title in ('content', 'downloaded-media', 'untitled'):
-            meta_title = get_title_from_metadata(download_info.path)
-            if meta_title:
-                prefetch_result.title = meta_title
-                slug = generate_slug(prefetch_result.title)
-                logger(f'Updated title from metadata: {prefetch_result.title}')
-                logger(f'Updated slug: {slug}')
+        resolved_title = resolve_title_from_metadata(prefetch_result.title, download_info.path)
+        if resolved_title and resolved_title != prefetch_result.title:
+            prefetch_result.title = resolved_title
+            slug = generate_slug(prefetch_result.title)
+            logger(f'Updated title from metadata: {prefetch_result.title}')
+            logger(f'Updated slug: {slug}')
 
         # Determine output filename using slug
         if download_only:
@@ -243,13 +246,7 @@ def transcode_url_to_dir(
 
                 # For audio: prefer .mp3 if that's what we have, otherwise .m4a
                 # For video: use .mp4
-                if resolved_type == 'audio':
-                    if download_info.extension == '.mp3':
-                        output_ext = '.mp3'
-                    else:
-                        output_ext = get_target_audio_format()
-                else:
-                    output_ext = get_target_video_format()
+                output_ext = get_output_extension(resolved_type, download_info.extension)
 
                 output_path = outdir / f'{slug}{output_ext}'
 

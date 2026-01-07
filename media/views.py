@@ -11,21 +11,12 @@ from django.views.decorators.http import require_http_methods
 
 from media.models import MediaItem
 from media.tasks import process_media
+from media.utils import build_media_url
 
 
 def _build_media_url(item, filename, request=None):
     """Build absolute or relative URL for a media file."""
-    rel_path = item.get_relative_path(filename)
-    if not rel_path:
-        return None
-
-    if settings.STASHCAST_MEDIA_BASE_URL:
-        return f'{settings.STASHCAST_MEDIA_BASE_URL.rstrip("/")}/{rel_path}'
-
-    if request:
-        return request.build_absolute_uri(f'/media/files/{rel_path}')
-
-    return f'/media/files/{rel_path}'
+    return build_media_url(item, filename, request=request)
 
 
 def home_view(request):
@@ -166,10 +157,17 @@ def bookmarklet_view(request):
 
     Allows configuring and generating bookmarklets for one-click stashing.
     """
+    from media.admin import is_demo_readonly
+
+    # Use a bogus API key for demo users so their bookmarklet won't work
+    api_key = (
+        'demo-user-no-access' if is_demo_readonly(request.user) else settings.STASHCAST_API_KEY
+    )
+
     context = {
         **admin.site.each_context(request),
         'base_url': request.build_absolute_uri('/').rstrip('/'),
-        'api_key': settings.STASHCAST_API_KEY,
+        'api_key': api_key,
         'title': 'Bookmarklet',
     }
 
@@ -185,7 +183,14 @@ def admin_stash_form_view(request):
     """
     from django.contrib import messages
 
+    from media.admin import is_demo_readonly
+
     if request.method == 'POST':
+        # Block demo users from submitting
+        if is_demo_readonly(request.user):
+            messages.error(request, 'Demo users are not allowed to add URLs.')
+            return redirect(request.path)
+
         url = request.POST.get('url', '').strip()
         media_type = request.POST.get('type', 'auto')
 

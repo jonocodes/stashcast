@@ -9,6 +9,7 @@ env/
 ENV/
 .venv
 output/
+.coverage
 
 # Django
 *.log
