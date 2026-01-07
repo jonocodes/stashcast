@@ -5,6 +5,7 @@ Verifies that:
 1. Every database entry has a corresponding directory
 2. Every directory has a corresponding database entry
 """
+
 from django.core.management.base import BaseCommand
 from django.conf import settings
 from pathlib import Path
@@ -45,34 +46,40 @@ class Command(BaseCommand):
         all_orphaned_dirs = dir_slugs - db_slugs
 
         # Output results
-        self.stdout.write(f"\nDatabase Consistency Check")
-        self.stdout.write(f"{'=' * 50}")
-        self.stdout.write(f"\nDatabase items: {total_db_items}")
-        self.stdout.write(f"\nMedia directories: {total_dirs}")
+        self.stdout.write(f'\nDatabase Consistency Check')
+        self.stdout.write(f'{"=" * 50}')
+        self.stdout.write(f'\nDatabase items: {total_db_items}')
+        self.stdout.write(f'\nMedia directories: {total_dirs}')
 
         if not all_missing_dirs and not all_orphaned_dirs:
-            self.stdout.write(self.style.SUCCESS(
-                f"\n✓ All {total_db_items} database items have matching directories."
-            ))
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f'\n✓ All {total_db_items} database items have matching directories.'
+                )
+            )
         else:
             # Missing directories
             if all_missing_dirs:
-                self.stdout.write(self.style.ERROR(
-                    f"\n✗ Found {len(all_missing_dirs)} database item(s) without directories:"
-                ))
+                self.stdout.write(
+                    self.style.ERROR(
+                        f'\n✗ Found {len(all_missing_dirs)} database item(s) without directories:'
+                    )
+                )
                 for slug in sorted(all_missing_dirs)[:10]:
-                    self.stdout.write(f"    - {slug}")
+                    self.stdout.write(f'    - {slug}')
                 if len(all_missing_dirs) > 10:
-                    self.stdout.write(f"    ... and {len(all_missing_dirs) - 10} more")
+                    self.stdout.write(f'    ... and {len(all_missing_dirs) - 10} more')
 
             # Orphaned directories
             if all_orphaned_dirs:
-                self.stdout.write(self.style.WARNING(
-                    f"\n⚠ Found {len(all_orphaned_dirs)} directory(ies) without database entries:"
-                ))
+                self.stdout.write(
+                    self.style.WARNING(
+                        f'\n⚠ Found {len(all_orphaned_dirs)} directory(ies) without database entries:'
+                    )
+                )
                 for slug in sorted(all_orphaned_dirs)[:10]:
-                    self.stdout.write(f"    - {slug}")
+                    self.stdout.write(f'    - {slug}')
                 if len(all_orphaned_dirs) > 10:
-                    self.stdout.write(f"    ... and {len(all_orphaned_dirs) - 10} more")
+                    self.stdout.write(f'    ... and {len(all_orphaned_dirs) - 10} more')
 
-        self.stdout.write(f"\n{'=' * 50}\n")
+        self.stdout.write(f'\n{"=" * 50}\n')

@@ -45,6 +45,7 @@ I created this since friends and family often send me links to listen to a singl
 - Python 3.13+
 - yt-dlp
 - ffmpeg
+- ruff (for development)
 
 ## Run in docker
 

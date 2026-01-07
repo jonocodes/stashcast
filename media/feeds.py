@@ -54,12 +54,13 @@ class StashcastRSSFeed(Rss201rev2Feed):
                     'url': media_content.get('url', ''),
                     'type': media_content.get('type', ''),
                     'medium': media_content.get('medium', ''),
-                }
+                },
             )
 
 
 class BaseFeed(Feed):
     """Shared feed helpers."""
+
     logo_filename = None
     feed_type = StashcastRSSFeed
     absolute_link = None
@@ -118,14 +119,21 @@ class BaseFeed(Feed):
         """Override to use the most recent updated_at from items."""
         if items:
             # Find the most recent updated_at from the items list
-            latest = max((item.updated_at for item in items if hasattr(item, 'updated_at') and item.updated_at), default=None)
+            latest = max(
+                (
+                    item.updated_at
+                    for item in items
+                    if hasattr(item, 'updated_at') and item.updated_at
+                ),
+                default=None,
+            )
             if latest:
                 return latest
         return timezone.now()
 
     def _build_feed_image(self):
         """Return dict for RSS image element with absolute URL."""
-        rel_url = static(f"media/{self.logo_filename}")
+        rel_url = static(f'media/{self.logo_filename}')
         return {
             'url': self.absolute_url(rel_url),
             'title': self.title,
@@ -164,25 +172,25 @@ class BaseFeed(Feed):
             return None
 
         if settings.STASHCAST_MEDIA_BASE_URL:
-            return f"{settings.STASHCAST_MEDIA_BASE_URL.rstrip('/')}/{rel_path}"
+            return f'{settings.STASHCAST_MEDIA_BASE_URL.rstrip("/")}/{rel_path}'
 
-        return self.absolute_url(f"/media/files/{rel_path}")
+        return self.absolute_url(f'/media/files/{rel_path}')
 
 
 class AudioFeed(BaseFeed):
     """Podcast feed for audio items"""
-    title = "StashCast Audio"
-    link = "/feeds/audio.xml"
-    description = "Downloaded audio content"
-    logo_filename = "feed-logo-audio.png"
+
+    title = 'StashCast Audio'
+    link = '/feeds/audio.xml'
+    description = 'Downloaded audio content'
+    logo_filename = 'feed-logo-audio.png'
 
     def items(self):
         return self.get_queryset().order_by('-publish_date', '-downloaded_at')[:100]
 
     def get_queryset(self):
         return MediaItem.objects.filter(
-            media_type=MediaItem.MEDIA_TYPE_AUDIO,
-            status=MediaItem.STATUS_READY
+            media_type=MediaItem.MEDIA_TYPE_AUDIO, status=MediaItem.STATUS_READY
         )
 
     def item_title(self, item):
@@ -190,11 +198,11 @@ class AudioFeed(BaseFeed):
 
     def item_description(self, item):
         if item.summary:
-            return f"{item.summary}\n\n{item.description}"
+            return f'{item.summary}\n\n{item.description}'
         return item.description
 
     def item_link(self, item):
-        return self.absolute_url(f"/items/{item.guid}/")
+        return self.absolute_url(f'/items/{item.guid}/')
 
     def item_guid(self, item):
         return item.guid
@@ -208,10 +216,10 @@ class AudioFeed(BaseFeed):
     def item_enclosure_url(self, item):
         rel_path = self._relative_media_path(item, item.content_path)
         if not rel_path:
-            return ""
+            return ''
         if settings.STASHCAST_MEDIA_BASE_URL:
-            return f"{settings.STASHCAST_MEDIA_BASE_URL.rstrip('/')}/{rel_path}"
-        return self.absolute_url(f"/media/files/{rel_path}")
+            return f'{settings.STASHCAST_MEDIA_BASE_URL.rstrip("/")}/{rel_path}'
+        return self.absolute_url(f'/media/files/{rel_path}')
 
     def item_enclosure_length(self, item):
         return item.file_size or 0
@@ -222,18 +230,18 @@ class AudioFeed(BaseFeed):
 
 class VideoFeed(BaseFeed):
     """Podcast feed for video items"""
-    title = "StashCast Video"
-    link = "/feeds/video.xml"
-    description = "Downloaded video content"
-    logo_filename = "feed-logo-video.png"
+
+    title = 'StashCast Video'
+    link = '/feeds/video.xml'
+    description = 'Downloaded video content'
+    logo_filename = 'feed-logo-video.png'
 
     def items(self):
         return self.get_queryset().order_by('-publish_date', '-downloaded_at')[:100]
 
     def get_queryset(self):
         return MediaItem.objects.filter(
-            media_type=MediaItem.MEDIA_TYPE_VIDEO,
-            status=MediaItem.STATUS_READY
+            media_type=MediaItem.MEDIA_TYPE_VIDEO, status=MediaItem.STATUS_READY
         )
 
     def item_title(self, item):
@@ -241,11 +249,11 @@ class VideoFeed(BaseFeed):
 
     def item_description(self, item):
         if item.summary:
-            return f"{item.summary}\n\n{item.description}"
+            return f'{item.summary}\n\n{item.description}'
         return item.description
 
     def item_link(self, item):
-        return self.absolute_url(f"/items/{item.guid}/")
+        return self.absolute_url(f'/items/{item.guid}/')
 
     def item_guid(self, item):
         return item.guid
@@ -259,10 +267,10 @@ class VideoFeed(BaseFeed):
     def item_enclosure_url(self, item):
         rel_path = self._relative_media_path(item, item.content_path)
         if not rel_path:
-            return ""
+            return ''
         if settings.STASHCAST_MEDIA_BASE_URL:
-            return f"{settings.STASHCAST_MEDIA_BASE_URL.rstrip('/')}/{rel_path}"
-        return self.absolute_url(f"/media/files/{rel_path}")
+            return f'{settings.STASHCAST_MEDIA_BASE_URL.rstrip("/")}/{rel_path}'
+        return self.absolute_url(f'/media/files/{rel_path}')
 
     def item_enclosure_length(self, item):
         return item.file_size or 0
@@ -273,10 +281,11 @@ class VideoFeed(BaseFeed):
 
 class CombinedFeed(BaseFeed):
     """Podcast feed for all media items (audio and video)"""
-    title = "StashCast"
-    link = "/feeds/combined.xml"
-    description = "Downloaded audio and video content"
-    logo_filename = "feed-logo-combined.png"
+
+    title = 'StashCast'
+    link = '/feeds/combined.xml'
+    description = 'Downloaded audio and video content'
+    logo_filename = 'feed-logo-combined.png'
 
     def items(self):
         return self.get_queryset().order_by('-publish_date', '-downloaded_at')[:100]
@@ -286,11 +295,11 @@ class CombinedFeed(BaseFeed):
 
     def item_description(self, item):
         if item.summary:
-            return f"{item.summary}\n\n{item.description}"
+            return f'{item.summary}\n\n{item.description}'
         return item.description
 
     def item_link(self, item):
-        return self.absolute_url(f"/items/{item.guid}/")
+        return self.absolute_url(f'/items/{item.guid}/')
 
     def item_guid(self, item):
         return item.guid
@@ -304,10 +313,10 @@ class CombinedFeed(BaseFeed):
     def item_enclosure_url(self, item):
         rel_path = self._relative_media_path(item, item.content_path)
         if not rel_path:
-            return ""
+            return ''
         if settings.STASHCAST_MEDIA_BASE_URL:
-            return f"{settings.STASHCAST_MEDIA_BASE_URL.rstrip('/')}/{rel_path}"
-        return self.absolute_url(f"/media/files/{rel_path}")
+            return f'{settings.STASHCAST_MEDIA_BASE_URL.rstrip("/")}/{rel_path}'
+        return self.absolute_url(f'/media/files/{rel_path}')
 
     def item_enclosure_length(self, item):
         return item.file_size or 0

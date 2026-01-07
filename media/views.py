@@ -20,21 +20,21 @@ def _build_media_url(item, filename, request=None):
         return None
 
     if settings.STASHCAST_MEDIA_BASE_URL:
-        return f"{settings.STASHCAST_MEDIA_BASE_URL.rstrip('/')}/{rel_path}"
+        return f'{settings.STASHCAST_MEDIA_BASE_URL.rstrip("/")}/{rel_path}'
 
     if request:
-        return request.build_absolute_uri(f"/media/files/{rel_path}")
+        return request.build_absolute_uri(f'/media/files/{rel_path}')
 
-    return f"/media/files/{rel_path}"
+    return f'/media/files/{rel_path}'
 
 
 def home_view(request):
     """Landing page with quick access to add URLs."""
-    return render(request, "media/home.html")
+    return render(request, 'media/home.html')
 
 
 @csrf_exempt
-@require_http_methods(["GET", "POST"])
+@require_http_methods(['GET', 'POST'])
 def stash_view(request):
     """
     Public endpoint to stash a URL for download.
@@ -49,24 +49,22 @@ def stash_view(request):
         JSON response with item details, or redirect to progress page
     """
     # Check API key
-    api_key = request.GET.get("apikey") or request.POST.get("apikey")
+    api_key = request.GET.get('apikey') or request.POST.get('apikey')
     if not api_key or api_key != settings.STASHCAST_API_KEY:
-        return JsonResponse({"error": "Invalid or missing API key"}, status=403)
+        return JsonResponse({'error': 'Invalid or missing API key'}, status=403)
 
     # Get parameters
-    url = request.GET.get("url") or request.POST.get("url")
-    requested_type = request.GET.get("type") or request.POST.get("type")
-    redirect_param = request.GET.get("redirect") or request.POST.get("redirect")
-    close_tab_after = request.GET.get("closeTabAfter") or request.POST.get(
-        "closeTabAfter"
-    )
+    url = request.GET.get('url') or request.POST.get('url')
+    requested_type = request.GET.get('type') or request.POST.get('type')
+    redirect_param = request.GET.get('redirect') or request.POST.get('redirect')
+    close_tab_after = request.GET.get('closeTabAfter') or request.POST.get('closeTabAfter')
 
     if not url:
-        return JsonResponse({"error": "Missing required parameter: url"}, status=400)
+        return JsonResponse({'error': 'Missing required parameter: url'}, status=400)
 
-    if not requested_type or requested_type not in ["auto", "audio", "video"]:
+    if not requested_type or requested_type not in ['auto', 'audio', 'video']:
         return JsonResponse(
-            {"error": "Invalid type parameter. Must be: auto, audio, or video"},
+            {'error': 'Invalid type parameter. Must be: auto, audio, or video'},
             status=400,
         )
 
@@ -75,23 +73,19 @@ def stash_view(request):
     # For 'audio'/'video', match with items that have that media_type
     existing_item = None
 
-    if requested_type == "auto":
+    if requested_type == 'auto':
         # Match with existing 'auto' requests
-        existing_item = MediaItem.objects.filter(
-            source_url=url, requested_type="auto"
-        ).first()
+        existing_item = MediaItem.objects.filter(source_url=url, requested_type='auto').first()
     else:
         # Match with items that have the same media_type as requested
-        existing_item = MediaItem.objects.filter(
-            source_url=url, media_type=requested_type
-        ).first()
+        existing_item = MediaItem.objects.filter(source_url=url, media_type=requested_type).first()
 
     if existing_item:
         # Reuse existing item - overwrite behavior
         item = existing_item
         item.requested_type = requested_type
         item.status = MediaItem.STATUS_PREFETCHING
-        item.error_message = ""
+        item.error_message = ''
         item.save()
 
         # Log the overwrite
@@ -99,35 +93,35 @@ def stash_view(request):
 
         log_path = item.get_absolute_log_path()
         if log_path:
-            write_log(log_path, f"=== OVERWRITE REQUEST ===")
-            write_log(log_path, f"Re-fetching URL with type: {requested_type}")
+            write_log(log_path, f'=== OVERWRITE REQUEST ===')
+            write_log(log_path, f'Re-fetching URL with type: {requested_type}')
     else:
         # Create new item
         item = MediaItem.objects.create(
             source_url=url,
             requested_type=requested_type,
-            slug="pending",  # Will be set during processing
+            slug='pending',  # Will be set during processing
         )
 
     # Enqueue processing task
     process_media(item.guid)
 
     # Check if redirect to progress page is requested
-    if redirect_param == "progress":
-        progress_url = request.build_absolute_uri(f"/stash/{item.guid}/progress/")
+    if redirect_param == 'progress':
+        progress_url = request.build_absolute_uri(f'/stash/{item.guid}/progress/')
         if close_tab_after:
-            progress_url = f"{progress_url}?closeTabAfter={close_tab_after}"
+            progress_url = f'{progress_url}?closeTabAfter={close_tab_after}'
         return redirect(progress_url)
 
     # Return JSON response (default behavior for API compatibility)
     return JsonResponse(
         {
-            "success": True,
-            "guid": item.guid,
-            "url": url,
-            "type": requested_type,
-            "status": item.status,
-            "detail_url": request.build_absolute_uri(f"/items/{item.guid}/"),
+            'success': True,
+            'guid': item.guid,
+            'url': url,
+            'type': requested_type,
+            'status': item.status,
+            'detail_url': request.build_absolute_uri(f'/items/{item.guid}/'),
         }
     )
 
@@ -154,13 +148,13 @@ def item_detail_view(request, guid):
     subtitle_url = _build_media_url(item, item.subtitle_path, request)
 
     context = {
-        "item": item,
-        "media_url": media_url,
-        "thumbnail_url": thumbnail_url,
-        "subtitle_url": subtitle_url,
+        'item': item,
+        'media_url': media_url,
+        'thumbnail_url': thumbnail_url,
+        'subtitle_url': subtitle_url,
     }
 
-    return render(request, "media/item_detail.html", context)
+    return render(request, 'media/item_detail.html', context)
 
 
 @staff_member_required
@@ -172,12 +166,12 @@ def bookmarklet_view(request):
     """
     context = {
         **admin.site.each_context(request),
-        "base_url": request.build_absolute_uri("/").rstrip("/"),
-        "api_key": settings.STASHCAST_API_KEY,
-        "title": "Bookmarklet",
+        'base_url': request.build_absolute_uri('/').rstrip('/'),
+        'api_key': settings.STASHCAST_API_KEY,
+        'title': 'Bookmarklet',
     }
 
-    return render(request, "media/bookmarklet.html", context)
+    return render(request, 'media/bookmarklet.html', context)
 
 
 @staff_member_required
@@ -189,18 +183,18 @@ def admin_stash_form_view(request):
     """
     from django.contrib import messages
 
-    if request.method == "POST":
-        url = request.POST.get("url", "").strip()
-        media_type = request.POST.get("type", "auto")
+    if request.method == 'POST':
+        url = request.POST.get('url', '').strip()
+        media_type = request.POST.get('type', 'auto')
 
         if url:
             # Check if item already exists for this URL and requested type combination
             existing_item = None
 
-            if media_type == "auto":
+            if media_type == 'auto':
                 # Match with existing 'auto' requests
                 existing_item = MediaItem.objects.filter(
-                    source_url=url, requested_type="auto"
+                    source_url=url, requested_type='auto'
                 ).first()
             else:
                 # Match with items that have the same media_type as requested
@@ -212,33 +206,33 @@ def admin_stash_form_view(request):
                 item = existing_item
                 item.requested_type = media_type
                 item.status = MediaItem.STATUS_PREFETCHING
-                item.error_message = ""
+                item.error_message = ''
                 item.save()
-                messages.info(request, f"Re-fetching existing item: {item.guid}")
+                messages.info(request, f'Re-fetching existing item: {item.guid}')
             else:
                 item = MediaItem.objects.create(
-                    source_url=url, requested_type=media_type, slug="pending"
+                    source_url=url, requested_type=media_type, slug='pending'
                 )
-                messages.success(request, f"Created new item: {item.guid}")
+                messages.success(request, f'Created new item: {item.guid}')
 
             # Enqueue processing
             process_media(item.guid)
 
             # Redirect to Huey monitor to see task progress
-            return redirect("/admin/huey_monitor/taskmodel/")
+            return redirect('/admin/huey_monitor/taskmodel/')
         else:
-            messages.error(request, "Please provide a URL")
+            messages.error(request, 'Please provide a URL')
 
     # Get recent items
-    recent_items = MediaItem.objects.all().order_by("-created_at")[:10]
+    recent_items = MediaItem.objects.all().order_by('-created_at')[:10]
 
     context = {
         **admin.site.each_context(request),
-        "recent_items": recent_items,
-        "title": "Add URL to StashCast",
+        'recent_items': recent_items,
+        'title': 'Add URL to StashCast',
     }
 
-    return render(request, "media/admin_stash_form.html", context)
+    return render(request, 'media/admin_stash_form.html', context)
 
 
 @staff_member_required
@@ -252,14 +246,12 @@ def grid_view(request):
     from pathlib import Path
 
     # Get filter parameters
-    media_type = request.GET.get("type", "all")
+    media_type = request.GET.get('type', 'all')
 
     # Build queryset - only show READY items
-    items = MediaItem.objects.filter(status=MediaItem.STATUS_READY).order_by(
-        "-created_at"
-    )
+    items = MediaItem.objects.filter(status=MediaItem.STATUS_READY).order_by('-created_at')
 
-    if media_type != "all":
+    if media_type != 'all':
         items = items.filter(media_type=media_type)
 
     # Calculate total storage used by checking media directories
@@ -284,20 +276,20 @@ def grid_view(request):
 
         items_with_urls.append(
             {
-                "item": item,
-                "thumbnail_url": thumbnail_url,
+                'item': item,
+                'thumbnail_url': thumbnail_url,
             }
         )
 
     context = {
         **admin.site.each_context(request),
-        "items": items_with_urls,
-        "media_type_filter": media_type,
-        "title": "Media Grid",
-        "total_storage_bytes": total_storage_bytes,
+        'items': items_with_urls,
+        'media_type_filter': media_type,
+        'title': 'Media Grid',
+        'total_storage_bytes': total_storage_bytes,
     }
 
-    return render(request, "media/grid_view.html", context)
+    return render(request, 'media/grid_view.html', context)
 
 
 @staff_member_required
@@ -311,14 +303,12 @@ def list_view(request):
     from pathlib import Path
 
     # Get filter parameters
-    media_type = request.GET.get("type", "all")
+    media_type = request.GET.get('type', 'all')
 
     # Build queryset - only show READY items
-    items = MediaItem.objects.filter(status=MediaItem.STATUS_READY).order_by(
-        "-created_at"
-    )
+    items = MediaItem.objects.filter(status=MediaItem.STATUS_READY).order_by('-created_at')
 
-    if media_type != "all":
+    if media_type != 'all':
         items = items.filter(media_type=media_type)
 
     # Calculate total storage used by checking media directories
@@ -343,20 +333,20 @@ def list_view(request):
 
         items_with_urls.append(
             {
-                "item": item,
-                "thumbnail_url": thumbnail_url,
+                'item': item,
+                'thumbnail_url': thumbnail_url,
             }
         )
 
     context = {
         **admin.site.each_context(request),
-        "items": items_with_urls,
-        "media_type_filter": media_type,
-        "title": "Media List",
-        "total_storage_bytes": total_storage_bytes,
+        'items': items_with_urls,
+        'media_type_filter': media_type,
+        'title': 'Media List',
+        'total_storage_bytes': total_storage_bytes,
     }
 
-    return render(request, "media/list_view.html", context)
+    return render(request, 'media/list_view.html', context)
 
 
 def stash_progress_view(request, guid):
@@ -368,10 +358,10 @@ def stash_progress_view(request, guid):
     item = get_object_or_404(MediaItem, guid=guid)
 
     context = {
-        "item": item,
-        "guid": guid,
+        'item': item,
+        'guid': guid,
     }
-    return render(request, "media/stash_progress.html", context)
+    return render(request, 'media/stash_progress.html', context)
 
 
 def stash_status_stream(request, guid):
@@ -392,21 +382,21 @@ def stash_status_stream(request, guid):
                 # Only send event if status changed
                 if item.status != last_status:
                     data = {
-                        "status": item.status,
-                        "title": item.title or "Loading...",
-                        "error_message": item.error_message,
-                        "media_type": item.media_type,
-                        "is_ready": item.status == MediaItem.STATUS_READY,
-                        "has_error": item.status == MediaItem.STATUS_ERROR,
-                        "detail_url": request.build_absolute_uri(f"/items/{guid}/"),
+                        'status': item.status,
+                        'title': item.title or 'Loading...',
+                        'error_message': item.error_message,
+                        'media_type': item.media_type,
+                        'is_ready': item.status == MediaItem.STATUS_READY,
+                        'has_error': item.status == MediaItem.STATUS_ERROR,
+                        'detail_url': request.build_absolute_uri(f'/items/{guid}/'),
                     }
 
-                    yield f"data: {json.dumps(data)}\n\n"
+                    yield f'data: {json.dumps(data)}\n\n'
                     last_status = item.status
 
                     # If processing is complete or failed, stop streaming
                     if item.status in [MediaItem.STATUS_READY, MediaItem.STATUS_ERROR]:
-                        yield "event: complete\ndata: {}\n\n"
+                        yield 'event: complete\ndata: {}\n\n'
                         break
 
                 # Wait before next check
@@ -421,7 +411,7 @@ def stash_status_stream(request, guid):
                 yield f'event: error\ndata: {{"error": "{str(e)}"}}\n\n'
                 break
 
-    response = StreamingHttpResponse(event_stream(), content_type="text/event-stream")
-    response["Cache-Control"] = "no-cache"
-    response["X-Accel-Buffering"] = "no"
+    response = StreamingHttpResponse(event_stream(), content_type='text/event-stream')
+    response['Cache-Control'] = 'no-cache'
+    response['X-Accel-Buffering'] = 'no'
     return response

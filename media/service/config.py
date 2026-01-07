@@ -4,6 +4,7 @@ Configuration adapter for media processing settings.
 Centralizes access to Django settings and environment variables,
 ensuring consistent configuration across CLI and web app.
 """
+
 from django.conf import settings
 
 
@@ -100,6 +101,7 @@ def parse_ytdlp_extra_args(args_string, base_opts):
         return base_opts
 
     import shlex
+
     args_list = shlex.split(args_string)
 
     # Parse common yt-dlp arguments
@@ -121,10 +123,12 @@ def parse_ytdlp_extra_args(args_string, base_opts):
                 i += 1
         elif arg == '--audio-format':
             if i + 1 < len(args_list):
-                base_opts['postprocessors'] = base_opts.get('postprocessors', []) + [{
-                    'key': 'FFmpegExtractAudio',
-                    'preferredcodec': args_list[i + 1],
-                }]
+                base_opts['postprocessors'] = base_opts.get('postprocessors', []) + [
+                    {
+                        'key': 'FFmpegExtractAudio',
+                        'preferredcodec': args_list[i + 1],
+                    }
+                ]
                 i += 2
             else:
                 i += 1

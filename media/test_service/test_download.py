@@ -1,17 +1,14 @@
 """
 Tests for service/download.py
 """
+
 from django.test import TestCase
 from unittest.mock import patch, MagicMock, mock_open
 from pathlib import Path
 import tempfile
 import os
 
-from media.service.download import (
-    download_direct,
-    download_ytdlp,
-    DownloadedFileInfo
-)
+from media.service.download import download_direct, download_ytdlp, DownloadedFileInfo
 
 
 class DownloadServiceTest(TestCase):
@@ -19,11 +16,7 @@ class DownloadServiceTest(TestCase):
 
     def test_downloaded_file_info_dataclass(self):
         """Test DownloadedFileInfo dataclass"""
-        info = DownloadedFileInfo(
-            path=Path('/tmp/test.mp3'),
-            file_size=1024,
-            extension='.mp3'
-        )
+        info = DownloadedFileInfo(path=Path('/tmp/test.mp3'), file_size=1024, extension='.mp3')
         self.assertEqual(info.path, Path('/tmp/test.mp3'))
         self.assertEqual(info.file_size, 1024)
         self.assertEqual(info.extension, '.mp3')
@@ -84,7 +77,7 @@ class DownloadServiceTest(TestCase):
     def test_download_direct_raises_on_http_error(self, mock_get):
         """Test that HTTP errors are raised"""
         mock_response = MagicMock()
-        mock_response.raise_for_status.side_effect = Exception("404 Not Found")
+        mock_response.raise_for_status.side_effect = Exception('404 Not Found')
         mock_get.return_value = mock_response
 
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -105,11 +98,7 @@ class DownloadServiceTest(TestCase):
             downloaded_file = temp_dir / 'download.m4a'
             downloaded_file.write_bytes(b'fake audio data')
 
-            result = download_ytdlp(
-                'https://youtube.com/watch?v=abc123',
-                'audio',
-                temp_dir
-            )
+            result = download_ytdlp('https://youtube.com/watch?v=abc123', 'audio', temp_dir)
 
             # Verify yt-dlp was called
             mock_ydl.download.assert_called_once()
@@ -131,11 +120,7 @@ class DownloadServiceTest(TestCase):
             downloaded_file = temp_dir / 'download.mp4'
             downloaded_file.write_bytes(b'fake video data')
 
-            result = download_ytdlp(
-                'https://youtube.com/watch?v=abc123',
-                'video',
-                temp_dir
-            )
+            result = download_ytdlp('https://youtube.com/watch?v=abc123', 'video', temp_dir)
 
             self.assertEqual(result.extension, '.mp4')
 

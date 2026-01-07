@@ -17,4 +17,4 @@ def cleanup_media_files(sender, instance, **kwargs):
             shutil.rmtree(base_dir)
         except Exception as e:
             # Log error but continue with deletion
-            print(f"Error deleting directory {base_dir}: {e}")
+            print(f'Error deleting directory {base_dir}: {e}')

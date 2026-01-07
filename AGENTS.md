@@ -39,9 +39,6 @@ coverage run manage.py test
 coverage report -m
 ```
 
-## Code style
-- Single quotes
-
 ## Notes for changes
 - Prefer touching only the relevant app (`media/`) or Django settings in `stashcast/`.
 - Background tasks are queued; consider the Huey worker when debugging async flows.

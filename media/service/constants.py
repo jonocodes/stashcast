@@ -6,8 +6,18 @@ Centralized definitions of file extensions and media types.
 
 # All supported media file extensions
 MEDIA_EXTENSIONS = [
-    '.mp3', '.m4a', '.mp4', '.webm', '.ogg', '.wav',
-    '.aac', '.flac', '.opus', '.mkv', '.avi', '.mov'
+    '.mp3',
+    '.m4a',
+    '.mp4',
+    '.webm',
+    '.ogg',
+    '.wav',
+    '.aac',
+    '.flac',
+    '.opus',
+    '.mkv',
+    '.avi',
+    '.mov',
 ]
 
 # Audio-specific file extensions

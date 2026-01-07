@@ -21,71 +21,71 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-y)n^3l6r8d$@3l^3y11@!m(j=^2n=#=k_4(hmu&rc*si#ce5kd"
+SECRET_KEY = 'django-insecure-y)n^3l6r8d$@3l^3y11@!m(j=^2n=#=k_4(hmu&rc*si#ce5kd'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "testserver", "*"]  # For development only
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'testserver', '*']  # For development only
 
 
 # Application definition
 
 INSTALLED_APPS = [
-    "media",  # Must be before admin to override templates
-    "django.contrib.admin",
-    "django.contrib.auth",
-    "django.contrib.contenttypes",
-    "django.contrib.sessions",
-    "django.contrib.messages",
-    "django.contrib.staticfiles",
-    "huey.contrib.djhuey",
-    "bx_django_utils",
-    "huey_monitor",
+    'media',  # Must be before admin to override templates
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'huey.contrib.djhuey',
+    'bx_django_utils',
+    'huey_monitor',
 ]
 
 MIDDLEWARE = [
-    "django.middleware.security.SecurityMiddleware",
-    "django.contrib.sessions.middleware.SessionMiddleware",
-    "django.middleware.common.CommonMiddleware",
-    "django.middleware.csrf.CsrfViewMiddleware",
-    "django.contrib.auth.middleware.AuthenticationMiddleware",
-    "django.contrib.messages.middleware.MessageMiddleware",
-    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = "stashcast.urls"
+ROOT_URLCONF = 'stashcast.urls'
 
 TEMPLATES = [
     {
-        "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
-        "APP_DIRS": True,
-        "OPTIONS": {
-            "context_processors": [
-                "django.template.context_processors.request",
-                "django.contrib.auth.context_processors.auth",
-                "django.contrib.messages.context_processors.messages",
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = "stashcast.wsgi.application"
+WSGI_APPLICATION = 'stashcast.wsgi.application'
 
-STASHCAST_DATA_DIR = Path(os.environ.get("STASHCAST_DATA_DIR", BASE_DIR / "data"))
-STASHCAST_MEDIA_DIR = STASHCAST_DATA_DIR / "media"
+STASHCAST_DATA_DIR = Path(os.environ.get('STASHCAST_DATA_DIR', BASE_DIR / 'data'))
+STASHCAST_MEDIA_DIR = STASHCAST_DATA_DIR / 'media'
 
 
-os.environ["NLTK_DATA"] = os.environ.get("NLTK_DATA", str(STASHCAST_DATA_DIR))
+os.environ['NLTK_DATA'] = os.environ.get('NLTK_DATA', str(STASHCAST_DATA_DIR))
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": STASHCAST_DATA_DIR / "db.sqlite3",
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': STASHCAST_DATA_DIR / 'db.sqlite3',
     }
 }
 
@@ -95,16 +95,16 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
     },
     {
-        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
     },
     {
-        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
     },
     {
-        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
 
@@ -112,9 +112,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = "UTC"
+TIME_ZONE = 'UTC'
 
 USE_I18N = True
 
@@ -124,67 +124,65 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-STATIC_URL = "static/"
+STATIC_URL = 'static/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/6.0/ref/settings/#default-auto-field
 
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # STASHCAST Configuration
 
-STASHCAST_API_KEY = os.environ.get(
-    "STASHCAST_API_KEY", "dev-api-key-change-in-production"
-)
+STASHCAST_API_KEY = os.environ.get('STASHCAST_API_KEY', 'dev-api-key-change-in-production')
 
 # Optional environment variables
-STASHCAST_MEDIA_BASE_URL = os.environ.get("STASHCAST_MEDIA_BASE_URL", None)
+STASHCAST_MEDIA_BASE_URL = os.environ.get('STASHCAST_MEDIA_BASE_URL', None)
 
 # Default yt-dlp args optimized for mobile playback
 # Audio: AAC codec in M4A container is widely supported
 STASHCAST_DEFAULT_YTDLP_ARGS_AUDIO = os.environ.get(
-    "STASHCAST_DEFAULT_YTDLP_ARGS_AUDIO", "--audio-format m4a --audio-quality 128K"
+    'STASHCAST_DEFAULT_YTDLP_ARGS_AUDIO', '--audio-format m4a --audio-quality 128K'
 )
 
 # Video: H.264/AAC in MP4 container for maximum mobile compatibility
 # Limit to 720p to balance quality and file size
 # Format filter: prefer best video ≤720p + best audio, fallback to combined format ≤720p
 STASHCAST_DEFAULT_YTDLP_ARGS_VIDEO = os.environ.get(
-    "STASHCAST_DEFAULT_YTDLP_ARGS_VIDEO",
+    'STASHCAST_DEFAULT_YTDLP_ARGS_VIDEO',
     '--format "bv*[height<=720][vcodec^=avc]+ba/b[height<=720]" --merge-output-format mp4',
 )
 
 # FFmpeg args for transcoding (if needed)
 STASHCAST_DEFAULT_FFMPEG_ARGS_AUDIO = os.environ.get(
-    "STASHCAST_DEFAULT_FFMPEG_ARGS_AUDIO", "-c:a aac -b:a 128k"
+    'STASHCAST_DEFAULT_FFMPEG_ARGS_AUDIO', '-c:a aac -b:a 128k'
 )
 
 STASHCAST_DEFAULT_FFMPEG_ARGS_VIDEO = os.environ.get(
-    "STASHCAST_DEFAULT_FFMPEG_ARGS_VIDEO",
-    "-c:v libx264 -preset fast -crf 23 -c:a aac -b:a 128k -movflags +faststart",
+    'STASHCAST_DEFAULT_FFMPEG_ARGS_VIDEO',
+    '-c:v libx264 -preset fast -crf 23 -c:a aac -b:a 128k -movflags +faststart',
 )
 
-STASHCAST_SLUG_MAX_WORDS = int(os.environ.get("STASHCAST_SLUG_MAX_WORDS", "6"))
-STASHCAST_SLUG_MAX_CHARS = int(os.environ.get("STASHCAST_SLUG_MAX_CHARS", "40"))
-STASHCAST_SUMMARY_SENTENCES = int(os.environ.get("STASHCAST_SUMMARY_SENTENCES", "8"))
+STASHCAST_SLUG_MAX_WORDS = int(os.environ.get('STASHCAST_SLUG_MAX_WORDS', '6'))
+STASHCAST_SLUG_MAX_CHARS = int(os.environ.get('STASHCAST_SLUG_MAX_CHARS', '40'))
+STASHCAST_SUMMARY_SENTENCES = int(os.environ.get('STASHCAST_SUMMARY_SENTENCES', '8'))
 
 # Ensure media directories exist
 os.makedirs(STASHCAST_MEDIA_DIR, exist_ok=True)
 
 # Media files configuration
-MEDIA_URL = "/media/"
+MEDIA_URL = '/media/'
 MEDIA_ROOT = STASHCAST_MEDIA_DIR
 
 # Huey configuration (SQLite backend)
 import sys
 
 HUEY = {
-    "huey_class": "huey.SqliteHuey",
-    "name": "stashcast",
-    "filename": str(STASHCAST_DATA_DIR / "huey.db"),
-    "immediate": "test" in sys.argv,  # Execute tasks immediately during tests
-    "consumer": {
-        "workers": 2,
-        "worker_type": "thread",
+    'huey_class': 'huey.SqliteHuey',
+    'name': 'stashcast',
+    'filename': str(STASHCAST_DATA_DIR / 'huey.db'),
+    'immediate': 'test' in sys.argv,  # Execute tasks immediately during tests
+    'consumer': {
+        'workers': 2,
+        'worker_type': 'thread',
     },
 }

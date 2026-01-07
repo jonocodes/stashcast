@@ -5,22 +5,54 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
             name='MediaItem',
             fields=[
-                ('guid', models.CharField(default=media.models.generate_nanoid, editable=False, max_length=21, primary_key=True, serialize=False)),
+                (
+                    'guid',
+                    models.CharField(
+                        default=media.models.generate_nanoid,
+                        editable=False,
+                        max_length=21,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
                 ('source_url', models.URLField(max_length=2048)),
                 ('slug', models.SlugField(max_length=100)),
-                ('media_type', models.CharField(blank=True, choices=[('audio', 'Audio'), ('video', 'Video')], max_length=10)),
-                ('requested_type', models.CharField(choices=[('auto', 'Auto'), ('audio', 'Audio'), ('video', 'Video')], max_length=10)),
-                ('status', models.CharField(choices=[('PREFETCHING', 'Prefetching'), ('DOWNLOADING', 'Downloading'), ('PROCESSING', 'Processing'), ('READY', 'Ready'), ('ERROR', 'Error')], db_index=True, default='PREFETCHING', max_length=20)),
+                (
+                    'media_type',
+                    models.CharField(
+                        blank=True, choices=[('audio', 'Audio'), ('video', 'Video')], max_length=10
+                    ),
+                ),
+                (
+                    'requested_type',
+                    models.CharField(
+                        choices=[('auto', 'Auto'), ('audio', 'Audio'), ('video', 'Video')],
+                        max_length=10,
+                    ),
+                ),
+                (
+                    'status',
+                    models.CharField(
+                        choices=[
+                            ('PREFETCHING', 'Prefetching'),
+                            ('DOWNLOADING', 'Downloading'),
+                            ('PROCESSING', 'Processing'),
+                            ('READY', 'Ready'),
+                            ('ERROR', 'Error'),
+                        ],
+                        db_index=True,
+                        default='PREFETCHING',
+                        max_length=20,
+                    ),
+                ),
                 ('title', models.CharField(blank=True, max_length=500)),
                 ('description', models.TextField(blank=True)),
                 ('author', models.CharField(blank=True, max_length=200)),
@@ -37,8 +69,14 @@ class Migration(migrations.Migration):
                 ('mime_type', models.CharField(blank=True, max_length=100)),
                 ('log_path', models.CharField(blank=True, max_length=500)),
                 ('error_message', models.TextField(blank=True)),
-                ('ytdlp_args', models.TextField(blank=True, help_text='Additional yt-dlp arguments')),
-                ('ffmpeg_args', models.TextField(blank=True, help_text='Additional ffmpeg arguments')),
+                (
+                    'ytdlp_args',
+                    models.TextField(blank=True, help_text='Additional yt-dlp arguments'),
+                ),
+                (
+                    'ffmpeg_args',
+                    models.TextField(blank=True, help_text='Additional ffmpeg arguments'),
+                ),
                 ('summary', models.TextField(blank=True)),
                 ('downloaded_at', models.DateTimeField(blank=True, null=True)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
@@ -46,7 +84,12 @@ class Migration(migrations.Migration):
             ],
             options={
                 'ordering': ['-publish_date', '-downloaded_at'],
-                'indexes': [models.Index(fields=['source_url'], name='media_media_source__2bf5fe_idx'), models.Index(fields=['slug'], name='media_media_slug_21be11_idx'), models.Index(fields=['status'], name='media_media_status_8448b7_idx'), models.Index(fields=['media_type'], name='media_media_media_t_ea723f_idx')],
+                'indexes': [
+                    models.Index(fields=['source_url'], name='media_media_source__2bf5fe_idx'),
+                    models.Index(fields=['slug'], name='media_media_slug_21be11_idx'),
+                    models.Index(fields=['status'], name='media_media_status_8448b7_idx'),
+                    models.Index(fields=['media_type'], name='media_media_media_t_ea723f_idx'),
+                ],
             },
         ),
     ]

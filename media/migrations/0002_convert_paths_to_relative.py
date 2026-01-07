@@ -42,7 +42,6 @@ def reverse_conversion(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('media', '0001_initial'),
     ]

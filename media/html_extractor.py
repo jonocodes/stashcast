@@ -3,10 +3,12 @@ HTML media extraction utilities.
 
 Provides functions to extract embedded audio/video from HTML pages.
 """
+
 from pathlib import Path
 from urllib.parse import urljoin, urlparse, unquote
 import requests
 from bs4 import BeautifulSoup
+
 
 def extract_title_from_html(soup, media_url):
     """
@@ -25,7 +27,7 @@ def extract_title_from_html(soup, media_url):
         return title_tag.string.strip()
 
     # Last resort
-    return "content"
+    return 'content'
 
 
 def extract_media_from_html_page(url):
@@ -72,7 +74,7 @@ def extract_media_from_html_page(url):
             'media_url': media_url,
             'media_type': 'audio',
             'title': extract_title_from_html(soup, media_url),
-            'webpage_url': base_url
+            'webpage_url': base_url,
         }
 
     # Look for <video> tags with src
@@ -83,7 +85,7 @@ def extract_media_from_html_page(url):
             'media_url': media_url,
             'media_type': 'video',
             'title': extract_title_from_html(soup, media_url),
-            'webpage_url': base_url
+            'webpage_url': base_url,
         }
 
     # Look for <source> tags inside <audio>
@@ -96,7 +98,7 @@ def extract_media_from_html_page(url):
                 'media_url': media_url,
                 'media_type': 'audio',
                 'title': extract_title_from_html(soup, media_url),
-                'webpage_url': base_url
+                'webpage_url': base_url,
             }
 
     # Look for <source> tags inside <video>
@@ -109,13 +111,8 @@ def extract_media_from_html_page(url):
                 'media_url': media_url,
                 'media_type': 'video',
                 'title': extract_title_from_html(soup, media_url),
-                'webpage_url': base_url
+                'webpage_url': base_url,
             }
 
     # No media found
-    return {
-        'media_url': None,
-        'media_type': None,
-        'title': None,
-        'webpage_url': base_url
-    }
+    return {'media_url': None, 'media_type': None, 'title': None, 'webpage_url': base_url}

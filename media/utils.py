@@ -77,6 +77,6 @@ def ensure_unique_slug(slug, source_url, existing_item=None, media_type=None):
     alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
     while True:
         nano_suffix = generate(alphabet, size=8)
-        new_slug = f"{slug}-{nano_suffix}"
+        new_slug = f'{slug}-{nano_suffix}'
         if not MediaItem.objects.filter(slug=new_slug).exists():
             return new_slug

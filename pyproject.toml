@@ -1,0 +1,20 @@
+[tool.ruff]
+exclude = [
+  ".git",
+  ".venv",
+  "venv",
+  "data_docker",
+  "demo_data",
+]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F"]
+
+[tool.ruff.lint.per-file-ignores]
+"**/migrations/*.py" = ["E501"]
+
+# Formatting specific rules
+[tool.ruff.format]
+quote-style = "single"

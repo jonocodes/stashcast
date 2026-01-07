@@ -3,6 +3,7 @@ Metadata extraction and media type resolution.
 
 Handles prefetching metadata and determining the actual media type.
 """
+
 from dataclasses import dataclass
 from typing import Optional
 from urllib.parse import urlparse
@@ -15,12 +16,14 @@ from media.service.constants import AUDIO_EXTENSIONS
 
 class PlaylistNotSupported(Exception):
     """Raised when URL points to a playlist"""
+
     pass
 
 
 @dataclass
 class PrefetchResult:
     """Result from prefetching metadata"""
+
     title: Optional[str] = None
     description: Optional[str] = None
     author: Optional[str] = None
@@ -49,6 +52,7 @@ def prefetch(url, strategy, logger=None):
     Raises:
         PlaylistNotSupported: If URL is a playlist
     """
+
     def log(message):
         if logger:
             logger(message)
@@ -60,7 +64,7 @@ def prefetch(url, strategy, logger=None):
     elif strategy == 'ytdlp':
         return _prefetch_ytdlp(url, logger=log)
     else:
-        raise ValueError(f"Unknown strategy: {strategy}")
+        raise ValueError(f'Unknown strategy: {strategy}')
 
 
 def _prefetch_file(file_path, logger=None):
@@ -70,7 +74,7 @@ def _prefetch_file(file_path, logger=None):
     ext = file_path.suffix.lower()
 
     result = PrefetchResult()
-    result.title = filename or "local-media"
+    result.title = filename or 'local-media'
     result.file_extension = ext
 
     # Determine if it's audio or video based on extension
@@ -83,9 +87,9 @@ def _prefetch_file(file_path, logger=None):
         result.has_audio_streams = True  # Videos usually have audio too
 
     if logger:
-        logger(f"Local file detected: {file_path}")
-        logger(f"Filename: {result.title}")
-        logger(f"Extension: {ext}")
+        logger(f'Local file detected: {file_path}')
+        logger(f'Filename: {result.title}')
+        logger(f'Extension: {ext}')
 
     return result
 
@@ -97,7 +101,7 @@ def _prefetch_direct(url, logger=None):
     ext = Path(parsed.path).suffix.lower()
 
     result = PrefetchResult()
-    result.title = filename or "downloaded-media"
+    result.title = filename or 'downloaded-media'
     result.file_extension = ext
 
     # Determine if it's audio or video based on extension
@@ -110,9 +114,9 @@ def _prefetch_direct(url, logger=None):
         result.has_audio_streams = True  # Videos usually have audio too
 
     if logger:
-        logger(f"Direct URL detected: {url}")
-        logger(f"Filename: {result.title}")
-        logger(f"Extension: {ext}")
+        logger(f'Direct URL detected: {url}')
+        logger(f'Filename: {result.title}')
+        logger(f'Extension: {ext}')
 
     return result
 
@@ -121,12 +125,13 @@ def _prefetch_ytdlp(url, logger=None):
     """Prefetch metadata using yt-dlp"""
     # For HTML pages, try HTML extraction first to avoid yt-dlp issues
     from urllib.parse import urlparse
+
     parsed = urlparse(url)
     is_html_page = parsed.path.lower().endswith(('.html', '.htm'))
 
     if is_html_page:
         if logger:
-            logger("Detected HTML page, trying HTML extraction first...")
+            logger('Detected HTML page, trying HTML extraction first...')
         html_result = _prefetch_html(url, logger=logger)
         if html_result and html_result.extracted_media_url:
             return html_result
@@ -148,7 +153,7 @@ def _prefetch_ytdlp(url, logger=None):
 
             # Check for playlist
             if 'entries' in info:
-                raise PlaylistNotSupported("URL is a playlist, not supported")
+                raise PlaylistNotSupported('URL is a playlist, not supported')
 
             result = PrefetchResult()
             result.title = info.get('title', 'Untitled')
@@ -165,16 +170,18 @@ def _prefetch_ytdlp(url, logger=None):
             result.has_audio_streams = any(f.get('acodec') != 'none' for f in formats)
 
             if logger:
-                logger(f"yt-dlp metadata extracted: {result.title}")
-                logger(f"Extractor: {result.extractor}")
-                logger(f"Has video: {result.has_video_streams}, Has audio: {result.has_audio_streams}")
+                logger(f'yt-dlp metadata extracted: {result.title}')
+                logger(f'Extractor: {result.extractor}')
+                logger(
+                    f'Has video: {result.has_video_streams}, Has audio: {result.has_audio_streams}'
+                )
 
             return result
 
     except yt_dlp.utils.DownloadError as e:
         # Try HTML extraction as fallback
         if logger:
-            logger(f"yt-dlp failed: {str(e)}, trying HTML extraction")
+            logger(f'yt-dlp failed: {str(e)}, trying HTML extraction')
 
         return _prefetch_html(url, logger=logger)
 
@@ -192,11 +199,11 @@ def _prefetch_html(url, logger=None):
         extraction = extract_media_from_html_page(url)
 
         if not extraction['media_url']:
-            raise Exception("No embedded media found in HTML")
+            raise Exception('No embedded media found in HTML')
 
         if logger:
-            media_type_str = "audio" if extraction['media_type'] == 'audio' else "video"
-            logger(f"Found {media_type_str} source: {extraction['media_url']}")
+            media_type_str = 'audio' if extraction['media_type'] == 'audio' else 'video'
+            logger(f'Found {media_type_str} source: {extraction["media_url"]}')
 
         result = PrefetchResult()
         result.title = extraction['title']
@@ -208,7 +215,7 @@ def _prefetch_html(url, logger=None):
         return result
 
     except Exception as e:
-        raise Exception(f"HTML extraction failed: {str(e)}")
+        raise Exception(f'HTML extraction failed: {str(e)}')
 
 
 def get_media_type_from_extension(extension):

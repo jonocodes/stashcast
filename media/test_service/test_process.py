@@ -1,6 +1,7 @@
 """
 Tests for service/process.py
 """
+
 from django.test import TestCase
 from unittest.mock import patch, MagicMock
 from pathlib import Path
@@ -11,7 +12,7 @@ from media.service.process import (
     transcode_to_playable,
     process_thumbnail,
     process_subtitle,
-    ProcessedFileInfo
+    ProcessedFileInfo,
 )
 
 
@@ -21,10 +22,7 @@ class ProcessServiceTest(TestCase):
     def test_processed_file_info_dataclass(self):
         """Test ProcessedFileInfo dataclass"""
         info = ProcessedFileInfo(
-            path=Path('/tmp/test.mp4'),
-            file_size=2048,
-            extension='.mp4',
-            was_transcoded=True
+            path=Path('/tmp/test.mp4'), file_size=2048, extension='.mp4', was_transcoded=True
         )
         self.assertEqual(info.path, Path('/tmp/test.mp4'))
         self.assertEqual(info.file_size, 2048)
@@ -99,6 +97,7 @@ class ProcessServiceTest(TestCase):
     @patch('media.service.process.subprocess.run')
     def test_transcode_to_playable_success(self, mock_run):
         """Test successful transcoding"""
+
         def mock_ffmpeg(cmd, **kwargs):
             # Extract output file from command and create it
             if '-i' in cmd:
@@ -141,6 +140,7 @@ class ProcessServiceTest(TestCase):
     @patch('media.service.process.subprocess.run')
     def test_transcode_to_playable_with_logger(self, mock_run):
         """Test transcoding with logger callback"""
+
         def mock_ffmpeg(cmd, **kwargs):
             output_path = Path(cmd[-1])
             output_path.write_bytes(b'transcoded data')
@@ -186,6 +186,7 @@ class ProcessServiceTest(TestCase):
     @patch('media.service.process.subprocess.run')
     def test_transcode_to_playable_creates_parent_dir(self, mock_run):
         """Test that transcoding creates parent directory"""
+
         def mock_ffmpeg(cmd, **kwargs):
             output_path = Path(cmd[-1])
             output_path.write_bytes(b'transcoded data')
@@ -209,6 +210,7 @@ class ProcessServiceTest(TestCase):
     @patch('media.service.process.subprocess.run')
     def test_transcode_audio_uses_audio_settings(self, mock_run):
         """Test that audio transcoding uses audio ffmpeg settings"""
+
         def mock_ffmpeg(cmd, **kwargs):
             output_path = Path(cmd[-1])
             output_path.write_bytes(b'transcoded data')
@@ -233,6 +235,7 @@ class ProcessServiceTest(TestCase):
     @patch('media.service.process.subprocess.run')
     def test_transcode_video_uses_video_settings(self, mock_run):
         """Test that video transcoding uses video ffmpeg settings"""
+
         def mock_ffmpeg(cmd, **kwargs):
             output_path = Path(cmd[-1])
             output_path.write_bytes(b'transcoded data')
@@ -316,7 +319,7 @@ class ProcessServiceTest(TestCase):
     @patch('media.service.process.shutil.copy2')
     def test_process_thumbnail_fallback_on_error(self, mock_copy, mock_image_open):
         """Test that thumbnail processing falls back to copy on error"""
-        mock_image_open.side_effect = Exception("PIL error")
+        mock_image_open.side_effect = Exception('PIL error')
 
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_dir = Path(temp_dir)

@@ -4,6 +4,7 @@ Management command to stash media from a URL (foreground execution).
 This command performs the same pipeline as the web app but runs synchronously
 in the foreground without using Huey. Useful for CLI workflows and debugging.
 """
+
 import json
 import shutil
 from pathlib import Path
@@ -18,7 +19,7 @@ from media.processing import (
     prefetch_ytdlp,
     download_direct,
     download_ytdlp,
-    process_files
+    process_files,
 )
 from media.service.strategy import choose_download_strategy
 
@@ -33,18 +34,10 @@ class Command(BaseCommand):
             type=str,
             choices=['auto', 'audio', 'video'],
             default='auto',
-            help='Media type (default: auto)'
+            help='Media type (default: auto)',
         )
-        parser.add_argument(
-            '--verbose',
-            action='store_true',
-            help='Verbose output'
-        )
-        parser.add_argument(
-            '--json',
-            action='store_true',
-            help='JSON output'
-        )
+        parser.add_argument('--verbose', action='store_true', help='Verbose output')
+        parser.add_argument('--json', action='store_true', help='JSON output')
 
     def handle(self, *args, **options):
         url = options['url']
@@ -62,8 +55,7 @@ class Command(BaseCommand):
 
         # Check if this URL already exists with this requested type
         existing_item = MediaItem.objects.filter(
-            source_url=url,
-            requested_type=requested_type
+            source_url=url, requested_type=requested_type
         ).first()
 
         if existing_item:
@@ -73,23 +65,21 @@ class Command(BaseCommand):
             item.error_message = ''
             item.save()
             if verbose:
-                self.stdout.write(f"Reusing existing item: {item.guid}")
+                self.stdout.write(f'Reusing existing item: {item.guid}')
         else:
             # Create new item
             item = MediaItem.objects.create(
-                source_url=url,
-                requested_type=requested_type,
-                status=MediaItem.STATUS_PREFETCHING
+                source_url=url, requested_type=requested_type, status=MediaItem.STATUS_PREFETCHING
             )
             if verbose:
-                self.stdout.write(f"Created new item: {item.guid}")
+                self.stdout.write(f'Created new item: {item.guid}')
 
         # Determine base media directory (don't know slug yet)
         media_base = Path(settings.STASHCAST_MEDIA_DIR)
         media_base.mkdir(parents=True, exist_ok=True)
 
         # Create tmp directory with GUID
-        tmp_dir = media_base / f"tmp-{item.guid}"
+        tmp_dir = media_base / f'tmp-{item.guid}'
         tmp_dir.mkdir(exist_ok=True)
 
         # Create log file
@@ -102,14 +92,14 @@ class Command(BaseCommand):
                 self.stdout.write(message)
 
         try:
-            log("=== TASK STARTED ===")
-            log(f"GUID: {item.guid}")
-            log(f"URL: {item.source_url}")
-            log(f"Requested type: {item.requested_type}")
-            log(f"Tmp directory: {tmp_dir}")
+            log('=== TASK STARTED ===')
+            log(f'GUID: {item.guid}')
+            log(f'URL: {item.source_url}')
+            log(f'Requested type: {item.requested_type}')
+            log(f'Tmp directory: {tmp_dir}')
 
             # PREFETCHING
-            log("=== PREFETCHING ===")
+            log('=== PREFETCHING ===')
 
             # Determine download strategy
             strategy = choose_download_strategy(item.source_url)
@@ -131,14 +121,14 @@ class Command(BaseCommand):
 
             except Exception as e:
                 # Handle playlist detection error
-                if "playlist" in str(e).lower():
-                    error_msg = f"Error: URL appears to be a playlist, which is not supported. Please provide a direct link to a single media item."
+                if 'playlist' in str(e).lower():
+                    error_msg = f'Error: URL appears to be a playlist, which is not supported. Please provide a direct link to a single media item.'
                     if json_output:
-                        self.stdout.write(json.dumps({
-                            'status': 'error',
-                            'error': error_msg,
-                            'guid': str(item.guid)
-                        }))
+                        self.stdout.write(
+                            json.dumps(
+                                {'status': 'error', 'error': error_msg, 'guid': str(item.guid)}
+                            )
+                        )
                     else:
                         self.stderr.write(self.style.ERROR(error_msg))
 
@@ -154,12 +144,12 @@ class Command(BaseCommand):
                 # Re-raise other errors
                 raise
 
-            log(f"Direct media URL: {is_direct}")
+            log(f'Direct media URL: {is_direct}')
 
             # DOWNLOADING
             item.status = MediaItem.STATUS_DOWNLOADING
             item.save()
-            log("=== DOWNLOADING ===")
+            log('=== DOWNLOADING ===')
 
             if is_direct:
                 download_direct(item, tmp_dir, log_path)
@@ -169,23 +159,23 @@ class Command(BaseCommand):
             # PROCESSING
             item.status = MediaItem.STATUS_PROCESSING
             item.save()
-            log("=== PROCESSING ===")
+            log('=== PROCESSING ===')
 
             process_files(item, tmp_dir, log_path)
 
             # Move from tmp directory to final slug-based directory
-            log("=== MOVING TO FINAL DIRECTORY ===")
+            log('=== MOVING TO FINAL DIRECTORY ===')
             final_dir = item.get_base_dir()
             final_dir.parent.mkdir(parents=True, exist_ok=True)
 
             # If final directory exists, remove it (overwrite behavior)
             if final_dir.exists():
-                log(f"Removing existing directory: {final_dir}")
+                log(f'Removing existing directory: {final_dir}')
                 shutil.rmtree(final_dir)
 
             # Move tmp directory to final location
             shutil.move(str(tmp_dir), str(final_dir))
-            log(f"Moved to: {final_dir}")
+            log(f'Moved to: {final_dir}')
 
             # Update log_path to new location
             log_path = final_dir / 'download.log'
@@ -194,8 +184,8 @@ class Command(BaseCommand):
             item.status = MediaItem.STATUS_READY
             item.downloaded_at = timezone.now()
             item.save()
-            log("=== READY ===")
-            log(f"Completed successfully: {item.title}")
+            log('=== READY ===')
+            log(f'Completed successfully: {item.title}')
 
             # Output result
             if json_output:
@@ -206,27 +196,29 @@ class Command(BaseCommand):
                     'title': item.title,
                     'media_type': item.media_type,
                     'directory': str(final_dir),
-                    'content_path': str(item.get_absolute_content_path()) if item.content_path else None,
+                    'content_path': str(item.get_absolute_content_path())
+                    if item.content_path
+                    else None,
                     'file_size': item.file_size,
                     'duration_seconds': item.duration_seconds,
                 }
                 self.stdout.write(json.dumps(result, indent=2))
             else:
-                self.stdout.write(self.style.SUCCESS("✓ Stash complete"))
-                self.stdout.write(f"  URL: {url}")
-                self.stdout.write(f"  Title: {item.title}")
-                self.stdout.write(f"  Slug: {item.slug}")
-                self.stdout.write(f"  Type: {item.media_type}")
-                self.stdout.write(f"  GUID: {item.guid}")
+                self.stdout.write(self.style.SUCCESS('✓ Stash complete'))
+                self.stdout.write(f'  URL: {url}')
+                self.stdout.write(f'  Title: {item.title}')
+                self.stdout.write(f'  Slug: {item.slug}')
+                self.stdout.write(f'  Type: {item.media_type}')
+                self.stdout.write(f'  GUID: {item.guid}')
                 if item.content_path:
-                    self.stdout.write(f"  Output: {item.get_absolute_content_path()}")
+                    self.stdout.write(f'  Output: {item.get_absolute_content_path()}')
                 if item.file_size:
-                    self.stdout.write(f"  Size: {item.file_size:,} bytes")
+                    self.stdout.write(f'  Size: {item.file_size:,} bytes')
                 if item.duration_seconds:
                     mins = item.duration_seconds // 60
                     secs = item.duration_seconds % 60
-                    self.stdout.write(f"  Duration: {mins}:{secs:02d}")
-                self.stdout.write(f"  Directory: {final_dir}")
+                    self.stdout.write(f'  Duration: {mins}:{secs:02d}')
+                self.stdout.write(f'  Directory: {final_dir}')
 
         except Exception as e:
             # ERROR
@@ -235,30 +227,28 @@ class Command(BaseCommand):
             item.save()
 
             if log_path:
-                write_log(log_path, "=== ERROR ===")
-                write_log(log_path, f"Error: {str(e)}")
+                write_log(log_path, '=== ERROR ===')
+                write_log(log_path, f'Error: {str(e)}')
 
             # Clean up tmp directory on error
             if tmp_dir and tmp_dir.exists():
                 if verbose:
-                    self.stdout.write(f"Cleaning up tmp directory: {tmp_dir}")
+                    self.stdout.write(f'Cleaning up tmp directory: {tmp_dir}')
                 try:
                     shutil.rmtree(tmp_dir)
                 except Exception as cleanup_error:
                     if verbose:
-                        self.stdout.write(f"Failed to clean up tmp: {cleanup_error}")
+                        self.stdout.write(f'Failed to clean up tmp: {cleanup_error}')
 
             # Output error
             if json_output:
-                self.stdout.write(json.dumps({
-                    'status': 'error',
-                    'error': str(e),
-                    'guid': str(item.guid)
-                }))
+                self.stdout.write(
+                    json.dumps({'status': 'error', 'error': str(e), 'guid': str(item.guid)})
+                )
             else:
-                self.stderr.write(self.style.ERROR(f"\n✗ Error: {str(e)}"))
-                self.stderr.write(f"  GUID: {item.guid}")
+                self.stderr.write(self.style.ERROR(f'\n✗ Error: {str(e)}'))
+                self.stderr.write(f'  GUID: {item.guid}')
                 if log_path and log_path.exists():
-                    self.stderr.write(f"  Log: {log_path}")
+                    self.stderr.write(f'  Log: {log_path}')
 
             raise

@@ -3,6 +3,7 @@ Download strategy detection.
 
 Determines whether to use direct HTTP download or yt-dlp for a given URL.
 """
+
 from urllib.parse import urlparse
 from pathlib import Path
 

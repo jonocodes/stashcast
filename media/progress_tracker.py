@@ -25,9 +25,9 @@ def update_progress(guid, status, progress=None):
     """
     with _lock:
         _progress_store[guid] = {
-            "status": status,
-            "progress": progress,
-            "updated_at": datetime.now(),
+            'status': status,
+            'progress': progress,
+            'updated_at': datetime.now(),
         }
 
 

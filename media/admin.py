@@ -17,7 +17,7 @@ class MediaItemAdmin(admin.ModelAdmin):
         'publish_date',
         'file_size_display',
         'updated_at',
-        'action_links'
+        'action_links',
     ]
 
     list_filter = [
@@ -47,51 +47,48 @@ class MediaItemAdmin(admin.ModelAdmin):
     ]
 
     fieldsets = [
-        ('Identification', {
-            'fields': ['guid', 'slug', 'source_url']
-        }),
-        ('Status', {
-            'fields': ['status', 'error_message']
-        }),
-        ('Media Info', {
-            'fields': [
-                'requested_type',
-                'media_type',
-                'title',
-                'author',
-                'description',
-                'publish_date',
-                'duration_seconds',
-            ]
-        }),
-        ('Files', {
-            'fields': [
-                'content_path',
-                'thumbnail_path',
-                'subtitle_path',
-                'file_size',
-                'mime_type',
-            ]
-        }),
-        ('Processing', {
-            'fields': ['ytdlp_args', 'ffmpeg_args']
-        }),
-        ('Metadata', {
-            'fields': [
-                'extractor',
-                'external_id',
-                'webpage_url',
-            ]
-        }),
-        ('Summary', {
-            'fields': ['summary']
-        }),
-        ('Logs & Preview', {
-            'fields': ['log_display', 'preview_display']
-        }),
-        ('Timestamps', {
-            'fields': ['created_at', 'updated_at', 'downloaded_at']
-        }),
+        ('Identification', {'fields': ['guid', 'slug', 'source_url']}),
+        ('Status', {'fields': ['status', 'error_message']}),
+        (
+            'Media Info',
+            {
+                'fields': [
+                    'requested_type',
+                    'media_type',
+                    'title',
+                    'author',
+                    'description',
+                    'publish_date',
+                    'duration_seconds',
+                ]
+            },
+        ),
+        (
+            'Files',
+            {
+                'fields': [
+                    'content_path',
+                    'thumbnail_path',
+                    'subtitle_path',
+                    'file_size',
+                    'mime_type',
+                ]
+            },
+        ),
+        ('Processing', {'fields': ['ytdlp_args', 'ffmpeg_args']}),
+        (
+            'Metadata',
+            {
+                'fields': [
+                    'extractor',
+                    'external_id',
+                    'webpage_url',
+                ]
+            },
+        ),
+        ('Summary', {'fields': ['summary']}),
+        ('Logs & Preview', {'fields': ['log_display', 'preview_display']}),
+        ('Timestamps', {'fields': ['created_at', 'updated_at', 'downloaded_at']}),
     ]
 
     actions = ['refetch_items', 'regenerate_summaries']
@@ -99,9 +96,10 @@ class MediaItemAdmin(admin.ModelAdmin):
     def file_size_display(self, obj):
         if obj.file_size:
             size_mb = obj.file_size / (1024 * 1024)
-            return f"{size_mb:.2f} MB"
-        return "-"
-    file_size_display.short_description = "File Size"
+            return f'{size_mb:.2f} MB'
+        return '-'
+
+    file_size_display.short_description = 'File Size'
 
     def action_links(self, obj):
         view_url = reverse('item_detail', args=[obj.guid])
@@ -113,26 +111,27 @@ class MediaItemAdmin(admin.ModelAdmin):
             admin_url = reverse('admin:media_mediaitem_change', args=[obj.guid])
             links.append(f'<a href="{admin_url}#log">Logs</a>')
         return mark_safe(' | '.join(links))
-    action_links.short_description = "Actions"
+
+    action_links.short_description = 'Actions'
 
     def preview_display(self, obj):
         if obj.status != MediaItem.STATUS_READY:
-            return "-"
+            return '-'
 
         view_url = reverse('item_detail', args=[obj.guid])
         return format_html(
-            '<iframe src="{}" width="100%" height="600" frameborder="0"></iframe>',
-            view_url
+            '<iframe src="{}" width="100%" height="600" frameborder="0"></iframe>', view_url
         )
-    preview_display.short_description = "Preview"
+
+    preview_display.short_description = 'Preview'
 
     def log_display(self, obj):
         if not obj.log_path:
-            return "No log file"
+            return 'No log file'
 
         log_path = obj.get_absolute_log_path()
         if not log_path:
-            return "No log file"
+            return 'No log file'
 
         try:
             with open(log_path, 'r') as f:
@@ -140,11 +139,12 @@ class MediaItemAdmin(admin.ModelAdmin):
             return format_html(
                 '<a name="log"></a><pre style="background: #f5f5f5; padding: 10px; '
                 'border-radius: 4px; max-height: 400px; overflow: auto;">{}</pre>',
-                log_content
+                log_content,
             )
         except Exception as e:
-            return f"Error reading log: {e}"
-    log_display.short_description = "Logs"
+            return f'Error reading log: {e}'
+
+    log_display.short_description = 'Logs'
 
     def refetch_items(self, request, queryset):
         count = 0
@@ -154,8 +154,9 @@ class MediaItemAdmin(admin.ModelAdmin):
             item.save()
             process_media(item.guid)
             count += 1
-        self.message_user(request, f"Re-fetching {count} items.")
-    refetch_items.short_description = "Re-fetch selected items"
+        self.message_user(request, f'Re-fetching {count} items.')
+
+    refetch_items.short_description = 'Re-fetch selected items'
 
     def regenerate_summaries(self, request, queryset):
         count = 0
@@ -163,5 +164,6 @@ class MediaItemAdmin(admin.ModelAdmin):
             if item.subtitle_path:
                 generate_summary(item.guid)
                 count += 1
-        self.message_user(request, f"Enqueued summary generation for {count} items.")
-    regenerate_summaries.short_description = "Regenerate summaries"
+        self.message_user(request, f'Enqueued summary generation for {count} items.')
+
+    regenerate_summaries.short_description = 'Regenerate summaries'

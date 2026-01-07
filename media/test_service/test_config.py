@@ -1,6 +1,7 @@
 """
 Tests for service/config.py
 """
+
 from django.test import TestCase, override_settings
 from media.service.config import (
     get_ytdlp_args_for_type,
@@ -10,7 +11,7 @@ from media.service.config import (
     get_acceptable_video_formats,
     get_target_audio_format,
     get_target_video_format,
-    parse_ytdlp_extra_args
+    parse_ytdlp_extra_args,
 )
 
 
@@ -140,8 +141,7 @@ class ParseYtdlpArgsTest(TestCase):
         """Test parsing complex format with quotes and brackets"""
         base_opts = {'quiet': True}
         result = parse_ytdlp_extra_args(
-            '--format "bv*[height<=720][vcodec^=avc]+ba/b[height<=720]"',
-            base_opts
+            '--format "bv*[height<=720][vcodec^=avc]+ba/b[height<=720]"', base_opts
         )
         self.assertEqual(result['format'], 'bv*[height<=720][vcodec^=avc]+ba/b[height<=720]')
         self.assertEqual(result['quiet'], True)
@@ -149,21 +149,13 @@ class ParseYtdlpArgsTest(TestCase):
     def test_parse_multiple_arguments(self):
         """Test parsing multiple arguments"""
         base_opts = {}
-        result = parse_ytdlp_extra_args(
-            '--format bestaudio --merge-output-format mp4',
-            base_opts
-        )
+        result = parse_ytdlp_extra_args('--format bestaudio --merge-output-format mp4', base_opts)
         self.assertEqual(result['format'], 'bestaudio')
         self.assertEqual(result['merge_output_format'], 'mp4')
 
     def test_preserves_existing_options(self):
         """Test that existing options are preserved"""
-        base_opts = {
-            'format': 'best',
-            'quiet': True,
-            'writethumbnail': True,
-            'noplaylist': True
-        }
+        base_opts = {'format': 'best', 'quiet': True, 'writethumbnail': True, 'noplaylist': True}
         result = parse_ytdlp_extra_args('--format bestaudio', base_opts)
         self.assertEqual(result['format'], 'bestaudio')
         self.assertEqual(result['quiet'], True)
@@ -189,7 +181,7 @@ class ParseYtdlpArgsTest(TestCase):
         base_opts = {'quiet': True}
         result = parse_ytdlp_extra_args(
             '--format "bv*[height<=720][vcodec^=avc]+ba/b[height<=720]" --merge-output-format mp4',
-            base_opts
+            base_opts,
         )
         self.assertEqual(result['format'], 'bv*[height<=720][vcodec^=avc]+ba/b[height<=720]')
         self.assertEqual(result['merge_output_format'], 'mp4')
