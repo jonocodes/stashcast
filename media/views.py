@@ -57,6 +57,9 @@ def stash_view(request):
     url = request.GET.get("url") or request.POST.get("url")
     requested_type = request.GET.get("type") or request.POST.get("type")
     redirect_param = request.GET.get("redirect") or request.POST.get("redirect")
+    close_tab_after = request.GET.get("closeTabAfter") or request.POST.get(
+        "closeTabAfter"
+    )
 
     if not url:
         return JsonResponse({"error": "Missing required parameter: url"}, status=400)
@@ -112,6 +115,8 @@ def stash_view(request):
     # Check if redirect to progress page is requested
     if redirect_param == "progress":
         progress_url = request.build_absolute_uri(f"/stash/{item.guid}/progress/")
+        if close_tab_after:
+            progress_url = f"{progress_url}?closeTabAfter={close_tab_after}"
         return redirect(progress_url)
 
     # Return JSON response (default behavior for API compatibility)

@@ -3,23 +3,25 @@ Media processing and transcoding service.
 
 Determines if transcoding is needed and performs it using ffmpeg.
 """
+
+import shutil
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
-import subprocess
-import shutil
 
 from media.service.config import (
     get_acceptable_audio_formats,
     get_acceptable_video_formats,
+    get_ffmpeg_args_for_type,
     get_target_audio_format,
     get_target_video_format,
-    get_ffmpeg_args_for_type
 )
 
 
 @dataclass
 class ProcessedFileInfo:
     """Information about a processed file"""
+
     path: Path
     file_size: int
     extension: str
@@ -42,11 +44,11 @@ def needs_transcode(file_path, resolved_type):
     file_path = Path(file_path)
     ext = file_path.suffix.lower()
 
-    if resolved_type == 'audio':
+    if resolved_type == "audio":
         acceptable = get_acceptable_audio_formats()
         # MP3 and M4A are acceptable for audio
         return ext not in acceptable
-    elif resolved_type == 'video':
+    elif resolved_type == "video":
         acceptable = get_acceptable_video_formats()
         # MP4 is acceptable for video
         return ext not in acceptable
@@ -63,28 +65,36 @@ def get_existing_metadata(file_path):
     """
     try:
         result = subprocess.run(
-            ['ffprobe', '-v', 'quiet', '-show_format', '-of', 'json', str(file_path)],
+            ["ffprobe", "-v", "quiet", "-show_format", "-of", "json", str(file_path)],
             capture_output=True,
             text=True,
-            timeout=10
+            timeout=10,
         )
         if result.returncode == 0:
             import json
+
             data = json.loads(result.stdout)
-            tags = data.get('format', {}).get('tags', {})
+            tags = data.get("format", {}).get("tags", {})
             # ffprobe returns tags in lowercase
             return {
-                'title': tags.get('title'),
-                'artist': tags.get('artist'),
-                'comment': tags.get('comment')
+                "title": tags.get("title"),
+                "artist": tags.get("artist"),
+                "comment": tags.get("comment"),
             }
     except Exception:
         pass
     return {}
 
 
-def transcode_to_playable(input_path, resolved_type, output_path, ffmpeg_extra_args='',
-                          metadata=None, logger=None):
+def transcode_to_playable(
+    input_path,
+    resolved_type,
+    output_path,
+    ffmpeg_extra_args="",
+    metadata=None,
+    logger=None,
+    progress_callback=None,
+):
     """
     Transcode a media file to a widely-compatible format.
 
@@ -95,10 +105,12 @@ def transcode_to_playable(input_path, resolved_type, output_path, ffmpeg_extra_a
         ffmpeg_extra_args: Additional ffmpeg arguments from settings
         metadata: Dict with optional keys: title, author, description
         logger: Optional callable(str) for logging
+        progress_callback: Optional callable(int) for progress updates (0-100)
 
     Returns:
         ProcessedFileInfo
     """
+
     def log(message):
         if logger:
             logger(message)
@@ -126,34 +138,101 @@ def transcode_to_playable(input_path, resolved_type, output_path, ffmpeg_extra_a
     metadata_args = []
     if metadata:
         # Only add title if source doesn't already have one
-        if metadata.get('title') and not existing_metadata.get('title'):
-            metadata_args.extend(['-metadata', f"title={metadata['title']}"])
+        if metadata.get("title") and not existing_metadata.get("title"):
+            metadata_args.extend(["-metadata", f"title={metadata['title']}"])
         # Only add artist if source doesn't already have one
-        if metadata.get('author') and not existing_metadata.get('artist'):
-            metadata_args.extend(['-metadata', f"artist={metadata['author']}"])
+        if metadata.get("author") and not existing_metadata.get("artist"):
+            metadata_args.extend(["-metadata", f"artist={metadata['author']}"])
         # Only add comment if source doesn't already have one
-        if metadata.get('description') and not existing_metadata.get('comment'):
-            metadata_args.extend(['-metadata', f"comment={metadata['description']}"])
+        if metadata.get("description") and not existing_metadata.get("comment"):
+            metadata_args.extend(["-metadata", f"comment={metadata['description']}"])
 
     # Build ffmpeg command
     # Use -map_metadata 0 to copy all existing metadata from input
-    cmd = [
-        'ffmpeg',
-        '-i', str(input_path),
-        '-y',  # Overwrite output file
-        '-map_metadata', '0',  # Copy existing metadata from input
-    ] + args_list + metadata_args + [
-        str(output_path)
-    ]
+    cmd = (
+        [
+            "ffmpeg",
+            "-i",
+            str(input_path),
+            "-y",  # Overwrite output file
+            "-map_metadata",
+            "0",  # Copy existing metadata from input
+        ]
+        + args_list
+        + metadata_args
+        + [str(output_path)]
+    )
 
     log(f"Running: {' '.join(cmd)}")
 
     # Run ffmpeg
-    result = subprocess.run(
-        cmd,
-        capture_output=True,
-        text=True
-    )
+    if progress_callback:
+        # Run with progress tracking
+        process = subprocess.Popen(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1
+        )
+
+        # Parse progress from ffmpeg output
+        total_duration = None
+        for line in process.stdout:
+            if "out_time=" in line:
+                # Extract current time
+                try:
+                    time_str = line.split("out_time=")[1].split()[0]
+                    # Parse time in format HH:MM:SS.ms or MM:SS.ms
+                    parts = time_str.split(":")
+                    if len(parts) == 3:
+                        # HH:MM:SS.ms
+                        hours = int(parts[0])
+                        minutes = int(parts[1])
+                        seconds = float(parts[2])
+                        total_seconds = hours * 3600 + minutes * 60 + seconds
+                    elif len(parts) == 2:
+                        # MM:SS.ms
+                        minutes = int(parts[0])
+                        seconds = float(parts[1])
+                        total_seconds = minutes * 60 + seconds
+                    else:
+                        continue
+
+                    # Get total duration from input file
+                    if total_duration is None:
+                        try:
+                            probe_result = subprocess.run(
+                                [
+                                    "ffprobe",
+                                    "-v",
+                                    "quiet",
+                                    "-show_entries",
+                                    "format=duration",
+                                    "-of",
+                                    "default=noprint_wrappers=1:nokey=1",
+                                    str(input_path),
+                                ],
+                                capture_output=True,
+                                text=True,
+                                timeout=10,
+                            )
+                            if probe_result.returncode == 0:
+                                total_duration = float(probe_result.stdout.strip())
+                        except:
+                            pass
+
+                    # Calculate progress
+                    if total_duration and total_duration > 0:
+                        progress = int((total_seconds / total_duration) * 100)
+                        # Map to 40-70% range (DOWNLOADING is 10-40%, PROCESSING is 40-70%)
+                        mapped_progress = 40 + int((progress / 100) * 30)
+                        progress_callback(mapped_progress)
+                except (ValueError, IndexError):
+                    pass
+
+        process.wait()
+        result = type(
+            "obj", (object,), {"returncode": process.returncode, "stderr": ""}
+        )()
+    else:
+        result = subprocess.run(cmd, capture_output=True, text=True)
 
     if result.returncode != 0:
         log(f"ffmpeg stderr: {result.stderr}")
@@ -166,7 +245,7 @@ def transcode_to_playable(input_path, resolved_type, output_path, ffmpeg_extra_a
         path=output_path,
         file_size=file_size,
         extension=output_path.suffix,
-        was_transcoded=True
+        was_transcoded=True,
     )
 
 
@@ -185,6 +264,7 @@ def add_metadata_without_transcode(input_path, output_path, metadata=None, logge
     Returns:
         Path to output file
     """
+
     def log(message):
         if logger:
             logger(message)
@@ -203,31 +283,31 @@ def add_metadata_without_transcode(input_path, output_path, metadata=None, logge
 
     # Build metadata arguments
     metadata_args = []
-    if metadata.get('title'):
-        metadata_args.extend(['-metadata', f"title={metadata['title']}"])
-    if metadata.get('author'):
-        metadata_args.extend(['-metadata', f"artist={metadata['author']}"])
-    if metadata.get('description'):
-        metadata_args.extend(['-metadata', f"comment={metadata['description']}"])
+    if metadata.get("title"):
+        metadata_args.extend(["-metadata", f"title={metadata['title']}"])
+    if metadata.get("author"):
+        metadata_args.extend(["-metadata", f"artist={metadata['author']}"])
+    if metadata.get("description"):
+        metadata_args.extend(["-metadata", f"comment={metadata['description']}"])
 
     # Build ffmpeg command with stream copy (no transcoding)
-    cmd = [
-        'ffmpeg',
-        '-i', str(input_path),
-        '-y',  # Overwrite output file
-        '-c', 'copy',  # Copy all streams without re-encoding
-    ] + metadata_args + [
-        str(output_path)
-    ]
+    cmd = (
+        [
+            "ffmpeg",
+            "-i",
+            str(input_path),
+            "-y",  # Overwrite output file
+            "-c",
+            "copy",  # Copy all streams without re-encoding
+        ]
+        + metadata_args
+        + [str(output_path)]
+    )
 
     log(f"Running: {' '.join(cmd)}")
 
     # Run ffmpeg
-    result = subprocess.run(
-        cmd,
-        capture_output=True,
-        text=True
-    )
+    result = subprocess.run(cmd, capture_output=True, text=True)
 
     if result.returncode != 0:
         log(f"ffmpeg metadata add failed, falling back to simple copy")
@@ -250,6 +330,7 @@ def process_thumbnail(thumbnail_path, output_path, logger=None):
     Returns:
         Path to processed thumbnail or None
     """
+
     def log(message):
         if logger:
             logger(message)
@@ -267,9 +348,9 @@ def process_thumbnail(thumbnail_path, output_path, logger=None):
         log(f"Converting thumbnail to PNG: {thumbnail_path}")
 
         img = Image.open(thumbnail_path)
-        if img.mode in ('RGBA', 'P'):
-            img = img.convert('RGB')
-        img.save(output_path, 'PNG', optimize=True)
+        if img.mode in ("RGBA", "P"):
+            img = img.convert("RGB")
+        img.save(output_path, "PNG", optimize=True)
 
         log(f"Thumbnail saved: {output_path}")
         return output_path
@@ -293,6 +374,7 @@ def process_subtitle(subtitle_path, output_path, logger=None):
     Returns:
         Path to processed subtitle or None
     """
+
     def log(message):
         if logger:
             logger(message)
@@ -304,7 +386,7 @@ def process_subtitle(subtitle_path, output_path, logger=None):
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    if subtitle_path.suffix == '.vtt':
+    if subtitle_path.suffix == ".vtt":
         # Already VTT, just copy
         log(f"Copying VTT subtitle: {subtitle_path}")
         shutil.copy2(subtitle_path, output_path)
@@ -314,12 +396,7 @@ def process_subtitle(subtitle_path, output_path, logger=None):
     try:
         log(f"Converting subtitle to VTT: {subtitle_path}")
 
-        cmd = [
-            'ffmpeg',
-            '-i', str(subtitle_path),
-            '-y',
-            str(output_path)
-        ]
+        cmd = ["ffmpeg", "-i", str(subtitle_path), "-y", str(output_path)]
 
         result = subprocess.run(cmd, capture_output=True, text=True)
 

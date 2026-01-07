@@ -20,6 +20,18 @@
             justify-content: center;
             padding: 20px;
         }
+        .home-link {
+            position: absolute;
+            top: 18px;
+            left: 18px;
+            color: rgba(255, 255, 255, 0.9);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .home-link:hover {
+            text-decoration: underline;
+        }
 
         .container {
             background: white;
@@ -100,12 +112,33 @@
             margin-top: 15px;
         }
 
+        .progress-percentage {
+            font-size: 14px;
+            font-weight: 600;
+            color: #667eea;
+            margin-left: 10px;
+        }
+
+        .progress-text {
+            font-size: 12px;
+            font-weight: 600;
+            color: #667eea;
+            margin-left: 10px;
+        }
+
         .progress-fill {
             height: 100%;
             background: linear-gradient(90deg, #667eea, #764ba2);
             width: 0%;
             transition: width 0.3s ease;
             animation: pulse 2s infinite;
+        }
+
+        .progress-text {
+            font-size: 12px;
+            font-weight: 600;
+            color: #667eea;
+            margin-left: 10px;
         }
 
         @keyframes pulse {
@@ -158,6 +191,13 @@
             display: none;
         }
 
+        .close-timer {
+            color: #666;
+            font-size: 13px;
+            margin-top: 10px;
+            display: none;
+        }
+
         .btn {
             display: inline-block;
             padding: 12px 30px;
@@ -200,6 +240,7 @@
     </style>
 </head>
 <body>
+    <a class="home-link" href="{% url 'home' %}">&larr; Home</a>
     <div class="container">
         <div class="icon">📥</div>
         <h1>StashCast</h1>
@@ -216,6 +257,7 @@
             <div class="progress-bar">
                 <div class="progress-fill" id="progress-fill"></div>
             </div>
+            <div class="progress-text" id="progress-text">0%</div>
         </div>
 
         <div class="info-row">
@@ -237,6 +279,7 @@
         <div class="success-message" id="success-message">
             Your media is ready!
         </div>
+        <div class="close-timer" id="close-timer"></div>
 
         <a href="#" class="btn" id="view-btn">View Media</a>
     </div>
@@ -246,11 +289,13 @@
         const statusText = document.getElementById('status-text');
         const statusValue = document.getElementById('status-value');
         const progressFill = document.getElementById('progress-fill');
+        const progressText = document.getElementById('progress-text');
         const titleValue = document.getElementById('title-value');
         const mediaTypeValue = document.getElementById('media-type-value');
         const errorMessage = document.getElementById('error-message');
         const successMessage = document.getElementById('success-message');
         const viewBtn = document.getElementById('view-btn');
+        const closeTimerText = document.getElementById('close-timer');
 
         // Status display mapping
         const statusDisplay = {
@@ -270,12 +315,34 @@
             'ERROR': 0
         };
 
+        const urlParams = new URLSearchParams(window.location.search);
+        const closeTabAfter = Number(urlParams.get('closeTabAfter'));
+        let closeTimerId = null;
+
+        function startCloseCountdown() {
+            if (!Number.isFinite(closeTabAfter) || closeTabAfter <= 0) {
+                return;
+            }
+            let remainingSeconds = Math.ceil(closeTabAfter);
+            closeTimerText.style.display = 'block';
+            closeTimerText.textContent = `Closing this tab in ${remainingSeconds}s...`;
+            closeTimerId = window.setInterval(() => {
+                remainingSeconds -= 1;
+                if (remainingSeconds <= 0) {
+                    window.close();
+                    window.clearInterval(closeTimerId);
+                    return;
+                }
+                closeTimerText.textContent = `Closing this tab in ${remainingSeconds}s...`;
+            }, 1000);
+        }
+
         // Connect to SSE endpoint
         const eventSource = new EventSource(`/stash/${guid}/stream/`);
 
         eventSource.addEventListener('message', function(event) {
             const data = JSON.parse(event.data);
-            
+
             // Update status
             if (data.status) {
                 const displayStatus = statusDisplay[data.status] || data.status;
@@ -284,8 +351,11 @@
                 // Update status value styling
                 statusValue.className = `status-value ${data.status.toLowerCase()}`;
                 
-                // Update progress bar
-                progressFill.style.width = `${statusProgress[data.status] || 0}%`;
+                // Update progress bar - use actual progress if available
+                const progress = data.progress !== undefined ? data.progress : (statusProgress[data.status] || 0);
+                const clampedProgress = Math.max(0, Math.min(progress, 100));
+                progressFill.style.width = `${clampedProgress}%`;
+                progressText.textContent = `${Math.round(clampedProgress)}%`;
                 
                 // Hide spinner if ready or error
                 if (data.status === 'READY' || data.status === 'ERROR') {
@@ -320,6 +390,7 @@
                 viewBtn.style.display = 'inline-block';
                 viewBtn.href = data.detail_url;
                 progressFill.style.background = '#28a745';
+                startCloseCountdown();
             }
         });
 

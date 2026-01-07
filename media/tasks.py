@@ -1,19 +1,21 @@
 import os
 import shutil
 from pathlib import Path
-from huey.contrib.djhuey import db_task
+
 from django.conf import settings
 from django.utils import timezone
+from huey.contrib.djhuey import db_task
 
 from media.models import MediaItem
 from media.processing import (
-    write_log,
-    prefetch_direct,
-    prefetch_ytdlp,
     download_direct,
     download_ytdlp,
-    process_files
+    prefetch_direct,
+    prefetch_ytdlp,
+    process_files,
+    write_log,
 )
+from media.progress_tracker import update_progress
 from media.service.strategy import choose_download_strategy
 
 
@@ -42,7 +44,10 @@ def process_media(guid):
     now = timezone.now()
     time_since_update = now - item.updated_at
 
-    if item.status == MediaItem.STATUS_PREFETCHING and time_since_update.total_seconds() > 30:
+    if (
+        item.status == MediaItem.STATUS_PREFETCHING
+        and time_since_update.total_seconds() > 30
+    ):
         item.status = MediaItem.STATUS_ERROR
         item.error_message = (
             f"Worker timeout: Item stuck in PREFETCHING for {int(time_since_update.total_seconds())} seconds. "
@@ -66,7 +71,7 @@ def process_media(guid):
         tmp_dir.mkdir(exist_ok=True)
 
         # Create log file immediately in tmp directory
-        log_path = tmp_dir / 'download.log'
+        log_path = tmp_dir / "download.log"
         write_log(log_path, "=== TASK STARTED ===")
         write_log(log_path, f"GUID: {guid}")
         write_log(log_path, f"URL: {item.source_url}")
@@ -77,10 +82,11 @@ def process_media(guid):
         item.status = MediaItem.STATUS_PREFETCHING
         item.save()
         write_log(log_path, "=== PREFETCHING ===")
+        update_progress(item.guid, MediaItem.STATUS_PREFETCHING, 0)
 
         # Determine download strategy
         strategy = choose_download_strategy(item.source_url)
-        is_direct = strategy in ('direct', 'file')
+        is_direct = strategy in ("direct", "file")
 
         if is_direct:
             # Direct download - minimal metadata
@@ -89,12 +95,13 @@ def process_media(guid):
             # Use yt-dlp to extract metadata (may fallback to HTML extractor)
             prefetch_ytdlp(item, tmp_dir, log_path)
 
-            # Re-check if URL is now direct (HTML extractor may have found direct media)
-            item.refresh_from_db()
-            strategy = choose_download_strategy(item.source_url)
-            is_direct = strategy in ('direct', 'file')
+        # Re-check if URL is now direct (HTML extractor may have found direct media)
+        item.refresh_from_db()
+        strategy = choose_download_strategy(item.source_url)
+        is_direct = strategy in ("direct", "file")
 
         write_log(log_path, f"Direct media URL: {is_direct}")
+        update_progress(item.guid, MediaItem.STATUS_PREFETCHING, 10)
 
         # DOWNLOADING
         item.status = MediaItem.STATUS_DOWNLOADING
@@ -110,6 +117,7 @@ def process_media(guid):
         item.status = MediaItem.STATUS_PROCESSING
         item.save()
         write_log(log_path, "=== PROCESSING ===")
+        update_progress(item.guid, MediaItem.STATUS_PROCESSING, 40)
 
         process_files(item, tmp_dir, log_path)
 
@@ -128,7 +136,7 @@ def process_media(guid):
         write_log(log_path, f"Moved to: {final_dir}")
 
         # Update log_path to new location for final messages
-        log_path = final_dir / 'download.log'
+        log_path = final_dir / "download.log"
 
         # READY
         item.status = MediaItem.STATUS_READY
@@ -136,6 +144,12 @@ def process_media(guid):
         item.save()
         write_log(log_path, "=== READY ===")
         write_log(log_path, f"Completed successfully: {item.title}")
+        update_progress(item.guid, MediaItem.STATUS_READY, 100)
+
+        # Clean up progress tracker
+        from media.progress_tracker import clear_progress
+
+        clear_progress(item.guid)
 
         # Generate summary if subtitles are available
         if item.subtitle_path and settings.STASHCAST_SUMMARY_SENTENCES > 0:
@@ -191,36 +205,39 @@ def generate_summary(guid):
             write_log(log_path, "=== GENERATING SUMMARY ===")
             write_log(log_path, f"Reading subtitles from: {subtitle_path}")
         # Read subtitle file and extract text
-        with open(subtitle_path, 'r', encoding='utf-8') as f:
+        with open(subtitle_path, "r", encoding="utf-8") as f:
             subtitle_text = f.read()
 
         # Remove VTT formatting
         import re
-        lines = subtitle_text.split('\n')
+
+        lines = subtitle_text.split("\n")
         text_lines = []
         for line in lines:
             # Skip VTT headers, timestamps, cue IDs, and blank lines
-            if (not line.startswith('WEBVTT') and
-                not line.startswith('Kind:') and
-                not line.startswith('Language:') and
-                not '-->' in line and
-                not re.match(r'^\d+$', line.strip()) and
-                not 'align:' in line and
-                not 'position:' in line and
-                line.strip()):
+            if (
+                not line.startswith("WEBVTT")
+                and not line.startswith("Kind:")
+                and not line.startswith("Language:")
+                and not "-->" in line
+                and not re.match(r"^\d+$", line.strip())
+                and not "align:" in line
+                and not "position:" in line
+                and line.strip()
+            ):
                 # Remove timing tags like <00:00:00.400> and <c>
-                clean_line = re.sub(r'<[^>]+>', '', line)
+                clean_line = re.sub(r"<[^>]+>", "", line)
                 if clean_line.strip():
                     text_lines.append(clean_line.strip())
 
-        full_text = ' '.join(text_lines)
+        full_text = " ".join(text_lines)
 
         if not full_text:
             return
 
         # Use sumy for extractive summarization
-        from sumy.parsers.plaintext import PlaintextParser
         from sumy.nlp.tokenizers import Tokenizer
+        from sumy.parsers.plaintext import PlaintextParser
         from sumy.summarizers.lex_rank import LexRankSummarizer
 
         parser = PlaintextParser.from_string(full_text, Tokenizer("english"))
@@ -229,13 +246,15 @@ def generate_summary(guid):
         # Generate summary with configured number of sentences
         num_sentences = settings.STASHCAST_SUMMARY_SENTENCES
         summary_sentences = summarizer(parser.document, num_sentences)
-        summary = ' '.join(str(sentence) for sentence in summary_sentences)
+        summary = " ".join(str(sentence) for sentence in summary_sentences)
 
         item.summary = summary
         item.save()
 
         if log_path:
-            write_log(log_path, f"Generated {len(list(summary_sentences))} sentence summary")
+            write_log(
+                log_path, f"Generated {len(list(summary_sentences))} sentence summary"
+            )
 
     except Exception as e:
         # Don't fail the whole item if summary generation fails

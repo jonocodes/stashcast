@@ -15,6 +15,16 @@
             padding: 20px;
             background-color: #f5f5f5;
         }
+        .home-link {
+            display: inline-block;
+            margin-bottom: 16px;
+            color: #007bff;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .home-link:hover {
+            text-decoration: underline;
+        }
         .container {
             background: white;
             border-radius: 8px;
@@ -102,6 +112,7 @@
 </head>
 <body>
     <div class="container">
+        <a class="home-link" href="{% url 'home' %}">&larr; Home</a>
         {% if item.status == 'READY' %}
             <span class="status-badge status-ready">Ready</span>
         {% elif item.status == 'ERROR' %}
