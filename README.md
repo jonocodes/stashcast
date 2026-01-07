@@ -45,7 +45,11 @@ I created this since friends and family often send me links to listen to a singl
 - Python 3.13+
 - yt-dlp
 - ffmpeg
-- ruff (for development)
+
+### For development
+- just
+- ruff
+
 
 ## Run in docker
 
@@ -75,9 +79,6 @@ First install yt-dlp and ffmpeg to your system however you need to, probably usi
 # Create and activate virtual environment
 python -m venv venv
 source venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
 ```
 
 ### 2. Configure environment variables (optional)
@@ -92,16 +93,15 @@ cp .env.example .env
 # - STASHCAST_API_KEY
 ```
 
-### 3. Download NLTK data (required for summarization)
+### 3. Download the dependencies and setup the db
 
 ```bash
-python -c "import nltk; nltk.download('punkt_tab'); nltk.download('stopwords')"
+just setup
 ```
 
-### 4. Initialize database
+### 4. Create an admin user (required)
 
 ```bash
-./manage.py migrate
 ./manage.py createsuperuser
 ```
 
@@ -110,7 +110,7 @@ python -c "import nltk; nltk.download('punkt_tab'); nltk.download('stopwords')"
 **Option A: Quick Start (all services in one terminal)**
 
 ```bash
-./run_dev.sh
+just dev
 ```
 
 This starts Django server (8000), Huey worker, and test server (8001) all at once.

@@ -458,7 +458,7 @@ class FeedAbsoluteUrlTest(TestCase):
         self.assertIn('xmlns:media="http://search.yahoo.com/mrss/"', xml)
         self.assertIn('http://testserver/feeds/audio.xml', xml)
         self.assertIn('http://testserver/static/media/feed-logo-audio.png', xml)
-        self.assertIn(f'http://testserver/items/{item.guid}/', xml)
+        self.assertIn(f'http://testserver/admin/tools/item/{item.guid}/', xml)
         self.assertIn('http://testserver/media/files/audio-item/audio.m4a', xml)
         self.assertIn(
             'media:thumbnail url="http://testserver/media/files/audio-item/thumbnail.jpg"',
@@ -484,7 +484,7 @@ class FeedAbsoluteUrlTest(TestCase):
         self.assertIn('xmlns:media="http://search.yahoo.com/mrss/"', xml)
         self.assertIn('http://testserver/feeds/video.xml', xml)
         self.assertIn('http://testserver/static/media/feed-logo-video.png', xml)
-        self.assertIn(f'http://testserver/items/{item.guid}/', xml)
+        self.assertIn(f'http://testserver/admin/tools/item/{item.guid}/', xml)
         self.assertIn('http://testserver/media/files/video-item/video.mp4', xml)
         self.assertIn(
             'media:thumbnail url="http://testserver/media/files/video-item/thumb.png"',
@@ -524,8 +524,8 @@ class FeedAbsoluteUrlTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn('http://testserver/feeds/combined.xml', xml)
         self.assertIn('http://testserver/static/media/feed-logo-combined.png', xml)
-        self.assertIn(f'http://testserver/items/{audio_item.guid}/', xml)
-        self.assertIn(f'http://testserver/items/{video_item.guid}/', xml)
+        self.assertIn(f'http://testserver/admin/tools/item/{audio_item.guid}/', xml)
+        self.assertIn(f'http://testserver/admin/tools/item/{video_item.guid}/', xml)
         self.assertIn('http://testserver/media/files/audio-combined/track.m4a', xml)
         self.assertIn('http://testserver/media/files/video-combined/clip.mp4', xml)
         self.assertIn(

@@ -53,13 +53,13 @@ urlpatterns = [
     path('admin/tools/add-url/', admin_stash_form_view, name='admin_stash_form'),
     path('admin/tools/grid/', grid_view, name='grid_view'),
     path('admin/tools/list/', list_view, name='list_view'),
+    path('admin/tools/item/<str:guid>/', item_detail_view, name='item_detail'),
     # Standard admin (includes django-huey-monitor integration)
     path('admin/', admin.site.urls),
     # Public endpoints
     path('stash/', stash_view, name='stash'),
     path('stash/<str:guid>/progress/', stash_progress_view, name='stash_progress'),
     path('stash/<str:guid>/stream/', stash_status_stream, name='stash_status_stream'),
-    path('items/<str:guid>/', item_detail_view, name='item_detail'),
     path('feeds/audio.xml', AudioFeed(), name='audio_feed'),
     path('feeds/video.xml', VideoFeed(), name='video_feed'),
     path('feeds/combined.xml', CombinedFeed(), name='combined_feed'),

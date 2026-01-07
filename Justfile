@@ -17,13 +17,16 @@ clean:
     rm -rf __pycache__
 
 # run the django server
-dev:
-    ./manage.py runserver 0.0.0.0:8000
+dev-web:
+    honcho start web
 
-# run the server and the worker
-dev-stack:
-    echo running dev server at http://0.0.0.0:8000
+# run the server, the worker, and demo data server
+dev:
     exec honcho start
+
+# run the dev services in docker
+dev-docker:
+    docker compose up --build
 
 # kill the local dev process by port in case it's running detached
 kill:

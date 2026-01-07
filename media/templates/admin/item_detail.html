@@ -1,0 +1,194 @@
+{% extends "admin/base_site.html" %}
+{% load media_filters %}
+{% load static %}
+
+{% block title %}{{ item.title|default:"Untitled" }} - StashCast{% endblock %}
+
+{% block extrastyle %}
+<style>
+    .item-detail-container {
+        max-width: 1000px;
+        margin: 20px auto;
+        padding: 20px;
+        background: var(--body-bg);
+        border: 1px solid var(--border-color, #ddd);
+        border-radius: 8px;
+    }
+    .status-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 4px;
+        font-size: 14px;
+        font-weight: 500;
+        margin-bottom: 20px;
+    }
+    .status-ready { background: #d4edda; color: #155724; }
+    .status-error { background: #f8d7da; color: #721c24; }
+    .status-processing { background: #fff3cd; color: #856404; }
+    .status-downloading { background: #d1ecf1; color: #0c5460; }
+    .status-prefetching { background: #e2e3e5; color: #383d41; }
+    h1 {
+        margin: 0 0 10px 0;
+        color: var(--body-fg);
+    }
+    .metadata {
+        color: var(--body-quiet-color, #666);
+        font-size: 14px;
+        margin-bottom: 20px;
+    }
+    .metadata div {
+        margin-bottom: 5px;
+    }
+    .thumbnail {
+        width: 100%;
+        max-width: 400px;
+        margin: 20px 0;
+        border-radius: 4px;
+    }
+    .summary {
+        background: #f8f9fa;
+        border-left: 4px solid #007bff;
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 4px;
+    }
+    .summary h3 {
+        margin: 0 0 10px 0;
+        color: #007bff;
+        font-size: 16px;
+    }
+    .description {
+        line-height: 1.6;
+        color: var(--body-fg);
+        white-space: pre-wrap;
+    }
+    .description h3 {
+        margin: 0 0 10px 0;
+        color: var(--body-fg);
+    }
+    .player {
+        margin: 30px 0;
+        width: 100%;
+    }
+    audio, video {
+        width: 100%;
+        border-radius: 4px;
+    }
+    .links {
+        margin: 20px 0;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 4px;
+    }
+    .links h3 {
+        margin: 0 0 15px 0;
+        color: var(--body-fg);
+    }
+    .links a {
+        display: inline-block;
+        margin-right: 15px;
+        color: #007bff;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    .links a:hover {
+        text-decoration: underline;
+    }
+    .error-message {
+        background: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+        padding: 15px;
+        border-radius: 4px;
+        margin: 20px 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="item-detail-container">
+    {% if item.status == 'READY' %}
+        <span class="status-badge status-ready">Ready</span>
+    {% elif item.status == 'ERROR' %}
+        <span class="status-badge status-error">Error</span>
+    {% elif item.status == 'PROCESSING' %}
+        <span class="status-badge status-processing">Processing</span>
+    {% elif item.status == 'DOWNLOADING' %}
+        <span class="status-badge status-downloading">Downloading</span>
+    {% else %}
+        <span class="status-badge status-prefetching">Prefetching</span>
+    {% endif %}
+
+    <h1>{{ item.title|default:"Untitled" }}</h1>
+
+    <div class="metadata">
+        {% if item.author %}
+            <div><strong>By:</strong> {{ item.author }}</div>
+        {% endif %}
+        {% if item.publish_date %}
+            <div><strong>Published:</strong> {{ item.publish_date|date:"F j, Y" }}</div>
+        {% endif %}
+        {% if item.duration_seconds %}
+            <div><strong>Duration:</strong> {{ item.duration_seconds|duration }}</div>
+        {% endif %}
+        <div><strong>Type:</strong> {{ item.media_type|title }}</div>
+    </div>
+
+    {% if item.has_error %}
+        <div class="error-message">
+            <strong>Error:</strong> {{ item.error_message }}
+        </div>
+    {% endif %}
+
+    {% if item.thumbnail_path and thumbnail_url %}
+        <img src="{{ thumbnail_url }}" alt="{{ item.title }}" class="thumbnail">
+    {% endif %}
+
+    {% if item.summary %}
+        <div class="summary">
+            <h3>Summary</h3>
+            <p>{{ item.summary }}</p>
+        </div>
+    {% endif %}
+
+    {% if item.description %}
+        <div class="description">
+            <h3>Description</h3>
+            {{ item.description }}
+        </div>
+    {% endif %}
+
+    {% if item.is_ready and media_url %}
+        <div class="player">
+            {% if item.media_type == 'audio' %}
+                <audio controls>
+                    <source src="{{ media_url }}" type="{{ item.mime_type }}">
+                    Your browser does not support audio element.
+                </audio>
+            {% else %}
+                <video controls>
+                    <source src="{{ media_url }}" type="{{ item.mime_type }}">
+                    {% if subtitle_url %}
+                        <track kind="subtitles" src="{{ subtitle_url }}" srclang="en" label="English">
+                    {% endif %}
+                    Your browser does not support video element.
+                </video>
+            {% endif %}
+        </div>
+
+        <div class="links">
+            <h3>Downloads</h3>
+            <a href="{{ media_url }}" download>Download {{ item.media_type|title }}</a>
+            {% if subtitle_url %}
+                <a href="{{ subtitle_url }}" download>Download Subtitles</a>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    {% if item.webpage_url %}
+        <div class="links">
+            <a href="{{ item.webpage_url }}" target="_blank">View Original Source</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

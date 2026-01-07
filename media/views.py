@@ -121,14 +121,15 @@ def stash_view(request):
             'url': url,
             'type': requested_type,
             'status': item.status,
-            'detail_url': request.build_absolute_uri(f'/items/{item.guid}/'),
+            'detail_url': request.build_absolute_uri(f'/admin/tools/item/{item.guid}/'),
         }
     )
 
 
+@staff_member_required
 def item_detail_view(request, guid):
     """
-    Public episode page.
+    Admin episode page.
 
     Displays:
     - Title, thumbnail, description
@@ -148,13 +149,14 @@ def item_detail_view(request, guid):
     subtitle_url = _build_media_url(item, item.subtitle_path, request)
 
     context = {
+        **admin.site.each_context(request),
         'item': item,
         'media_url': media_url,
         'thumbnail_url': thumbnail_url,
         'subtitle_url': subtitle_url,
     }
 
-    return render(request, 'media/item_detail.html', context)
+    return render(request, 'admin/item_detail.html', context)
 
 
 @staff_member_required
@@ -171,7 +173,7 @@ def bookmarklet_view(request):
         'title': 'Bookmarklet',
     }
 
-    return render(request, 'media/bookmarklet.html', context)
+    return render(request, 'admin/bookmarklet.html', context)
 
 
 @staff_member_required
@@ -232,7 +234,7 @@ def admin_stash_form_view(request):
         'title': 'Add URL to StashCast',
     }
 
-    return render(request, 'media/admin_stash_form.html', context)
+    return render(request, 'admin/admin_stash_form.html', context)
 
 
 @staff_member_required
@@ -289,7 +291,7 @@ def grid_view(request):
         'total_storage_bytes': total_storage_bytes,
     }
 
-    return render(request, 'media/grid_view.html', context)
+    return render(request, 'admin/grid_view.html', context)
 
 
 @staff_member_required
@@ -346,7 +348,7 @@ def list_view(request):
         'total_storage_bytes': total_storage_bytes,
     }
 
-    return render(request, 'media/list_view.html', context)
+    return render(request, 'admin/list_view.html', context)
 
 
 def stash_progress_view(request, guid):
@@ -388,7 +390,7 @@ def stash_status_stream(request, guid):
                         'media_type': item.media_type,
                         'is_ready': item.status == MediaItem.STATUS_READY,
                         'has_error': item.status == MediaItem.STATUS_ERROR,
-                        'detail_url': request.build_absolute_uri(f'/items/{guid}/'),
+                        'detail_url': request.build_absolute_uri(f'/admin/tools/item/{guid}/'),
                     }
 
                     yield f'data: {json.dumps(data)}\n\n'

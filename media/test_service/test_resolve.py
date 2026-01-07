@@ -160,38 +160,28 @@ class ResolveServiceTest(TestCase):
         # Make yt-dlp fail with DownloadError
         import yt_dlp
 
-        # Use context managers to ensure proper cleanup
         with (
-            patch('bs4.BeautifulSoup') as mock_bs,
             patch('media.service.resolve.yt_dlp.YoutubeDL') as mock_ytdlp_class,
-            patch('media.service.resolve.requests.get') as mock_requests,
+            patch('media.html_extractor.extract_media_from_html_page') as mock_extract,
         ):
             mock_ydl = MagicMock()
             mock_ytdlp_class.return_value.__enter__.return_value = mock_ydl
             mock_ydl.extract_info.side_effect = yt_dlp.utils.DownloadError('yt-dlp failed')
 
-            # Mock HTML response with video tag
-            mock_response = MagicMock()
-            mock_response.text = '<html><video src="video.mp4"></video></html>'
-            mock_response.raise_for_status = MagicMock()
-            mock_requests.return_value = mock_response
-
-            mock_soup = MagicMock()
-
-            # Mock find to return video tag when called with 'video'
-            def find_side_effect(tag, **kwargs):
-                if tag == 'video':
-                    return {'src': 'video.mp4'}
-                return None
-
-            mock_soup.find.side_effect = find_side_effect
-            mock_bs.return_value = mock_soup
+            # Mock HTML extraction result
+            mock_extract.return_value = {
+                'media_url': 'https://example.com/video.mp4',
+                'media_type': 'video',
+                'title': 'Test Video',
+                'webpage_url': 'https://example.com/page.html',
+            }
 
             url = 'https://example.com/page.html'
             result = prefetch(url, 'ytdlp')
 
             self.assertTrue(result.has_video_streams)
             self.assertEqual(result.webpage_url, url)
+            self.assertEqual(result.extracted_media_url, 'https://example.com/video.mp4')
 
     def test_resolve_media_type_explicit_audio(self):
         """Test explicit audio type request"""

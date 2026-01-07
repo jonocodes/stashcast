@@ -162,7 +162,7 @@ class BaseFeed(Feed):
         return {
             'url': self.absolute_url(enclosure_url),
             'type': self.item_enclosure_mime_type(item),
-            'medium': 'video' if item.media_type == MediaItem.MEDIA_TYPE_VIDEO else 'audio',
+            'medium': ('video' if item.media_type == MediaItem.MEDIA_TYPE_VIDEO else 'audio'),
         }
 
     def _thumbnail_url(self, item):
@@ -202,7 +202,7 @@ class AudioFeed(BaseFeed):
         return item.description
 
     def item_link(self, item):
-        return self.absolute_url(f'/items/{item.guid}/')
+        return self.absolute_url(f'/admin/tools/item/{item.guid}/')
 
     def item_guid(self, item):
         return item.guid
@@ -253,7 +253,7 @@ class VideoFeed(BaseFeed):
         return item.description
 
     def item_link(self, item):
-        return self.absolute_url(f'/items/{item.guid}/')
+        return self.absolute_url(f'/admin/tools/item/{item.guid}/')
 
     def item_guid(self, item):
         return item.guid
@@ -299,7 +299,7 @@ class CombinedFeed(BaseFeed):
         return item.description
 
     def item_link(self, item):
-        return self.absolute_url(f'/items/{item.guid}/')
+        return self.absolute_url(f'/admin/tools/item/{item.guid}/')
 
     def item_guid(self, item):
         return item.guid

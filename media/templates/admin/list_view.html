@@ -7,7 +7,7 @@
 {% block extrastyle %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
-    .grid-container {
+    .list-container {
         max-width: 1400px;
         margin: 20px auto;
         padding: 20px;
@@ -36,115 +36,6 @@
         color: var(--body-fg);
     }
 
-    .grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 20px;
-    }
-
-    .grid-item {
-        background: var(--body-bg);
-        border: 1px solid var(--border-color, #ddd);
-        border-radius: 8px;
-        overflow: hidden;
-        transition: transform 0.2s, box-shadow 0.2s;
-        cursor: pointer;
-    }
-
-    .grid-item:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    }
-
-    .thumbnail {
-        width: 100%;
-        height: 160px;
-        object-fit: cover;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 48px;
-        position: relative;
-    }
-
-    .thumbnail img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-
-    .duration {
-        position: absolute;
-        bottom: 8px;
-        right: 8px;
-        background: rgba(0, 0, 0, 0.8);
-        color: white;
-        padding: 2px 6px;
-        border-radius: 3px;
-        font-size: 12px;
-        font-weight: 500;
-    }
-
-    .item-info {
-        padding: 12px;
-    }
-
-    .item-title {
-        font-size: 14px;
-        font-weight: 500;
-        margin: 0 0 8px 0;
-        color: var(--body-fg);
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        line-height: 1.4;
-    }
-
-    .item-meta {
-        font-size: 12px;
-        color: var(--body-quiet-color, #666);
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-    }
-
-    .status-badge {
-        display: inline-block;
-        padding: 2px 8px;
-        border-radius: 3px;
-        font-size: 11px;
-        font-weight: 500;
-        text-transform: uppercase;
-    }
-
-    .status-ready { background: #d4edda; color: #155724; }
-    .status-error { background: #f8d7da; color: #721c24; }
-    .status-processing { background: #fff3cd; color: #856404; }
-    .status-downloading { background: #d1ecf1; color: #0c5460; }
-    .status-prefetching { background: #e2e3e5; color: #383d41; }
-
-    .type-badge {
-        color: var(--body-quiet-color, #666);
-        font-size: 14px;
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-    }
-
-    .empty-state {
-        text-align: center;
-        padding: 60px 20px;
-        color: var(--body-quiet-color, #666);
-    }
-
-    .empty-state h2 {
-        margin: 0 0 10px 0;
-        color: var(--body-quiet-color, #999);
-    }
-
     .view-switcher {
         margin-left: auto;
         display: flex;
@@ -170,6 +61,155 @@
         color: var(--primary-fg);
     }
 
+    .list-items {
+        background: var(--body-bg);
+        border: 1px solid var(--border-color, #ddd);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .list-item {
+        display: flex;
+        gap: 15px;
+        padding: 15px;
+        border-bottom: 1px solid var(--border-color, #f0f0f0);
+        transition: background 0.2s;
+        text-decoration: none !important;
+        color: inherit;
+        cursor: pointer;
+    }
+
+    .list-item * {
+        text-decoration: none !important;
+    }
+
+    .list-item:last-child {
+        border-bottom: none;
+    }
+
+    .list-item:hover {
+        background: var(--darkened-bg);
+    }
+
+    .list-item:hover .list-title {
+        text-decoration: underline !important;
+    }
+
+    .list-thumbnail {
+        width: 160px;
+        height: 90px;
+        flex-shrink: 0;
+        border-radius: 4px;
+        overflow: hidden;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 36px;
+        position: relative;
+    }
+
+    .list-thumbnail img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .duration {
+        position: absolute;
+        bottom: 4px;
+        right: 4px;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 11px;
+        font-weight: 500;
+    }
+
+    .list-content {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .list-title {
+        font-size: 16px;
+        font-weight: 500;
+        margin: 0 0 8px 0;
+        color: var(--body-fg);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .list-description {
+        font-size: 13px;
+        color: var(--body-quiet-color, #666);
+        margin: 0 0 10px 0;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        line-height: 1.4;
+    }
+
+    .list-meta {
+        font-size: 12px;
+        color: var(--body-quiet-color, #666);
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 3px;
+        font-size: 11px;
+        font-weight: 500;
+        text-transform: uppercase;
+    }
+
+    .status-ready { background: #d4edda; color: #155724; }
+    .status-error { background: #f8d7da; color: #721c24; }
+    .status-processing { background: #fff3cd; color: #856404; }
+    .status-downloading { background: #d1ecf1; color: #0c5460; }
+    .status-prefetching { background: #e2e3e5; color: #383d41; }
+
+    .type-badge {
+        color: var(--body-quiet-color, #666);
+        font-size: 16px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .meta-label {
+        color: var(--body-quiet-color, #999);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--body-quiet-color, #666);
+        background: var(--body-bg);
+        border: 1px solid var(--border-color, #ddd);
+        border-radius: 8px;
+    }
+
+    .empty-state h2 {
+        margin: 0 0 10px 0;
+        color: var(--body-quiet-color, #999);
+    }
+
     .filters .storage-info {
         margin-left: auto;
         font-weight: 500;
@@ -179,8 +219,8 @@
 {% endblock %}
 
 {% block content %}
-<div class="grid-container">
-    <h1>Media Grid</h1>
+<div class="list-container">
+    <h1>Media List</h1>
 
     <div class="filters">
         <form method="get" style="display: flex; gap: 15px; align-items: center; flex: 1;">
@@ -197,16 +237,16 @@
         </form>
 
         <div class="view-switcher">
-            <a href="{% url 'grid_view' %}?type={{ media_type_filter }}" class="active">Grid</a>
-            <a href="{% url 'list_view' %}?type={{ media_type_filter }}">List</a>
+            <a href="{% url 'grid_view' %}?type={{ media_type_filter }}">Grid</a>
+            <a href="{% url 'list_view' %}?type={{ media_type_filter }}" class="active">List</a>
         </div>
     </div>
 
     {% if items %}
-    <div class="grid">
+    <div class="list-items">
         {% for data in items %}
-        <a href="/items/{{ data.item.guid }}/" class="grid-item" style="text-decoration: none;">
-            <div class="thumbnail">
+        <a href="{% url 'item_detail' data.item.guid %}" class="list-item">
+            <div class="list-thumbnail">
                 {% if data.thumbnail_url %}
                     <img src="{{ data.thumbnail_url }}" alt="{{ data.item.title }}">
                 {% else %}
@@ -216,9 +256,12 @@
                     <span class="duration">{{ data.item.duration_seconds|duration }}</span>
                 {% endif %}
             </div>
-            <div class="item-info">
-                <h3 class="item-title">{{ data.item.title|default:"Untitled" }}</h3>
-                <div class="item-meta">
+            <div class="list-content">
+                <h3 class="list-title">{{ data.item.title|default:"Untitled" }}</h3>
+                {% if data.item.description %}
+                    <p class="list-description">{{ data.item.description }}</p>
+                {% endif %}
+                <div class="list-meta">
                     <span class="type-badge">
                         {% if data.item.media_type == 'audio' %}
                             <i class="fa-solid fa-headphones" aria-label="Audio"></i>
@@ -230,10 +273,22 @@
                         <span class="status-badge status-{{ data.item.status|lower }}">{{ data.item.status }}</span>
                     {% endif %}
                     {% if data.item.file_size %}
-                        <span>{{ data.item.file_size|filesize }}</span>
+                        <span class="meta-item">
+                            <span class="meta-label">Size:</span>
+                            <span>{{ data.item.file_size|filesize }}</span>
+                        </span>
                     {% endif %}
                     {% if data.item.author %}
-                        <span>{{ data.item.author }}</span>
+                        <span class="meta-item">
+                            <span class="meta-label">Author:</span>
+                            <span>{{ data.item.author }}</span>
+                        </span>
+                    {% endif %}
+                    {% if data.item.created_at %}
+                        <span class="meta-item">
+                            <span class="meta-label">Added:</span>
+                            <span>{{ data.item.created_at|date:"M d, Y" }}</span>
+                        </span>
                     {% endif %}
                 </div>
             </div>
