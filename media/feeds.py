@@ -56,6 +56,17 @@ class StashcastRSSFeed(Rss201rev2Feed):
                     'medium': media_content.get('medium', ''),
                 },
             )
+        subtitle = item.get('subtitle')
+        if subtitle:
+            handler.addQuickElement(
+                'media:subTitle',
+                '',
+                {
+                    'type': 'text/vtt',
+                    'lang': 'en',
+                    'href': subtitle,
+                },
+            )
 
 
 class BaseFeed(Feed):
@@ -148,6 +159,9 @@ class BaseFeed(Feed):
         media_content = self._media_content(item)
         if media_content:
             extra['media_content'] = media_content
+        subtitle_url = self._subtitle_url(item)
+        if subtitle_url:
+            extra['subtitle'] = subtitle_url
         return extra
 
     def _media_content(self, item):
@@ -164,6 +178,10 @@ class BaseFeed(Feed):
     def _thumbnail_url(self, item):
         """Return absolute thumbnail URL for an item, if available."""
         return build_media_url(item, item.thumbnail_path, absolute_builder=self.absolute_url)
+
+    def _subtitle_url(self, item):
+        """Return absolute subtitle URL for an item, if available."""
+        return build_media_url(item, item.subtitle_path, absolute_builder=self.absolute_url)
 
     def item_title(self, item):
         return item.title
