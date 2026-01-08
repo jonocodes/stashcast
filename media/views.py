@@ -186,12 +186,8 @@ def admin_stash_form_view(request):
     from media.admin import is_demo_readonly
 
     if request.method == 'POST':
-        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
-
         # Block demo users from submitting
         if is_demo_readonly(request.user):
-            if is_ajax:
-                return JsonResponse({'success': False, 'error': 'Demo users are not allowed to add URLs.'})
             messages.error(request, 'Demo users are not allowed to add URLs.')
             return redirect(request.path)
 
@@ -229,19 +225,9 @@ def admin_stash_form_view(request):
             # Enqueue processing
             process_media(item.guid)
 
-            # Return JSON for AJAX requests
-            if is_ajax:
-                return JsonResponse({
-                    'success': True,
-                    'guid': str(item.guid),
-                    'status': item.status
-                })
-
-            # Redirect to Huey monitor to see task progress
-            return redirect('/admin/huey_monitor/taskmodel/')
+            # Redirect to admin progress page
+            return redirect('admin_stash_progress', guid=item.guid)
         else:
-            if is_ajax:
-                return JsonResponse({'success': False, 'error': 'Please provide a URL'})
             messages.error(request, 'Please provide a URL')
 
     # Get recent items
@@ -254,6 +240,22 @@ def admin_stash_form_view(request):
     }
 
     return render(request, 'admin/admin_stash_form.html', context)
+
+
+@staff_member_required
+def admin_stash_progress_view(request, guid):
+    """
+    Admin progress page for monitoring media processing.
+
+    Shows live progress updates within the admin interface.
+    """
+    context = {
+        **admin.site.each_context(request),
+        'guid': guid,
+        'title': 'Processing Media',
+    }
+
+    return render(request, 'admin/admin_stash_progress.html', context)
 
 
 @staff_member_required
