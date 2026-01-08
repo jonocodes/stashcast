@@ -225,8 +225,8 @@ def admin_stash_form_view(request):
             # Enqueue processing
             process_media(item.guid)
 
-            # Redirect to Huey monitor to see task progress
-            return redirect('/admin/huey_monitor/taskmodel/')
+            # Redirect to admin progress page
+            return redirect('admin_stash_progress', guid=item.guid)
         else:
             messages.error(request, 'Please provide a URL')
 
@@ -240,6 +240,22 @@ def admin_stash_form_view(request):
     }
 
     return render(request, 'admin/admin_stash_form.html', context)
+
+
+@staff_member_required
+def admin_stash_progress_view(request, guid):
+    """
+    Admin progress page for monitoring media processing.
+
+    Shows live progress updates within the admin interface.
+    """
+    context = {
+        **admin.site.each_context(request),
+        'guid': guid,
+        'title': 'Processing Media',
+    }
+
+    return render(request, 'admin/admin_stash_progress.html', context)
 
 
 @staff_member_required

@@ -24,6 +24,7 @@ from django.views.generic import RedirectView
 from media.feeds import AudioFeed, CombinedFeed, VideoFeed
 from media.views import (
     admin_stash_form_view,
+    admin_stash_progress_view,
     bookmarklet_view,
     grid_view,
     home_view,
@@ -51,6 +52,7 @@ urlpatterns = [
     # Custom admin tools (must come before admin.site.urls)
     path('admin/tools/bookmarklet/', bookmarklet_view, name='bookmarklet'),
     path('admin/tools/add-url/', admin_stash_form_view, name='admin_stash_form'),
+    path('admin/tools/add-url/progress/<str:guid>/', admin_stash_progress_view, name='admin_stash_progress'),
     path('admin/tools/grid/', grid_view, name='grid_view'),
     path('admin/tools/list/', list_view, name='list_view'),
     path('admin/tools/item/<str:guid>/', item_detail_view, name='item_detail'),
