@@ -17,6 +17,7 @@ output/
 # db.sqlite3-journal
 # huey.db
 # huey.db-*
+staticfiles/
 
 # Data files
 data/

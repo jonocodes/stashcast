@@ -134,10 +134,11 @@ def process_media(guid):
 
         # Move tmp directory to final location
         shutil.move(str(tmp_dir), str(final_dir))
-        write_log(log_path, f'Moved to: {final_dir}')
 
-        # Update log_path to new location for final messages
+        # IMPORTANT: Update log_path BEFORE writing more logs to prevent creating
+        # files in the old tmp directory, which would leave it behind after the move
         log_path = final_dir / 'download.log'
+        write_log(log_path, f'Moved to: {final_dir}')
 
         # READY
         item.status = MediaItem.STATUS_READY

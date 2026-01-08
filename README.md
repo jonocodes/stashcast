@@ -273,6 +273,24 @@ Generate summaries from VTT subtitle files:
 ./manage.py summarize demo_data/carpool/subtitles.vtt --algorithm luhn
 ```
 
+### Cleanup Command
+
+Clean up abandoned tmp directories from failed downloads:
+
+```bash
+# Show what would be deleted (dry run)
+./manage.py cleanup_tmp --dry-run
+
+# Delete tmp directories older than 60 minutes (default)
+./manage.py cleanup_tmp
+
+# Delete tmp directories older than 24 hours
+./manage.py cleanup_tmp --max-age 1440
+
+# Delete without confirmation prompt
+./manage.py cleanup_tmp --force
+```
+
 See `EXAMPLES.md` for more usage examples.
 
 ## How It Works
