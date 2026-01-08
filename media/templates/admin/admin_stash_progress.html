@@ -94,7 +94,7 @@
     .progress-text {
         font-size: 12px;
         font-weight: 600;
-        color: #667eea;
+        color: var(--primary, #667eea);
         margin-top: 8px;
     }
     @keyframes pulse {
@@ -144,8 +144,8 @@
         font-size: 14px;
     }
     .error-message {
-        background: #f8d7da;
-        color: #721c24;
+        background: color-mix(in srgb, #dc3545 15%, transparent);
+        color: #dc3545;
         padding: 15px;
         border-radius: 6px;
         margin-top: 20px;
@@ -153,8 +153,8 @@
         display: none;
     }
     .success-message {
-        background: #d4edda;
-        color: #155724;
+        background: color-mix(in srgb, #28a745 15%, transparent);
+        color: #28a745;
         padding: 15px;
         border-radius: 6px;
         margin-top: 20px;

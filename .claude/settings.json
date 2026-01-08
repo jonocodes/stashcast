@@ -1,0 +1,25 @@
+{
+    "hooks": {
+        "PostToolUse": [
+            {
+                "matcher": "Edit|Write|MultiEdit",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "just lint 2>/dev/null || true"
+                    },
+                ]
+            }
+        ],
+        "Stop": [
+            {
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": ".claude/hooks/quality-check.sh"
+                    }
+                ]
+            }
+        ]
+    }
+}

@@ -35,8 +35,8 @@ dev:
     exec honcho start
 
 # run the dev services in docker
-dev-docker:
-    docker compose up --build
+dev-docker *args:
+    docker compose up {{ args }}
 
 # kill the local dev process by port in case it's running detached
 kill:
@@ -46,6 +46,10 @@ kill:
 lint:
     ruff format
     ruff check --fix --unsafe-fixes
+
+# create a superuser with username 'admin' and password 'admin' for testing/dev
+create-admin-dummy:
+    DJANGO_SUPERUSER_PASSWORD=admin ./manage.py createsuperuser --username admin --email "" --noinput
 
 # run tests
 test *args:
@@ -58,3 +62,7 @@ manage *args:
 # alias to manage
 m *args:
     ./manage.py {{ args }}
+
+# alias to run commands in docker
+docker-run *args:
+    docker compose run web {{ args }}

@@ -22,11 +22,11 @@
         font-weight: 500;
         margin-bottom: 20px;
     }
-    .status-ready { background: #d4edda; color: #155724; }
-    .status-error { background: #f8d7da; color: #721c24; }
-    .status-processing { background: #fff3cd; color: #856404; }
-    .status-downloading { background: #d1ecf1; color: #0c5460; }
-    .status-prefetching { background: #e2e3e5; color: #383d41; }
+    .status-ready { background: color-mix(in srgb, #28a745 25%, transparent); color: #28a745; }
+    .status-error { background: color-mix(in srgb, #dc3545 25%, transparent); color: #dc3545; }
+    .status-processing { background: color-mix(in srgb, #ffc107 25%, transparent); color: #b38600; }
+    .status-downloading { background: color-mix(in srgb, #17a2b8 25%, transparent); color: #17a2b8; }
+    .status-prefetching { background: color-mix(in srgb, #6c757d 25%, transparent); color: var(--body-quiet-color, #6c757d); }
     h1 {
         margin: 0 0 10px 0;
         color: var(--body-fg);
@@ -46,15 +46,15 @@
         border-radius: 4px;
     }
     .summary {
-        background: #f8f9fa;
-        border-left: 4px solid #007bff;
+        background: var(--darkened-bg, rgba(0,0,0,0.02));
+        border-left: 4px solid var(--primary, #417690);
         padding: 15px;
         margin: 20px 0;
         border-radius: 4px;
     }
     .summary h3 {
         margin: 0 0 10px 0;
-        color: #007bff;
+        color: var(--primary, #417690);
         font-size: 16px;
     }
     .description {
@@ -77,7 +77,7 @@
     .links {
         margin: 20px 0;
         padding: 20px;
-        background: #f8f9fa;
+        background: var(--darkened-bg, rgba(0,0,0,0.02));
         border-radius: 4px;
     }
     .links h3 {
@@ -87,7 +87,7 @@
     .links a {
         display: inline-block;
         margin-right: 15px;
-        color: #007bff;
+        color: var(--primary, #417690);
         text-decoration: none;
         font-weight: 500;
     }
@@ -95,9 +95,9 @@
         text-decoration: underline;
     }
     .error-message {
-        background: #f8d7da;
-        border: 1px solid #f5c6cb;
-        color: #721c24;
+        background: color-mix(in srgb, #dc3545 15%, transparent);
+        border: 1px solid color-mix(in srgb, #dc3545 40%, transparent);
+        color: #dc3545;
         padding: 15px;
         border-radius: 4px;
         margin: 20px 0;

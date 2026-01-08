@@ -18,7 +18,7 @@ Including another URLconf
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, re_path
 from django.views.generic import RedirectView
 
 from media.feeds import AudioFeed, CombinedFeed, VideoFeed
@@ -56,6 +56,8 @@ urlpatterns = [
     path('admin/tools/grid/', grid_view, name='grid_view'),
     path('admin/tools/list/', list_view, name='list_view'),
     path('admin/tools/item/<str:guid>/', item_detail_view, name='item_detail'),
+    # Redirect admin index to grid view (must come before admin.site.urls)
+    re_path(r'^admin/$', RedirectView.as_view(url='/admin/tools/grid/', permanent=False)),
     # Standard admin (includes django-huey-monitor integration)
     path('admin/', admin.site.urls),
     # Public endpoints

@@ -47,7 +47,7 @@ I created this since friends and family often send me links to listen to a singl
 
 ## Requirements
 
-- Python 3.13+
+- Python 3.12+
 - yt-dlp
 - ffmpeg
 
@@ -55,6 +55,7 @@ I created this since friends and family often send me links to listen to a singl
 
 - just (for running commands)
 - ruff (for linting)
+- docker
 
 
 ## Run in docker
@@ -304,6 +305,21 @@ STASHCAST downloads media from URLs and makes it available through podcast feeds
 5. Media becomes available in your podcast feed
 
 For technical details, see [ARCHITECTURE.md](ARCHITECTURE.md)
+
+## Security Model
+
+Use admin to add/remove media or update metadata.
+
+Use the public site to view/subscribe to your feed.
+
+Use the bookmarklet with your api key to add media outside of admin.
+
+Your api key is a single user secret that you can use to identify yourself, and is set via STASHCAST_API_KEY. I recommend using a random string, or generate a uuid using one of these:
+
+`uuidgen`
+
+`python -c 'import uuid; print(uuid.uuid4())'`
+
 
 ## Configuration
 

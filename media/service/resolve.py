@@ -156,6 +156,11 @@ def _prefetch_ytdlp(url, logger=None):
             result.has_video_streams = any(f.get('vcodec') != 'none' for f in formats)
             result.has_audio_streams = any(f.get('acodec') != 'none' for f in formats)
 
+            # Fallback: check top-level codec info (used by some extractors like ApplePodcasts)
+            if not result.has_video_streams and not result.has_audio_streams:
+                result.has_video_streams = info.get('vcodec') not in (None, 'none')
+                result.has_audio_streams = info.get('acodec') not in (None, 'none')
+
             if logger:
                 logger(f'yt-dlp metadata extracted: {result.title}')
                 logger(f'Extractor: {result.extractor}')

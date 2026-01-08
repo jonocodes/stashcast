@@ -15,7 +15,7 @@ ENV PYTHONUNBUFFERED=1
 
 # Install system dependencies
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends ffmpeg yt-dlp && \
+    apt-get install -y --no-install-recommends ffmpeg yt-dlp just && \
     rm -rf /var/lib/apt/lists/*
 
 # Upgrade pip
