@@ -641,6 +641,73 @@ class FeedTranscriptTest(TestCase):
 
 
 @override_settings(STASHCAST_MEDIA_BASE_URL='')
+class FeedAuthenticationTest(TestCase):
+    """Test feed user token authentication"""
+
+    def setUp(self):
+        self.client = Client()
+        self.user_token = settings.STASHCAST_USER_TOKEN
+        # Create test items
+        MediaItem.objects.create(
+            source_url='https://example.com/audio',
+            requested_type=MediaItem.REQUESTED_TYPE_AUDIO,
+            slug='test-audio',
+            title='Test Audio',
+            media_type=MediaItem.MEDIA_TYPE_AUDIO,
+            status=MediaItem.STATUS_READY,
+        )
+
+    @override_settings(REQUIRE_USER_TOKEN_FOR_FEEDS=False)
+    def test_feeds_public_by_default(self):
+        """Test that feeds are accessible without user token when setting is False"""
+        response = self.client.get('/feeds/audio.xml')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Test Audio')
+
+    @override_settings(REQUIRE_USER_TOKEN_FOR_FEEDS=True)
+    def test_feeds_require_user_token_when_enabled(self):
+        """Test that feeds require user token when setting is True"""
+        response = self.client.get('/feeds/audio.xml')
+        self.assertEqual(response.status_code, 403)
+        self.assertIn(b'User token required', response.content)
+
+    @override_settings(REQUIRE_USER_TOKEN_FOR_FEEDS=True)
+    def test_feeds_work_with_valid_user_token(self):
+        """Test that feeds work with valid user token"""
+        response = self.client.get(f'/feeds/audio.xml?token={self.user_token}')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Test Audio')
+
+    @override_settings(REQUIRE_USER_TOKEN_FOR_FEEDS=True)
+    def test_feeds_reject_invalid_user_token(self):
+        """Test that feeds reject invalid user token"""
+        response = self.client.get('/feeds/audio.xml?token=invalid-token')
+        self.assertEqual(response.status_code, 403)
+        self.assertIn(b'User token required', response.content)
+
+    @override_settings(REQUIRE_USER_TOKEN_FOR_FEEDS=True)
+    def test_all_feed_types_require_user_token(self):
+        """Test that all feed types require user token when enabled"""
+        MediaItem.objects.create(
+            source_url='https://example.com/video',
+            requested_type=MediaItem.REQUESTED_TYPE_VIDEO,
+            slug='test-video',
+            title='Test Video',
+            media_type=MediaItem.MEDIA_TYPE_VIDEO,
+            status=MediaItem.STATUS_READY,
+        )
+
+        # Test all three feed types
+        for feed_url in ['/feeds/audio.xml', '/feeds/video.xml', '/feeds/combined.xml']:
+            # Without user token - should fail
+            response = self.client.get(feed_url)
+            self.assertEqual(response.status_code, 403, f'{feed_url} should require user token')
+
+            # With valid user token - should work
+            response = self.client.get(f'{feed_url}?token={self.user_token}')
+            self.assertEqual(response.status_code, 200, f'{feed_url} should work with valid token')
+
+
 class FeedAbsoluteUrlTest(TestCase):
     """Ensure feed channel images and item links are absolute URLs."""
 

@@ -1,4 +1,6 @@
+from django.conf import settings
 from django.contrib.syndication.views import Feed
+from django.http import HttpResponseForbidden
 from django.templatetags.static import static
 from django.utils import timezone
 from django.utils.feedgenerator import Rss201rev2Feed
@@ -78,6 +80,14 @@ class BaseFeed(Feed):
     absolute_link = None
 
     def __call__(self, request, *args, **kwargs):
+        # Check if API key is required for feeds
+        if settings.REQUIRE_API_KEY_FOR_FEEDS:
+            api_key = request.GET.get('apikey')
+            if not api_key or api_key != settings.STASHCAST_API_KEY:
+                return HttpResponseForbidden(
+                    'API key required. Add ?apikey=YOUR_KEY to the feed URL.'
+                )
+
         # Store request so we can build absolute URLs everywhere
         self.request = request
         # Precompute absolute link for the channel

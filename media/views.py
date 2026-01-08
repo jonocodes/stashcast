@@ -21,7 +21,11 @@ def _build_media_url(item, filename, request=None):
 
 def home_view(request):
     """Landing page with quick access to add URLs."""
-    return render(request, 'media/home.html')
+    context = {
+        'api_key': settings.STASHCAST_API_KEY,
+        'require_api_key_for_feeds': settings.REQUIRE_API_KEY_FOR_FEEDS,
+    }
+    return render(request, 'media/home.html', context)
 
 
 @csrf_exempt
