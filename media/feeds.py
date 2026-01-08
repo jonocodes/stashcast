@@ -17,6 +17,7 @@ class StashcastRSSFeed(Rss201rev2Feed):
         attrs = super().rss_attributes()
         attrs['xmlns:media'] = 'http://search.yahoo.com/mrss/'
         attrs['xmlns:itunes'] = 'http://www.itunes.com/dtds/podcast-1.0.dtd'
+        attrs['xmlns:podcast'] = 'https://podcastindex.org/namespace/1.0'
         return attrs
 
     def latest_post_date(self):
@@ -56,15 +57,15 @@ class StashcastRSSFeed(Rss201rev2Feed):
                     'medium': media_content.get('medium', ''),
                 },
             )
-        subtitle = item.get('subtitle')
-        if subtitle:
+        transcript = item.get('transcript')
+        if transcript:
             handler.addQuickElement(
-                'media:subTitle',
+                'podcast:transcript',
                 '',
                 {
+                    'url': transcript,
                     'type': 'text/vtt',
-                    'lang': 'en',
-                    'href': subtitle,
+                    'language': 'en',
                 },
             )
 
@@ -159,9 +160,9 @@ class BaseFeed(Feed):
         media_content = self._media_content(item)
         if media_content:
             extra['media_content'] = media_content
-        subtitle_url = self._subtitle_url(item)
-        if subtitle_url:
-            extra['subtitle'] = subtitle_url
+        transcript_url = self._transcript_url(item)
+        if transcript_url:
+            extra['transcript'] = transcript_url
         return extra
 
     def _media_content(self, item):
@@ -179,8 +180,8 @@ class BaseFeed(Feed):
         """Return absolute thumbnail URL for an item, if available."""
         return build_media_url(item, item.thumbnail_path, absolute_builder=self.absolute_url)
 
-    def _subtitle_url(self, item):
-        """Return absolute subtitle URL for an item, if available."""
+    def _transcript_url(self, item):
+        """Return absolute transcript/subtitle URL for an item, if available."""
         return build_media_url(item, item.subtitle_path, absolute_builder=self.absolute_url)
 
     def item_title(self, item):

@@ -591,14 +591,14 @@ class FeedTest(TestCase):
 
 
 @override_settings(STASHCAST_MEDIA_BASE_URL='')
-class FeedSubtitleTest(TestCase):
-    """Ensure subtitles are included in RSS feeds."""
+class FeedTranscriptTest(TestCase):
+    """Ensure transcripts are included in RSS feeds via podcast:transcript."""
 
     def setUp(self):
         self.client = Client()
 
-    def test_feed_includes_subtitle(self):
-        """Test that items with subtitles include media:subTitle in the feed."""
+    def test_feed_includes_transcript(self):
+        """Test that items with subtitles include podcast:transcript in the feed."""
         MediaItem.objects.create(
             source_url='https://example.com/video',
             requested_type=MediaItem.REQUESTED_TYPE_VIDEO,
@@ -614,13 +614,14 @@ class FeedSubtitleTest(TestCase):
         xml = response.content.decode()
 
         self.assertEqual(response.status_code, 200)
-        self.assertIn('<media:subTitle', xml)
+        self.assertIn('xmlns:podcast="https://podcastindex.org/namespace/1.0"', xml)
+        self.assertIn('<podcast:transcript', xml)
         self.assertIn('type="text/vtt"', xml)
-        self.assertIn('lang="en"', xml)
-        self.assertIn('href="http://testserver/media/files/video-with-subs/subtitles.vtt"', xml)
+        self.assertIn('language="en"', xml)
+        self.assertIn('url="http://testserver/media/files/video-with-subs/subtitles.vtt"', xml)
 
-    def test_feed_no_subtitle_when_missing(self):
-        """Test that items without subtitles don't include media:subTitle."""
+    def test_feed_no_transcript_when_missing(self):
+        """Test that items without subtitles don't include podcast:transcript."""
         MediaItem.objects.create(
             source_url='https://example.com/video',
             requested_type=MediaItem.REQUESTED_TYPE_VIDEO,
@@ -636,7 +637,7 @@ class FeedSubtitleTest(TestCase):
         xml = response.content.decode()
 
         self.assertEqual(response.status_code, 200)
-        self.assertNotIn('<media:subTitle', xml)
+        self.assertNotIn('<podcast:transcript', xml)
 
 
 @override_settings(STASHCAST_MEDIA_BASE_URL='')
