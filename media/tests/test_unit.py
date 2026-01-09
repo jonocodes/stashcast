@@ -708,6 +708,92 @@ class FeedAuthenticationTest(TestCase):
             self.assertEqual(response.status_code, 200, f'{feed_url} should work with valid token')
 
 
+class FeedProtectionUITest(TestCase):
+    """Test visual indicators for feed protection status"""
+
+    def setUp(self):
+        self.client = Client()
+
+    @override_settings(REQUIRE_API_KEY_FOR_FEEDS=True)
+    def test_home_page_shows_protected_banner(self):
+        """Test that home page shows protected banner when setting is enabled"""
+        response = self.client.get('/')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Feed Protection Enabled')
+        self.assertContains(response, 'RSS feeds require an API key for access')
+        self.assertContains(response, '🔒')
+        self.assertNotContains(response, 'REQUIRE_API_KEY_FOR_FEEDS=true')
+
+    @override_settings(REQUIRE_API_KEY_FOR_FEEDS=False)
+    def test_home_page_shows_public_banner(self):
+        """Test that home page shows public banner when setting is disabled"""
+        response = self.client.get('/')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Public Feeds')
+        self.assertContains(response, 'publicly accessible without authentication')
+        self.assertContains(response, 'REQUIRE_API_KEY_FOR_FEEDS=true')
+        self.assertContains(response, '🌐')
+        self.assertNotContains(response, 'Feed Protection Enabled')
+
+    @override_settings(REQUIRE_API_KEY_FOR_FEEDS=True)
+    def test_home_page_includes_apikey_in_feed_urls(self):
+        """Test that feed URLs include API key when protection is enabled"""
+        response = self.client.get('/')
+        self.assertEqual(response.status_code, 200)
+        # Check that feed URLs contain the apikey parameter
+        self.assertContains(response, f'/feeds/audio.xml?apikey={settings.STASHCAST_API_KEY}')
+        self.assertContains(response, f'/feeds/video.xml?apikey={settings.STASHCAST_API_KEY}')
+        self.assertContains(response, f'/feeds/combined.xml?apikey={settings.STASHCAST_API_KEY}')
+
+    @override_settings(REQUIRE_API_KEY_FOR_FEEDS=False)
+    def test_home_page_excludes_apikey_from_feed_urls(self):
+        """Test that feed URLs don't include API key when protection is disabled"""
+        response = self.client.get('/')
+        self.assertEqual(response.status_code, 200)
+        # Check that feed URLs don't contain apikey parameter in the copy button
+        # (they still have ?view=1 for the view link)
+        content = response.content.decode()
+        # The copy button should have feed URL without apikey
+        self.assertIn('data-url="/feeds/audio.xml"', content)
+        self.assertIn('data-url="/feeds/video.xml"', content)
+        self.assertIn('data-url="/feeds/combined.xml"', content)
+
+    @override_settings(REQUIRE_API_KEY_FOR_FEEDS=True)
+    def test_bookmarklet_page_shows_protected_banner(self):
+        """Test that bookmarklet page shows protected banner when setting is enabled"""
+        from django.contrib.auth.models import User
+
+        # Create a staff user to access bookmarklet page
+        user = User.objects.create_user('testuser', 'test@example.com', 'password')
+        user.is_staff = True
+        user.save()
+        self.client.login(username='testuser', password='password')
+
+        response = self.client.get('/admin/tools/bookmarklet/')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Feed Protection Enabled')
+        self.assertContains(response, 'RSS feeds require an API key')
+        self.assertContains(response, '🔒')
+
+    @override_settings(REQUIRE_API_KEY_FOR_FEEDS=False)
+    def test_bookmarklet_page_shows_public_banner(self):
+        """Test that bookmarklet page shows public banner when setting is disabled"""
+        from django.contrib.auth.models import User
+
+        # Create a staff user to access bookmarklet page
+        user = User.objects.create_user('testuser', 'test@example.com', 'password')
+        user.is_staff = True
+        user.save()
+        self.client.login(username='testuser', password='password')
+
+        response = self.client.get('/admin/tools/bookmarklet/')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Public Feeds Notice')
+        self.assertContains(response, 'RSS feeds are currently publicly accessible')
+        self.assertContains(response, 'REQUIRE_API_KEY_FOR_FEEDS=true')
+        self.assertContains(response, '🌐')
+
+
 class FeedAbsoluteUrlTest(TestCase):
     """Ensure feed channel images and item links are absolute URLs."""
 

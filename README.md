@@ -176,6 +176,26 @@ Parameters:
 
 Add these URLs to your podcast app (AntennaPod, Overcast, etc.)
 
+#### Optional: Private Feeds with API Key Protection
+
+By default, RSS feeds are publicly accessible. To require an API key for feed access (keeping your listening activity private):
+
+1. Set the environment variable in your `.env` file:
+   ```bash
+   REQUIRE_API_KEY_FOR_FEEDS=true
+   ```
+
+2. Restart the service
+
+3. Feed URLs must now include your API key:
+   - Audio feed: `http://localhost:8000/feeds/audio.xml?apikey=YOUR_API_KEY`
+   - Video feed: `http://localhost:8000/feeds/video.xml?apikey=YOUR_API_KEY`
+   - Combined feed: `http://localhost:8000/feeds/combined.xml?apikey=YOUR_API_KEY`
+
+The home page and bookmarklet page will display the current protection status and automatically show feed URLs with the API key when enabled.
+
+**Note:** All major podcast apps support query parameters in feed URLs (this is how services like Patreon and Supercast provide private feeds).
+
 ### Test Server
 
 The test server serves files from `demo_data/` directory on `http://localhost:8001/`
