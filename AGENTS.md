@@ -42,7 +42,7 @@ coverage report -m
 When running in Claude Web (Ubuntu container without flox/Docker):
 ```bash
 # System dependencies
-apt-get install -y ffmpeg yt-dlp
+apt-get install -y ffmpeg yt-dlp just
 
 # Requires Python 3.12+ (for Django 6.0)
 python3.12 -m venv venv
