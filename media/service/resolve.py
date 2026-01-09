@@ -4,8 +4,8 @@ Metadata extraction and media type resolution.
 Handles prefetching metadata and determining the actual media type.
 """
 
-from dataclasses import dataclass
-from typing import Optional
+from dataclasses import dataclass, field
+from typing import Optional, List
 from urllib.parse import urlparse
 from pathlib import Path
 import yt_dlp
@@ -14,9 +14,33 @@ from media.service.media_info import get_streams_from_extension
 
 
 class PlaylistNotSupported(Exception):
-    """Raised when URL points to a playlist"""
+    """Raised when URL points to a playlist/multi-file and allow_multiple is False"""
 
     pass
+
+
+class MultipleItemsDetected(Exception):
+    """
+    Raised when multiple items are detected and allow_multiple is False.
+
+    Includes information about the entries for display to users.
+    """
+
+    def __init__(self, message: str, entries: list, playlist_title: Optional[str] = None):
+        super().__init__(message)
+        self.entries = entries
+        self.playlist_title = playlist_title
+        self.count = len(entries)
+
+
+@dataclass
+class EntryInfo:
+    """Information about a single entry in a multi-item result"""
+
+    url: str
+    title: Optional[str] = None
+    duration_seconds: Optional[int] = None
+    thumbnail_url: Optional[str] = None
 
 
 @dataclass
@@ -34,6 +58,10 @@ class PrefetchResult:
     external_id: Optional[str] = None
     file_extension: Optional[str] = None
     extracted_media_url: Optional[str] = None  # URL extracted from HTML
+    # Multi-item support
+    entries: List[EntryInfo] = field(default_factory=list)
+    is_multiple: bool = False
+    playlist_title: Optional[str] = None
 
 
 def prefetch(url, strategy, logger=None):
@@ -138,11 +166,40 @@ def _prefetch_ytdlp(url, logger=None):
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
 
-            # Check for playlist
-            if 'entries' in info:
-                raise PlaylistNotSupported('URL is a playlist, not supported')
-
             result = PrefetchResult()
+
+            # Check for playlist/multi-item result
+            if 'entries' in info:
+                entries_list = list(info.get('entries', []))
+                result.is_multiple = True
+                result.playlist_title = info.get('title', 'Untitled Playlist')
+
+                # Extract info for each entry
+                for entry in entries_list:
+                    if entry is None:
+                        continue
+                    entry_info = EntryInfo(
+                        url=entry.get('webpage_url') or entry.get('url', ''),
+                        title=entry.get('title', 'Untitled'),
+                        duration_seconds=entry.get('duration'),
+                        thumbnail_url=entry.get('thumbnail'),
+                    )
+                    result.entries.append(entry_info)
+
+                # Use playlist metadata for the result
+                result.title = result.playlist_title
+                result.description = info.get('description', '')
+                result.author = info.get('uploader', '') or info.get('channel', '')
+                result.extractor = info.get('extractor', '')
+                result.webpage_url = info.get('webpage_url', url)
+
+                if logger:
+                    logger(f'Multi-item URL detected: {result.playlist_title}')
+                    logger(f'Found {len(result.entries)} items')
+
+                return result
+
+            # Single item result
             result.title = info.get('title', 'Untitled')
             result.description = info.get('description', '')
             result.author = info.get('uploader', '') or info.get('channel', '')
@@ -240,3 +297,47 @@ def resolve_media_type(requested_type, prefetch_result):
         return 'video'
     else:
         return 'audio'
+
+
+def check_multiple_items(prefetch_result, allow_multiple=False, source='cli'):
+    """
+    Check if prefetch result contains multiple items and handle accordingly.
+
+    Args:
+        prefetch_result: PrefetchResult from prefetch()
+        allow_multiple: If True, allow multiple items
+        source: Source of the request for actionable error messages
+                ('cli', 'api', 'admin')
+
+    Raises:
+        MultipleItemsDetected: If multiple items found and not allowed
+    """
+    if not prefetch_result.is_multiple:
+        return
+
+    count = len(prefetch_result.entries)
+
+    if allow_multiple:
+        return
+
+    # Build actionable error message based on source
+    if source == 'cli':
+        action_hint = 'Run again with --allow-multiple to download all items.'
+    elif source == 'api':
+        action_hint = (
+            'Add allow_multiple=true parameter to proceed, '
+            'or use the admin interface to confirm.'
+        )
+    else:  # admin or other
+        action_hint = 'Use the confirmation page to proceed with all items.'
+
+    message = (
+        f'Found {count} items in this URL (playlist, channel, or page with multiple videos). '
+        f'{action_hint}'
+    )
+
+    raise MultipleItemsDetected(
+        message=message,
+        entries=prefetch_result.entries,
+        playlist_title=prefetch_result.playlist_title,
+    )

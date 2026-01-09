@@ -34,11 +34,15 @@ def stash_view(request):
         token (required): User token for authentication
         url (required): URL to download
         type (required): auto|audio|video
+        allow_multiple (optional): If 'true', allow downloading multiple items
         redirect (optional): If 'progress', redirect to progress page instead of returning JSON
 
     Returns:
         JSON response with item details, or redirect to progress page
     """
+    from media.service.strategy import choose_download_strategy
+    from media.service.resolve import prefetch
+
     # Check user token
     user_token = request.GET.get('token') or request.POST.get('token')
     if not user_token or user_token != settings.STASHCAST_USER_TOKEN:
@@ -49,6 +53,8 @@ def stash_view(request):
     requested_type = request.GET.get('type') or request.POST.get('type')
     redirect_param = request.GET.get('redirect') or request.POST.get('redirect')
     close_tab_after = request.GET.get('closeTabAfter') or request.POST.get('closeTabAfter')
+    allow_multiple_param = request.GET.get('allow_multiple') or request.POST.get('allow_multiple')
+    allow_multiple = allow_multiple_param in ['true', 'True', '1', 'yes']
 
     if not url:
         return JsonResponse({'error': 'Missing required parameter: url'}, status=400)
@@ -59,9 +65,86 @@ def stash_view(request):
             status=400,
         )
 
+    # Check for multiple items before processing
+    strategy = choose_download_strategy(url)
+    if strategy == 'ytdlp':
+        try:
+            prefetch_result = prefetch(url, strategy, logger=None)
+            if prefetch_result.is_multiple:
+                count = len(prefetch_result.entries)
+
+                if not allow_multiple:
+                    # Return error with actionable message
+                    return JsonResponse(
+                        {
+                            'error': (
+                                f'Found {count} items in this URL (playlist, channel, or page with '
+                                f'multiple videos). Add allow_multiple=true parameter to proceed, '
+                                f'or use the admin interface to confirm.'
+                            ),
+                            'is_multiple': True,
+                            'count': count,
+                            'playlist_title': prefetch_result.playlist_title,
+                            'entries': [
+                                {'title': e.title, 'url': e.url}
+                                for e in prefetch_result.entries[:10]  # Limit preview
+                            ],
+                        },
+                        status=400,
+                    )
+
+                # allow_multiple is True - create items for each entry
+                created_items = []
+                for entry in prefetch_result.entries:
+                    entry_url = entry.url
+                    if not entry_url:
+                        continue
+
+                    # Check if item already exists
+                    existing_item = None
+                    if requested_type == 'auto':
+                        existing_item = MediaItem.objects.filter(
+                            source_url=entry_url, requested_type='auto'
+                        ).first()
+                    else:
+                        existing_item = MediaItem.objects.filter(
+                            source_url=entry_url, media_type=requested_type
+                        ).first()
+
+                    if existing_item:
+                        item = existing_item
+                        item.requested_type = requested_type
+                        item.status = MediaItem.STATUS_PREFETCHING
+                        item.error_message = ''
+                        item.save()
+                    else:
+                        item = MediaItem.objects.create(
+                            source_url=entry_url,
+                            requested_type=requested_type,
+                            slug='pending',
+                        )
+
+                    # Enqueue processing task
+                    process_media(item.guid)
+                    created_items.append({
+                        'guid': item.guid,
+                        'url': entry_url,
+                        'title': entry.title,
+                    })
+
+                return JsonResponse({
+                    'success': True,
+                    'is_multiple': True,
+                    'count': len(created_items),
+                    'playlist_title': prefetch_result.playlist_title,
+                    'items': created_items,
+                })
+
+        except Exception as e:
+            return JsonResponse({'error': f'Error checking URL: {str(e)}'}, status=500)
+
+    # Single item flow
     # Check if item already exists for this URL and requested type combination
-    # For 'auto', match with other 'auto' requests
-    # For 'audio'/'video', match with items that have that media_type
     existing_item = None
 
     if requested_type == 'auto':
@@ -168,6 +251,7 @@ def bookmarklet_view(request):
         **admin.site.each_context(request),
         'base_url': request.build_absolute_uri('/').rstrip('/'),
         'user_token': user_token,
+        'require_user_token_for_feeds': settings.REQUIRE_USER_TOKEN_FOR_FEEDS,
         'title': 'Bookmarklet',
     }
 
@@ -209,6 +293,8 @@ def admin_stash_form_view(request):
     from django.contrib import messages
 
     from media.admin import is_demo_readonly
+    from media.service.strategy import choose_download_strategy
+    from media.service.resolve import prefetch, MultipleItemsDetected, check_multiple_items
 
     if request.method == 'POST':
         # Block demo users from submitting
@@ -220,6 +306,30 @@ def admin_stash_form_view(request):
         media_type = request.POST.get('type', 'auto')
 
         if url:
+            # Check for multiple items first
+            strategy = choose_download_strategy(url)
+            if strategy == 'ytdlp':
+                try:
+                    prefetch_result = prefetch(url, strategy, logger=None)
+                    if prefetch_result.is_multiple:
+                        # Redirect to confirmation page
+                        request.session['multi_item_url'] = url
+                        request.session['multi_item_type'] = media_type
+                        request.session['multi_item_entries'] = [
+                            {
+                                'url': e.url,
+                                'title': e.title,
+                                'duration_seconds': e.duration_seconds,
+                            }
+                            for e in prefetch_result.entries
+                        ]
+                        request.session['multi_item_playlist_title'] = prefetch_result.playlist_title
+                        return redirect('admin_stash_confirm_multiple')
+                except Exception as e:
+                    messages.error(request, f'Error checking URL: {str(e)}')
+                    return redirect(request.path)
+
+            # Single item - proceed as before
             # Check if item already exists for this URL and requested type combination
             existing_item = None
 
@@ -265,6 +375,88 @@ def admin_stash_form_view(request):
     }
 
     return render(request, 'admin/admin_stash_form.html', context)
+
+
+@staff_member_required
+def admin_stash_confirm_multiple_view(request):
+    """
+    Confirmation page for multi-item downloads.
+
+    Shows list of items that will be downloaded and asks for confirmation.
+    """
+    from django.contrib import messages
+
+    from media.admin import is_demo_readonly
+
+    # Get data from session
+    url = request.session.get('multi_item_url')
+    media_type = request.session.get('multi_item_type', 'auto')
+    entries = request.session.get('multi_item_entries', [])
+    playlist_title = request.session.get('multi_item_playlist_title', 'Multiple Items')
+
+    if not url or not entries:
+        messages.error(request, 'No multi-item data found. Please try again.')
+        return redirect('admin_stash_form')
+
+    if request.method == 'POST':
+        # Block demo users from submitting
+        if is_demo_readonly(request.user):
+            messages.error(request, 'Demo users are not allowed to add URLs.')
+            return redirect('admin_stash_form')
+
+        # Clear session data
+        del request.session['multi_item_url']
+        del request.session['multi_item_type']
+        del request.session['multi_item_entries']
+        del request.session['multi_item_playlist_title']
+
+        # Create MediaItem for each entry and queue processing
+        created_count = 0
+        for entry in entries:
+            entry_url = entry.get('url')
+            if not entry_url:
+                continue
+
+            # Check if item already exists
+            existing_item = None
+            if media_type == 'auto':
+                existing_item = MediaItem.objects.filter(
+                    source_url=entry_url, requested_type='auto'
+                ).first()
+            else:
+                existing_item = MediaItem.objects.filter(
+                    source_url=entry_url, media_type=media_type
+                ).first()
+
+            if existing_item:
+                item = existing_item
+                item.requested_type = media_type
+                item.status = MediaItem.STATUS_PREFETCHING
+                item.error_message = ''
+                item.save()
+            else:
+                item = MediaItem.objects.create(
+                    source_url=entry_url, requested_type=media_type, slug='pending'
+                )
+
+            # Enqueue processing
+            process_media(item.guid)
+            created_count += 1
+
+        messages.success(request, f'Queued {created_count} items for download')
+        return redirect('admin_stash_form')
+
+    context = {
+        **admin.site.each_context(request),
+        'url': url,
+        'media_type': media_type,
+        'entries': entries,
+        'playlist_title': playlist_title,
+        'count': len(entries),
+        'title': f'Confirm Download - {len(entries)} Items',
+    }
+
+    return render(request, 'admin/admin_stash_confirm_multiple.html', context)
 
 
 @staff_member_required

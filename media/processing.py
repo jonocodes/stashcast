@@ -36,6 +36,7 @@ from media.service.media_info import (
     resolve_title_from_metadata,
 )
 from media.service.resolve import (
+    MultipleItemsDetected,
     PlaylistNotSupported,
     prefetch as service_prefetch,
     resolve_media_type,
@@ -103,6 +104,18 @@ def _prefetch_with_strategy(item, strategy, log_path):
         )
     except PlaylistNotSupported as e:
         raise Exception(str(e))
+
+    # Check for multi-item results (playlists, channels, multi-embed pages)
+    if result.is_multiple:
+        count = len(result.entries)
+        raise MultipleItemsDetected(
+            message=(
+                f'Found {count} items in this URL (playlist, channel, or page with multiple videos). '
+                f'Use the admin interface to confirm downloading all items, or use CLI with --allow-multiple.'
+            ),
+            entries=result.entries,
+            playlist_title=result.playlist_title,
+        )
 
     _apply_prefetch_result(item, result, log_path)
 

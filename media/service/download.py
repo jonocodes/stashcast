@@ -140,7 +140,8 @@ def download_ytdlp(url, resolved_type, temp_dir, ytdlp_extra_args='', logger=Non
         'writesubtitles': True,
         'writeautomaticsub': True,
         'subtitleslangs': ['en'],
-        'noplaylist': True,
+        # Note: noplaylist removed to allow multi-item downloads
+        # Multi-item handling is done at prefetch stage with --allow-multiple flag
         'quiet': not logger,  # Show output if logger is provided
     }
 

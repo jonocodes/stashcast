@@ -6,10 +6,17 @@ This is a thin CLI wrapper around the transcode_service.
 
 import json
 import sys
+from pathlib import Path
 from django.core.management.base import BaseCommand, CommandError
 
 from media.service.transcode_service import transcode_url_to_dir
-from media.service.resolve import PlaylistNotSupported
+from media.service.resolve import (
+    PlaylistNotSupported,
+    MultipleItemsDetected,
+    prefetch,
+    check_multiple_items,
+)
+from media.service.strategy import choose_download_strategy
 
 
 class Command(BaseCommand):
@@ -34,6 +41,11 @@ class Command(BaseCommand):
         )
         parser.add_argument('--verbose', action='store_true', help='Enable verbose output')
         parser.add_argument('--json', action='store_true', help='Output result as JSON')
+        parser.add_argument(
+            '--allow-multiple',
+            action='store_true',
+            help='Allow downloading multiple items from playlists or pages with multiple videos',
+        )
 
     def handle(self, *args, **options):
         input_url = options['input']
@@ -42,11 +54,75 @@ class Command(BaseCommand):
         dry_run = options['dry_run']
         verbose = options['verbose']
         output_json = options['json']
+        allow_multiple = options['allow_multiple']
+
+        # Check for multiple items BEFORE doing anything else
+        strategy = choose_download_strategy(input_url)
+        if strategy == 'ytdlp':
+            try:
+                prefetch_result = prefetch(input_url, strategy, logger=None)
+                if prefetch_result.is_multiple:
+                    check_multiple_items(prefetch_result, allow_multiple=allow_multiple, source='cli')
+
+                    # If we get here, allow_multiple is True - process each entry
+                    if verbose:
+                        self.stdout.write(
+                            f'Processing {len(prefetch_result.entries)} items from: '
+                            f'{prefetch_result.playlist_title}'
+                        )
+
+                    results = []
+                    for i, entry in enumerate(prefetch_result.entries):
+                        if verbose:
+                            self.stdout.write(
+                                f'\n[{i + 1}/{len(prefetch_result.entries)}] {entry.title}'
+                            )
+                        result = self._transcode_single_url(
+                            entry.url, outdir, requested_type, verbose, output_json
+                        )
+                        if result:
+                            results.append(result)
+
+                    # Output summary
+                    if output_json:
+                        self.stdout.write(
+                            json.dumps({'success': True, 'items': results}, indent=2)
+                        )
+                    else:
+                        self.stdout.write(
+                            self.style.SUCCESS(f'\n✓ Completed {len(results)} items')
+                        )
+                    return
+
+            except MultipleItemsDetected as e:
+                error_msg = str(e)
+                if output_json:
+                    self.stdout.write(
+                        json.dumps(
+                            {
+                                'success': False,
+                                'error': error_msg,
+                                'count': e.count,
+                                'playlist_title': e.playlist_title,
+                            }
+                        )
+                    )
+                    sys.exit(1)
+                else:
+                    self.stderr.write(self.style.ERROR(f'\nError: {error_msg}'))
+                    if e.playlist_title:
+                        self.stderr.write(f'  Playlist: {e.playlist_title}')
+                    self.stderr.write(f'  Items found: {e.count}')
+                    # Show first few items
+                    for entry in e.entries[:5]:
+                        self.stderr.write(f'    - {entry.title}')
+                    if e.count > 5:
+                        self.stderr.write(f'    ... and {e.count - 5} more')
+                return
 
         # Dry run mode
         if dry_run:
-            from media.service.strategy import choose_download_strategy
-            from media.service.resolve import prefetch, resolve_media_type
+            from media.service.resolve import resolve_media_type
 
             if not output_json:
                 self.stdout.write(self.style.WARNING('DRY RUN MODE - No files will be downloaded'))
@@ -55,7 +131,6 @@ class Command(BaseCommand):
                 self.stdout.write(f'Output directory: {outdir}')
 
             try:
-                strategy = choose_download_strategy(input_url)
                 if not output_json:
                     self.stdout.write(f'Strategy: {strategy}')
 
@@ -84,7 +159,11 @@ class Command(BaseCommand):
 
             return
 
-        # Actual execution
+        # Single item flow
+        self._transcode_single_url(input_url, outdir, requested_type, verbose, output_json)
+
+    def _transcode_single_url(self, input_url, outdir, requested_type, verbose, output_json):
+        """Transcode a single URL and return result dict for JSON output."""
         try:
             if not output_json and verbose:
                 self.stdout.write(self.style.NOTICE(f'Transcoding: {input_url}'))
@@ -93,27 +172,27 @@ class Command(BaseCommand):
                 url=input_url, outdir=outdir, requested_type=requested_type, verbose=verbose
             )
 
+            # Build result dict
+            output = {
+                'success': True,
+                'url': result.url,
+                'strategy': result.strategy,
+                'requested_type': result.requested_type,
+                'resolved_type': result.resolved_type,
+                'title': result.title,
+                'slug': result.slug,
+                'output_path': str(result.output_path),
+                'file_size': result.file_size,
+                'transcoded': result.transcoded,
+            }
+
+            if result.thumbnail_path:
+                output['thumbnail_path'] = str(result.thumbnail_path)
+            if result.subtitle_path:
+                output['subtitle_path'] = str(result.subtitle_path)
+
             # Output result
             if output_json:
-                # JSON output
-                output = {
-                    'success': True,
-                    'url': result.url,
-                    'strategy': result.strategy,
-                    'requested_type': result.requested_type,
-                    'resolved_type': result.resolved_type,
-                    'title': result.title,
-                    'slug': result.slug,
-                    'output_path': str(result.output_path),
-                    'file_size': result.file_size,
-                    'transcoded': result.transcoded,
-                }
-
-                if result.thumbnail_path:
-                    output['thumbnail_path'] = str(result.thumbnail_path)
-                if result.subtitle_path:
-                    output['subtitle_path'] = str(result.subtitle_path)
-
                 self.stdout.write(json.dumps(output, indent=2))
             else:
                 # Human-readable output
@@ -135,12 +214,19 @@ class Command(BaseCommand):
                 if result.subtitle_path:
                     self.stdout.write(f'  Subtitles: {result.subtitle_path}')
 
+            return output
+
         except PlaylistNotSupported as e:
-            raise CommandError(f'Playlist not supported: {e}')
+            if output_json:
+                error_output = {'success': False, 'error': f'Playlist not supported: {e}'}
+                self.stdout.write(json.dumps(error_output, indent=2))
+            else:
+                self.stderr.write(self.style.ERROR(f'Playlist not supported: {e}'))
+            return None
         except Exception as e:
             if output_json:
                 error_output = {'success': False, 'error': str(e)}
                 self.stdout.write(json.dumps(error_output, indent=2))
-                sys.exit(1)
             else:
-                raise CommandError(f'Transcode failed: {e}')
+                self.stderr.write(self.style.ERROR(f'Transcode failed: {e}'))
+            return None

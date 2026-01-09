@@ -23,6 +23,7 @@ from django.views.generic import RedirectView
 
 from media.feeds import AudioFeed, CombinedFeed, VideoFeed
 from media.views import (
+    admin_stash_confirm_multiple_view,
     admin_stash_form_view,
     admin_stash_progress_view,
     bookmarklet_view,
@@ -54,6 +55,11 @@ urlpatterns = [
     path('admin/tools/bookmarklet/', bookmarklet_view, name='bookmarklet'),
     path('admin/tools/feeds/', feed_links_view, name='feed_links'),
     path('admin/tools/add-url/', admin_stash_form_view, name='admin_stash_form'),
+    path(
+        'admin/tools/add-url/confirm-multiple/',
+        admin_stash_confirm_multiple_view,
+        name='admin_stash_confirm_multiple',
+    ),
     path(
         'admin/tools/add-url/progress/<str:guid>/',
         admin_stash_progress_view,

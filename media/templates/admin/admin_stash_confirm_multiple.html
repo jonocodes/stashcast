@@ -1,0 +1,220 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}Confirm Download - {{ count }} Items{% endblock %}
+
+{% block extrastyle %}
+<style>
+    :root {
+        --sc-panel-bg: var(--body-bg, #ffffff);
+        --sc-panel-fg: var(--body-fg, #222222);
+        --sc-muted: var(--body-quiet-color, #6b7280);
+        --sc-border: var(--hairline-color, #d4d4d4);
+        --sc-border-strong: var(--darkened-bg, rgba(255,255,255,0.08));
+        --sc-primary: var(--primary, #417690);
+        --sc-primary-fg: var(--primary-fg, #ffffff);
+        --sc-surface: var(--darkened-bg, rgba(0,0,0,0.02));
+        --sc-warning: #f59e0b;
+        --sc-warning-bg: rgba(245, 158, 11, 0.1);
+    }
+    .confirm-container {
+        max-width: 800px;
+        margin: 20px auto;
+        padding: 20px;
+    }
+    .confirm-panel {
+        background: var(--sc-panel-bg);
+        color: var(--sc-panel-fg);
+        border-radius: 8px;
+        padding: 30px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border: 1px solid var(--sc-border);
+    }
+    .confirm-panel h1 {
+        margin-top: 0;
+    }
+    .warning-box {
+        background: var(--sc-warning-bg);
+        border-left: 4px solid var(--sc-warning);
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 4px;
+    }
+    .warning-box h3 {
+        margin: 0 0 10px 0;
+        color: var(--sc-warning);
+    }
+    .warning-box p {
+        margin: 0;
+    }
+    .source-info {
+        background: var(--sc-surface);
+        padding: 15px;
+        border-radius: 4px;
+        margin: 20px 0;
+        border: 1px solid var(--sc-border);
+    }
+    .source-info strong {
+        display: block;
+        margin-bottom: 5px;
+    }
+    .source-info code {
+        word-break: break-all;
+        font-size: 12px;
+        color: var(--sc-muted);
+    }
+    .items-list {
+        max-height: 400px;
+        overflow-y: auto;
+        border: 1px solid var(--sc-border);
+        border-radius: 4px;
+        margin: 20px 0;
+    }
+    .items-list table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .items-list th {
+        position: sticky;
+        top: 0;
+        background: var(--sc-surface);
+        padding: 12px;
+        text-align: left;
+        border-bottom: 2px solid var(--sc-border);
+        font-weight: bold;
+        color: var(--sc-muted);
+    }
+    .items-list td {
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--sc-border);
+    }
+    .items-list tr:last-child td {
+        border-bottom: none;
+    }
+    .items-list tr:hover {
+        background: var(--sc-surface);
+    }
+    .item-number {
+        color: var(--sc-muted);
+        font-size: 12px;
+        width: 40px;
+    }
+    .item-title {
+        max-width: 400px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .item-duration {
+        color: var(--sc-muted);
+        font-size: 13px;
+        width: 80px;
+    }
+    .button-row {
+        display: flex;
+        gap: 15px;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid var(--sc-border);
+    }
+    .btn {
+        padding: 12px 30px;
+        border: none;
+        border-radius: 4px;
+        font-size: 14px;
+        font-weight: bold;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+    }
+    .btn-primary {
+        background: var(--sc-primary);
+        color: var(--sc-primary-fg);
+    }
+    .btn-primary:hover {
+        filter: brightness(1.03);
+    }
+    .btn-secondary {
+        background: var(--sc-surface);
+        color: var(--sc-panel-fg);
+        border: 1px solid var(--sc-border);
+    }
+    .btn-secondary:hover {
+        background: var(--sc-border);
+    }
+    .count-badge {
+        display: inline-block;
+        background: var(--sc-primary);
+        color: var(--sc-primary-fg);
+        padding: 3px 10px;
+        border-radius: 12px;
+        font-size: 14px;
+        margin-left: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">Home</a>
+    &rsaquo; <a href="{% url 'admin_stash_form' %}">Add URL</a>
+    &rsaquo; Confirm Multiple Items
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="confirm-container">
+    <div class="confirm-panel">
+        <h1>Confirm Download <span class="count-badge">{{ count }} items</span></h1>
+
+        <div class="warning-box">
+            <h3>Multiple items detected</h3>
+            <p>This URL contains multiple videos/audio files. Please confirm you want to download all {{ count }} items.</p>
+        </div>
+
+        <div class="source-info">
+            <strong>{{ playlist_title }}</strong>
+            <code>{{ url }}</code>
+        </div>
+
+        <p>Media type: <strong>{{ media_type|title }}</strong></p>
+
+        <div class="items-list">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Title</th>
+                        <th>Duration</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in entries %}
+                    <tr>
+                        <td class="item-number">{{ forloop.counter }}</td>
+                        <td class="item-title" title="{{ entry.title }}">{{ entry.title|default:"Untitled"|truncatechars:60 }}</td>
+                        <td class="item-duration">
+                            {% if entry.duration_seconds %}
+                                {% widthratio entry.duration_seconds 60 1 as mins %}
+                                {% widthratio entry.duration_seconds 1 1 as total_secs %}
+                                {{ mins }}:{% widthratio entry.duration_seconds 1 1 as ts %}{% with secs=entry.duration_seconds|divisibleby:60 %}{{ entry.duration_seconds|add:0|stringformat:"02d" }}{% endwith %}
+                            {% else %}
+                                --
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="button-row">
+                <a href="{% url 'admin_stash_form' %}" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary">Download All {{ count }} Items</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
