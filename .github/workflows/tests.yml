@@ -32,7 +32,7 @@ jobs:
         run: mkdir -p "$STASHCAST_DATA_DIR"
 
       - name: Run tests with coverage
-        run: coverage run manage.py test
+        run: coverage run -m pytest
 
       - name: Report coverage
         run: coverage report -m

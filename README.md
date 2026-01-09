@@ -369,7 +369,7 @@ See `.env.example` for all available configuration options.
 pip install -r requirements-dev.txt
 
 # Run all tests
-coverage run manage.py test
+coverage run -m pytest
 coverage report -m
 
 # Create and apply database migrations

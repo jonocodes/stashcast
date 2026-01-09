@@ -661,17 +661,17 @@ The architecture is designed to support:
 ### Running Tests
 
 ```bash
-# All tests (165 total: 121 service + 44 app)
-./manage.py test media
+# All tests
+pytest
 
-# Service layer only (121 tests)
-./manage.py test media.test_service
+# Service layer only
+pytest media/test_service/
 
-# App integration tests only (44 tests)
-./manage.py test media.tests
+# App integration tests only
+pytest media/tests/
 
-# Parallel execution for faster results
-./manage.py test media --parallel
+# Parallel execution for faster results (requires pytest-xdist)
+pytest -n auto
 ```
 
 ### Adding New Features
