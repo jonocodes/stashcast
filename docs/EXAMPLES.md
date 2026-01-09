@@ -146,23 +146,23 @@ This makes it easy to find help and resources when you need them.
 
 ```bash
 # Stash audio file
-curl "http://localhost:8000/stash/?apikey=dev-api-key-change-in-production&url=http://localhost:8001/pecha-kucha-aud/aud.mp3&type=auto"
+curl "http://localhost:8000/stash/?apikey=dev-user-token-change-in-production&url=http://localhost:8001/pecha-kucha-aud/aud.mp3&type=auto"
 
 # Stash video file
-curl "http://localhost:8000/stash/?apikey=dev-api-key-change-in-production&url=http://localhost:8001/pecha-kucha-vid/vid.mp4&type=auto"
+curl "http://localhost:8000/stash/?apikey=dev-user-token-change-in-production&url=http://localhost:8001/pecha-kucha-vid/vid.mp4&type=auto"
 ```
 
 ### From YouTube (requires yt-dlp)
 
 ```bash
 # Auto-detect media type
-curl "http://localhost:8000/stash/?apikey=dev-api-key-change-in-production&url=https://www.youtube.com/watch?v=VIDEO_ID&type=auto"
+curl "http://localhost:8000/stash/?apikey=dev-user-token-change-in-production&url=https://www.youtube.com/watch?v=VIDEO_ID&type=auto"
 
 # Force audio only
-curl "http://localhost:8000/stash/?apikey=dev-api-key-change-in-production&url=https://www.youtube.com/watch?v=VIDEO_ID&type=audio"
+curl "http://localhost:8000/stash/?apikey=dev-user-token-change-in-production&url=https://www.youtube.com/watch?v=VIDEO_ID&type=audio"
 
 # Force video
-curl "http://localhost:8000/stash/?apikey=dev-api-key-change-in-production&url=https://www.youtube.com/watch?v=VIDEO_ID&type=video"
+curl "http://localhost:8000/stash/?apikey=dev-user-token-change-in-production&url=https://www.youtube.com/watch?v=VIDEO_ID&type=video"
 ```
 
 ## Managing Items in Django Admin

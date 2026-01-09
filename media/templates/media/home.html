@@ -202,12 +202,6 @@
             background: rgba(79, 179, 255, 0.06);
             transform: translateY(-1px);
         }
-        .copy-btn {
-            cursor: pointer;
-        }
-        .copy-btn:active {
-            transform: translateY(0);
-        }
     </style>
 </head>
 <body>
@@ -238,9 +232,6 @@
                 <div class="feed-links">
                     <a class="pill" href="/admin/tools/grid/?type=audio">Grid view</a>
                     <a class="pill" href="/admin/tools/list/?type=audio">List view</a>
-                    <!-- <a class="pill" href="/feeds/audio.xml">Subscribe</a> -->
-                    <button class="pill copy-btn" data-url="/feeds/audio.xml" type="button">Copy subscribe URL</button>
-                    <a class="pill" href="/feeds/audio.xml?view=1">View RSS feed XML</a>
                     <a class="pill" href="/admin/media/mediaitem/?media_type=audio">Manage</a>
                 </div>
             </div>
@@ -249,9 +240,6 @@
                 <div class="feed-links">
                     <a class="pill" href="/admin/tools/grid/?type=video">Grid view</a>
                     <a class="pill" href="/admin/tools/list/?type=video">List view</a>
-                    <!-- <a class="pill" href="/feeds/video.xml">Subscribe</a> -->
-                    <button class="pill copy-btn" data-url="/feeds/video.xml" type="button">Copy subscribe URL</button>
-                    <a class="pill" href="/feeds/video.xml?view=1">View RSS feed XML</a>
                     <a class="pill" href="/admin/media/mediaitem/?media_type=video">Manage</a>
                 </div>
             </div>
@@ -260,34 +248,20 @@
                 <div class="feed-links">
                     <a class="pill" href="/admin/tools/grid/?type=all">Grid view</a>
                     <a class="pill" href="/admin/tools/list/?type=all">List view</a>
-                    <!-- <a class="pill" href="/feeds/combined.xml">Subscribe</a> -->
-                    <button class="pill copy-btn" data-url="/feeds/combined.xml" type="button">Copy subscribe URL</button>
-                    <a class="pill" href="/feeds/combined.xml?view=1">View RSS feed XML</a>
                     <a class="pill" href="/admin/media/mediaitem/">Manage</a>
                 </div>
             </div>
         </div>
         <div class="links">
+            <a class="link-card" href="{% url 'feed_links' %}">
+                <strong>Subscribe to feeds</strong>
+                <span>Get RSS feed URLs for your podcast app</span>
+            </a>
             <a class="link-card" href="/admin/">
                 <strong>Admin dashboard</strong>
                 <span>Manage media items and jobs</span>
             </a>
         </div>
     </main>
-    <script>
-        document.querySelectorAll('.copy-btn').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                const url = btn.dataset.url;
-                try {
-                    await navigator.clipboard.writeText(new URL(url, window.location.origin).href);
-                    btn.textContent = 'Copied!';
-                    setTimeout(() => btn.textContent = 'Copy subscribe URL', 1400);
-                } catch (e) {
-                    btn.textContent = 'Copy failed';
-                    setTimeout(() => btn.textContent = 'Copy subscribe URL', 1400);
-                }
-            });
-        });
-    </script>
 </body>
 </html>

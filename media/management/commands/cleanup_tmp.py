@@ -97,9 +97,9 @@ class Command(BaseCommand):
             return
 
         # Display findings
-        self.stdout.write(
-            f'\nFound {len(old_tmp_dirs)} abandoned tmp director{"ies" if len(old_tmp_dirs) != 1 else "y"}:'
-        )
+        count = len(old_tmp_dirs)
+        plural = 'ies' if count != 1 else 'y'
+        self.stdout.write(f'\nFound {count} abandoned tmp director{plural}:')
         self.stdout.write(f'{"=" * 80}')
 
         total_size = 0
@@ -127,7 +127,7 @@ class Command(BaseCommand):
                             last_line = lines[-1].strip()
                             if last_line:
                                 self.stdout.write(f'        Last log: {last_line[:60]}...')
-                except:
+                except OSError:
                     pass
 
         self.stdout.write(f'\n{"=" * 80}')
@@ -136,18 +136,14 @@ class Command(BaseCommand):
         # Handle deletion
         if dry_run:
             self.stdout.write(
-                self.style.WARNING(
-                    f'\nDRY RUN: Would delete {len(old_tmp_dirs)} director{"ies" if len(old_tmp_dirs) != 1 else "y"}'
-                )
+                self.style.WARNING(f'\nDRY RUN: Would delete {count} director{plural}')
             )
             self.stdout.write('Run without --dry-run to actually delete')
             return
 
         # Confirm deletion
         if not force:
-            response = input(
-                f'\nDelete these {len(old_tmp_dirs)} director{"ies" if len(old_tmp_dirs) != 1 else "y"}? [y/N]: '
-            )
+            response = input(f'\nDelete these {count} director{plural}? [y/N]: ')
             if response.lower() != 'y':
                 self.stdout.write('Cancelled')
                 return
@@ -166,8 +162,7 @@ class Command(BaseCommand):
             except Exception as e:
                 self.stdout.write(self.style.ERROR(f'✗ Failed to delete {info["path"].name}: {e}'))
 
+        del_plural = 'ies' if deleted_count != 1 else 'y'
         self.stdout.write(
-            self.style.SUCCESS(
-                f'\n✓ Deleted {deleted_count} of {len(old_tmp_dirs)} tmp director{"ies" if deleted_count != 1 else "y"}'
-            )
+            self.style.SUCCESS(f'\n✓ Deleted {deleted_count} of {count} tmp director{del_plural}')
         )

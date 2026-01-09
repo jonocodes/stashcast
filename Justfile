@@ -1,6 +1,6 @@
 set shell := ["bash", "-c"]
 
-set dotenv-load
+# set dotenv-load
 
 setenv := '. ".envrc"'
 

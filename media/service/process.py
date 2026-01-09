@@ -200,7 +200,7 @@ def transcode_to_playable(
                             )
                             if probe_result.returncode == 0:
                                 total_duration = float(probe_result.stdout.strip())
-                        except:
+                        except (OSError, ValueError, subprocess.SubprocessError):
                             pass
 
                     # Calculate progress

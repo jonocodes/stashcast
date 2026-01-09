@@ -97,7 +97,7 @@ cp .env.example .env
 # Edit .env and set your values
 # At minimum, set:
 # - STASHCAST_DATA_DIR (base path; media is stored in STASHCAST_DATA_DIR/media)
-# - STASHCAST_API_KEY
+# - STASHCAST_USER_TOKEN
 ```
 
 ### 3. Download the dependencies and setup the db
@@ -159,12 +159,12 @@ Access the admin at `http://localhost:8000/admin/`
 
 ```bash
 # Stash a URL
-curl "http://localhost:8000/stash/?apikey=YOUR_API_KEY&url=https://example.com/video&type=auto"
+curl "http://localhost:8000/stash/?token=YOUR_USER_TOKEN&url=https://example.com/video&type=auto"
 ```
 
 Parameters:
 
-- `apikey` (required): Your API key
+- `token` (required): Your user token
 - `url` (required): URL to download
 - `type` (required): `auto`, `audio`, or `video`
 
@@ -175,6 +175,26 @@ Parameters:
 - Combined feed: `http://localhost:8000/feeds/combined.xml`
 
 Add these URLs to your podcast app (AntennaPod, Overcast, etc.)
+
+#### Optional: Private Feeds with User Token Protection
+
+By default, RSS feeds are publicly accessible. To require a user token for feed access (keeping your listening activity private):
+
+1. Set the environment variable in your `.env` file:
+   ```bash
+   REQUIRE_USER_TOKEN_FOR_FEEDS=true
+   ```
+
+2. Restart the service
+
+3. Feed URLs must now include your user token:
+   - Audio feed: `http://localhost:8000/feeds/audio.xml?token=YOUR_USER_TOKEN`
+   - Video feed: `http://localhost:8000/feeds/video.xml?token=YOUR_USER_TOKEN`
+   - Combined feed: `http://localhost:8000/feeds/combined.xml?token=YOUR_USER_TOKEN`
+
+The home page and bookmarklet page will display the current protection status and automatically show feed URLs with the user token when enabled.
+
+**Note:** All major podcast apps support query parameters in feed URLs (this is how services like Patreon and Supercast provide private feeds).
 
 ### Test Server
 
@@ -192,10 +212,10 @@ Then test stashing them:
 
 ```bash
 # Stash a direct video file
-curl "http://localhost:8000/stash/?apikey=dev-api-key-change-in-production&url=http://localhost:8001/pecha-kucha-vid/vid.mp4&type=auto"
+curl "http://localhost:8000/stash/?token=dev-user-token-change-in-production&url=http://localhost:8001/pecha-kucha-vid/vid.mp4&type=auto"
 
 # Stash from HTML page with embedded video (StashCast will extract the video automatically)
-curl "http://localhost:8000/stash/?apikey=dev-api-key-change-in-production&url=http://localhost:8001/pecha-kucha-vid/view.html&type=auto"
+curl "http://localhost:8000/stash/?token=dev-user-token-change-in-production&url=http://localhost:8001/pecha-kucha-vid/view.html&type=auto"
 ```
 
 Your current test files:
@@ -314,7 +334,7 @@ Use the public site to view/subscribe to your feed.
 
 Use the bookmarklet with your api key to add media outside of admin.
 
-Your api key is a single user secret that you can use to identify yourself, and is set via STASHCAST_API_KEY. I recommend using a random string, or generate a uuid using one of these:
+Your api key is a single user secret that you can use to identify yourself, and is set via STASHCAST_USER_TOKEN. I recommend using a random string, or generate a uuid using one of these:
 
 `uuidgen`
 
@@ -330,7 +350,7 @@ See `.env.example` for all available configuration options.
 #### Required
 
 - `STASHCAST_DATA_DIR`: Base directory for application data (media is stored in `STASHCAST_DATA_DIR/media`; default: `./data`)
-- `STASHCAST_API_KEY`: API key for stash endpoint
+- `STASHCAST_USER_TOKEN`: API key for stash endpoint
 
 #### Optional
 

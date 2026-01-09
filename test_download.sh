@@ -3,7 +3,7 @@
 
 set -e
 
-API_KEY="dev-api-key-change-in-production"
+USER_SECRET="dev-user-token-change-in-production"
 BASE_URL="http://localhost:8000"
 TEST_SERVER="http://localhost:8001"
 
@@ -35,7 +35,7 @@ echo "Test 1: Downloading audio file..."
 echo "URL: $TEST_SERVER/01_Eragon_001_of_115.mp3"
 echo ""
 
-RESPONSE=$(curl -s "$BASE_URL/stash/?apikey=$API_KEY&url=$TEST_SERVER/01_Eragon_001_of_115.mp3&type=auto")
+RESPONSE=$(curl -s "$BASE_URL/stash/?apikey=$USER_SECRET&url=$TEST_SERVER/01_Eragon_001_of_115.mp3&type=auto")
 echo "Response: $RESPONSE"
 
 GUID=$(echo $RESPONSE | grep -o '"guid":"[^"]*"' | cut -d'"' -f4)
@@ -54,7 +54,7 @@ echo "Test 2: Downloading video file..."
 echo "URL: $TEST_SERVER/dji_fly_20250723_094842_13_1753459195176_quickshot.mp4"
 echo ""
 
-RESPONSE=$(curl -s "$BASE_URL/stash/?apikey=$API_KEY&url=$TEST_SERVER/dji_fly_20250723_094842_13_1753459195176_quickshot.mp4&type=auto")
+RESPONSE=$(curl -s "$BASE_URL/stash/?apikey=$USER_SECRET&url=$TEST_SERVER/dji_fly_20250723_094842_13_1753459195176_quickshot.mp4&type=auto")
 echo "Response: $RESPONSE"
 
 GUID=$(echo $RESPONSE | grep -o '"guid":"[^"]*"' | cut -d'"' -f4)

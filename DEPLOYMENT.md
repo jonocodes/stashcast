@@ -51,7 +51,7 @@ cPanel provides a "Setup Python App" interface that makes deployment simpler. He
 2. **Add environment variables** in the "Environment variables" section:
    ```
    DJANGO_SECRET_KEY=your-secret-key-here
-   STASHCAST_API_KEY=your-api-key-here
+   STASHCAST_USER_TOKEN=your-user-token-here
    STASHCAST_DATA_DIR=/home/username/stashcast_data
    DEBUG=False
    ALLOWED_HOSTS=yourdomain.com,www.yourdomain.com
@@ -228,7 +228,7 @@ cPanel shared hosting has some limitations:
    cp .env.example .env
    # Edit .env and set:
    # - STASHCAST_DATA_DIR (e.g., /var/www/stashcast/data)
-   # - STASHCAST_API_KEY (generate a secure random key)
+   # - STASHCAST_USER_TOKEN (generate a secure random key)
    # - DJANGO_SECRET_KEY (generate a secure random key)
    # - DEBUG=False
    # - ALLOWED_HOSTS (your domain name)
@@ -287,7 +287,7 @@ Create an Apache virtual host configuration (e.g., `/etc/apache2/sites-available
 
     # Load environment variables from .env file
     # Note: You may need to set these explicitly or use PassengerEnvVar
-    # PassengerEnvVar STASHCAST_API_KEY "your-api-key-here"
+    # PassengerEnvVar STASHCAST_USER_TOKEN "your-user-token-here"
     # PassengerEnvVar STASHCAST_DATA_DIR "/var/www/stashcast/data"
 
     # Error and access logs
@@ -322,7 +322,7 @@ server {
 
     # Environment variables
     passenger_env_var DJANGO_SETTINGS_MODULE stashcast.settings;
-    # passenger_env_var STASHCAST_API_KEY "your-api-key-here";
+    # passenger_env_var STASHCAST_USER_TOKEN "your-user-token-here";
     # passenger_env_var STASHCAST_DATA_DIR "/var/www/stashcast/data";
 
     # Serve static files directly
@@ -461,7 +461,7 @@ sudo certbot --nginx -d stashcast.example.com    # For Nginx
 - [ ] `DEBUG=False` in settings
 - [ ] `ALLOWED_HOSTS` configured
 - [ ] `DJANGO_SECRET_KEY` set to a secure random value
-- [ ] `STASHCAST_API_KEY` set to a secure random value
+- [ ] `STASHCAST_USER_TOKEN` set to a secure random value
 - [ ] HTTPS enabled
 - [ ] Static files collected and served by web server
 - [ ] Media files directory writable by web server

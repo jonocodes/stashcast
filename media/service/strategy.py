@@ -18,7 +18,8 @@ def choose_download_strategy(url):
         url: The source URL or file path
 
     Returns:
-        str: 'file' for local media files, 'direct' for direct media URLs, 'ytdlp' for hosted content or HTML files
+        str: 'file' for local media files, 'direct' for direct media URLs,
+             'ytdlp' for hosted content or HTML files
     """
     # Check if it's a local file path
     file_path = Path(url)

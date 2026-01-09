@@ -1,4 +1,6 @@
+from django.conf import settings
 from django.contrib.syndication.views import Feed
+from django.http import HttpResponseForbidden
 from django.templatetags.static import static
 from django.utils import timezone
 from django.utils.feedgenerator import Rss201rev2Feed
@@ -78,6 +80,14 @@ class BaseFeed(Feed):
     absolute_link = None
 
     def __call__(self, request, *args, **kwargs):
+        # Check if user token is required for feeds
+        if settings.REQUIRE_USER_TOKEN_FOR_FEEDS:
+            user_token = request.GET.get('token')
+            if not user_token or user_token != settings.STASHCAST_USER_TOKEN:
+                return HttpResponseForbidden(
+                    'User token required. Add ?token=YOUR_TOKEN to the feed URL.'
+                )
+
         # Store request so we can build absolute URLs everywhere
         self.request = request
         # Precompute absolute link for the channel

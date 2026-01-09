@@ -114,6 +114,34 @@
         margin: 20px 0;
         color: var(--sc-panel-fg);
     }
+    .status-info {
+        padding: 15px;
+        border-radius: 4px;
+        margin: 20px 0;
+        border: 1px solid;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    .status-info.protected {
+        background: color-mix(in srgb, #22c55e 10%, transparent);
+        border-color: #22c55e;
+    }
+    .status-info.public {
+        background: color-mix(in srgb, #f59e0b 10%, transparent);
+        border-color: #f59e0b;
+    }
+    .status-info-icon {
+        font-size: 20px;
+        flex-shrink: 0;
+    }
+    code {
+        background: rgba(0, 0, 0, 0.1);
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.9em;
+    }
 </style>
 {% endblock %}
 
@@ -127,6 +155,24 @@
         Drag the bookmarklet link below to your bookmarks bar, then click it on any page with
         media you want to download to StashCast.
     </div>
+
+    {% if require_user_token_for_feeds %}
+    <div class="status-info protected">
+        <span class="status-info-icon">🔒</span>
+        <div>
+            <strong>Feed Protection Enabled</strong><br>
+            Your RSS feeds require a user token. Feed URLs in this instance automatically include the token for privacy.
+        </div>
+    </div>
+    {% else %}
+    <div class="status-info public">
+        <span class="status-info-icon">🌐</span>
+        <div>
+            <strong>Public Feeds Notice</strong><br>
+            RSS feeds are currently publicly accessible. To require user tokens for feeds, set <code>REQUIRE_USER_TOKEN_FOR_FEEDS=true</code> in your environment configuration.
+        </div>
+    </div>
+    {% endif %}
 
     <h2>1. Configure Bookmarklet</h2>
 
@@ -187,7 +233,7 @@
 </div>
 
 <script>
-    const apiKey = '{{ api_key }}';
+    const userToken = '{{ user_token }}';
 
     function generateBookmarklet() {
         const baseUrl = document.getElementById('base-url').value;
@@ -197,13 +243,13 @@
 
         const code = `javascript:(function(){
             const url = encodeURIComponent(window.location.href);
-            const stashUrl = '${baseUrl}/stash/?apikey=${apiKey}&url=' + url + '&type=${mediaType}';
+            const stashUrl = '${baseUrl}/stash/?token=${userToken}&url=' + url + '&type=${mediaType}';
             window.open(stashUrl, '_blank');
         })();`;
 
         const progressCode = `javascript:(function(){
             const url = encodeURIComponent(window.location.href);
-            const stashUrl = '${baseUrl}/stash/?apikey=${apiKey}&url=' + url + '&type=${mediaType}&redirect=progress${closeParam}';
+            const stashUrl = '${baseUrl}/stash/?token=${userToken}&url=' + url + '&type=${mediaType}&redirect=progress${closeParam}';
             window.open(stashUrl, '_blank');
         })();`;
 
@@ -233,7 +279,7 @@
         const closeTabAfter = document.getElementById('close-tab-after').value;
         const closeParam = closeTabAfter ? `&closeTabAfter=${encodeURIComponent(closeTabAfter)}` : '';
 
-        const stashUrl = `${baseUrl}/stash/?apikey=${apiKey}&url=${encodeURIComponent(testUrl)}&type=${mediaType}&redirect=progress${closeParam}`;
+        const stashUrl = `${baseUrl}/stash/?token=${userToken}&url=${encodeURIComponent(testUrl)}&type=${mediaType}&redirect=progress${closeParam}`;
         window.open(stashUrl, '_blank');
     });
 

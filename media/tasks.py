@@ -47,8 +47,9 @@ def process_media(guid):
 
     if item.status == MediaItem.STATUS_PREFETCHING and time_since_update.total_seconds() > 30:
         item.status = MediaItem.STATUS_ERROR
+        seconds = int(time_since_update.total_seconds())
         item.error_message = (
-            f'Worker timeout: Item stuck in PREFETCHING for {int(time_since_update.total_seconds())} seconds. '
+            f'Worker timeout: Item stuck in PREFETCHING for {seconds} seconds. '
             'Huey worker may not be running. Start with: python manage.py run_huey'
         )
         item.save()
