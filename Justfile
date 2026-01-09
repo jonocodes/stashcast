@@ -53,7 +53,7 @@ create-admin-dummy:
 
 # run tests
 test *args:
-    ./manage.py test {{ args }}
+    pytest {{ args }}
 
 # alias for django manage command
 manage *args:
