@@ -159,34 +159,6 @@ class ResolveServiceTest(TestCase):
         self.assertEqual(result.entries[1].title, 'Video 2')
         self.assertEqual(result.playlist_title, 'Test Playlist')
 
-    def test_prefetch_ytdlp_fallback_to_html(self):
-        """Test HTML extraction fallback when yt-dlp fails"""
-        # Make yt-dlp fail with DownloadError
-        import yt_dlp
-
-        with (
-            patch('media.service.resolve.yt_dlp.YoutubeDL') as mock_ytdlp_class,
-            patch('media.html_extractor.extract_media_from_html_page') as mock_extract,
-        ):
-            mock_ydl = MagicMock()
-            mock_ytdlp_class.return_value.__enter__.return_value = mock_ydl
-            mock_ydl.extract_info.side_effect = yt_dlp.utils.DownloadError('yt-dlp failed')
-
-            # Mock HTML extraction result
-            mock_extract.return_value = {
-                'media_url': 'https://example.com/video.mp4',
-                'media_type': 'video',
-                'title': 'Test Video',
-                'webpage_url': 'https://example.com/page.html',
-            }
-
-            url = 'https://example.com/page.html'
-            result = prefetch(url, 'ytdlp')
-
-            self.assertTrue(result.has_video_streams)
-            self.assertEqual(result.webpage_url, url)
-            self.assertEqual(result.extracted_media_url, 'https://example.com/video.mp4')
-
     def test_resolve_media_type_explicit_audio(self):
         """Test explicit audio type request"""
         result = PrefetchResult()

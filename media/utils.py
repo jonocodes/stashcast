@@ -115,7 +115,7 @@ def select_existing_item(source_url, webpage_url, media_type, exclude_guid=None)
     """
     Locate an existing MediaItem for slug reuse.
 
-    Prefers webpage_url match when available (HTML extraction flow).
+    Prefers webpage_url match when available.
     """
     from media.models import MediaItem
 

@@ -56,17 +56,8 @@ def write_log(log_path, message):
 def _apply_prefetch_result(item, result, log_path):
     """
     Apply a PrefetchResult to a MediaItem and persist metadata.
-    Returns the original URL if an embedded media URL was extracted.
     """
-    original_url = None
-
-    if result.extracted_media_url:
-        original_url = item.source_url
-        item.source_url = result.extracted_media_url
-        item.webpage_url = result.webpage_url or original_url
-        write_log(log_path, f'HTML extractor found media: {item.source_url}')
-        write_log(log_path, f'Original page: {item.webpage_url}')
-    elif result.webpage_url:
+    if result.webpage_url:
         item.webpage_url = result.webpage_url
 
     item.title = result.title or 'content'
@@ -80,20 +71,17 @@ def _apply_prefetch_result(item, result, log_path):
 
     existing_item = select_existing_item(
         item.source_url,
-        original_url,
+        item.webpage_url,
         item.media_type,
         exclude_guid=item.guid,
     )
-    slug_source = original_url or item.source_url
 
     slug = generate_slug(item.title)
-    item.slug = ensure_unique_slug(slug, slug_source, existing_item, item.media_type)
+    item.slug = ensure_unique_slug(slug, item.source_url, existing_item, item.media_type)
     item.log_path = 'download.log'
     item.save()
 
     log_prefetch_result(lambda m: write_log(log_path, m), item)
-
-    return original_url
 
 
 def _prefetch_with_strategy(item, strategy, log_path):

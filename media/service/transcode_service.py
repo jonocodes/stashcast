@@ -8,7 +8,6 @@ used by both the CLI and the web app.
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
-from urllib.parse import urlparse
 import tempfile
 import shutil
 
@@ -150,59 +149,22 @@ def transcode_url_to_dir(
     # Step 4: Download
     logger('Downloading...')
 
-    # If HTML extraction found a media URL, use that instead of the original
-    download_url = url
-    download_strategy = strategy
-
-    if prefetch_result.extracted_media_url:
-        download_url = prefetch_result.extracted_media_url
-        logger(f'Using extracted media URL: {download_url}')
-
-        # Determine new strategy for extracted URL
-        if download_url.startswith('file://'):
-            # Local file - use file copy strategy
-            download_strategy = 'file'
-            download_url = download_url.replace('file://', '')
-        elif download_url.startswith(('http://', 'https://')):
-            # Check if it's a direct media file or needs yt-dlp
-            parsed = urlparse(download_url)
-            ext = Path(parsed.path).suffix.lower()
-            media_exts = [
-                '.mp3',
-                '.m4a',
-                '.ogg',
-                '.wav',
-                '.aac',
-                '.flac',
-                '.opus',
-                '.mp4',
-                '.mkv',
-                '.webm',
-                '.mov',
-                '.avi',
-            ]
-            if ext in media_exts:
-                download_strategy = 'direct'
-            else:
-                download_strategy = 'ytdlp'
-
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_dir = Path(temp_dir)
 
-        if strategy == 'file' or download_strategy == 'file':
-            # Local file copy (use original_url which is the file path)
-            file_to_copy = download_url if download_strategy == 'file' else original_url
+        if strategy == 'file':
+            # Local file copy
             temp_file = temp_dir / f'download{prefetch_result.file_extension or ".tmp"}'
-            download_info = download_file(file_to_copy, temp_file, logger=logger)
-        elif strategy == 'direct' or download_strategy == 'direct':
+            download_info = download_file(original_url, temp_file, logger=logger)
+        elif strategy == 'direct':
             # Direct download
             temp_file = temp_dir / f'download{prefetch_result.file_extension or ".tmp"}'
-            download_info = download_direct(download_url, temp_file, logger=logger)
+            download_info = download_direct(url, temp_file, logger=logger)
         else:
             # yt-dlp download
             ytdlp_args = get_ytdlp_args_for_type(resolved_type)
             download_info = download_ytdlp(
-                download_url, resolved_type, temp_dir, ytdlp_extra_args=ytdlp_args, logger=logger
+                url, resolved_type, temp_dir, ytdlp_extra_args=ytdlp_args, logger=logger
             )
 
         logger(f'Downloaded: {download_info.path} ({download_info.file_size} bytes)')

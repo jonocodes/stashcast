@@ -57,7 +57,6 @@ class PrefetchResult:
     extractor: Optional[str] = None
     external_id: Optional[str] = None
     file_extension: Optional[str] = None
-    extracted_media_url: Optional[str] = None  # URL extracted from HTML
     # Multi-item support
     entries: List[EntryInfo] = field(default_factory=list)
     is_multiple: bool = False
@@ -138,20 +137,6 @@ def _prefetch_direct(url, logger=None):
 
 def _prefetch_ytdlp(url, logger=None):
     """Prefetch metadata using yt-dlp"""
-    # For HTML pages, try HTML extraction first to avoid yt-dlp issues
-    from urllib.parse import urlparse
-
-    parsed = urlparse(url)
-    is_html_page = parsed.path.lower().endswith(('.html', '.htm'))
-
-    if is_html_page:
-        if logger:
-            logger('Detected HTML page, trying HTML extraction first...')
-        html_result = _prefetch_html(url, logger=logger)
-        if html_result and html_result.extracted_media_url:
-            return html_result
-
-    # Fall back to yt-dlp for non-HTML URLs or if HTML extraction failed
     ydl_opts = {
         'quiet': True,
         'no_warnings': True,
@@ -162,109 +147,69 @@ def _prefetch_ytdlp(url, logger=None):
     if url.startswith('file://'):
         ydl_opts['enable_file_urls'] = True
 
-    try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=False)
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        info = ydl.extract_info(url, download=False)
 
-            result = PrefetchResult()
+        result = PrefetchResult()
 
-            # Check for playlist/multi-item result
-            if 'entries' in info:
-                entries_list = list(info.get('entries', []))
-                result.is_multiple = True
-                result.playlist_title = info.get('title', 'Untitled Playlist')
+        # Check for playlist/multi-item result
+        if 'entries' in info:
+            entries_list = list(info.get('entries', []))
+            result.is_multiple = True
+            result.playlist_title = info.get('title', 'Untitled Playlist')
 
-                # Extract info for each entry
-                for entry in entries_list:
-                    if entry is None:
-                        continue
-                    entry_info = EntryInfo(
-                        url=entry.get('webpage_url') or entry.get('url', ''),
-                        title=entry.get('title', 'Untitled'),
-                        duration_seconds=entry.get('duration'),
-                        thumbnail_url=entry.get('thumbnail'),
-                    )
-                    result.entries.append(entry_info)
+            # Extract info for each entry
+            for entry in entries_list:
+                if entry is None:
+                    continue
+                entry_info = EntryInfo(
+                    url=entry.get('webpage_url') or entry.get('url', ''),
+                    title=entry.get('title', 'Untitled'),
+                    duration_seconds=entry.get('duration'),
+                    thumbnail_url=entry.get('thumbnail'),
+                )
+                result.entries.append(entry_info)
 
-                # Use playlist metadata for the result
-                result.title = result.playlist_title
-                result.description = info.get('description', '')
-                result.author = info.get('uploader', '') or info.get('channel', '')
-                result.extractor = info.get('extractor', '')
-                result.webpage_url = info.get('webpage_url', url)
-
-                if logger:
-                    logger(f'Multi-item URL detected: {result.playlist_title}')
-                    logger(f'Found {len(result.entries)} items')
-
-                return result
-
-            # Single item result
-            result.title = info.get('title', 'Untitled')
+            # Use playlist metadata for the result
+            result.title = result.playlist_title
             result.description = info.get('description', '')
             result.author = info.get('uploader', '') or info.get('channel', '')
-            result.duration_seconds = info.get('duration')
             result.extractor = info.get('extractor', '')
-            result.external_id = info.get('id', '')
             result.webpage_url = info.get('webpage_url', url)
 
-            # Check for video/audio streams
-            formats = info.get('formats', [])
-            result.has_video_streams = any(f.get('vcodec') != 'none' for f in formats)
-            result.has_audio_streams = any(f.get('acodec') != 'none' for f in formats)
-
-            # Fallback: check top-level codec info (used by some extractors like ApplePodcasts)
-            if not result.has_video_streams and not result.has_audio_streams:
-                result.has_video_streams = info.get('vcodec') not in (None, 'none')
-                result.has_audio_streams = info.get('acodec') not in (None, 'none')
-
             if logger:
-                logger(f'yt-dlp metadata extracted: {result.title}')
-                logger(f'Extractor: {result.extractor}')
-                logger(
-                    f'Has video: {result.has_video_streams}, Has audio: {result.has_audio_streams}'
-                )
+                logger(f'Multi-item URL detected: {result.playlist_title}')
+                logger(f'Found {len(result.entries)} items')
 
             return result
 
-    except yt_dlp.utils.DownloadError as e:
-        # Try HTML extraction as fallback
-        if logger:
-            logger(f'yt-dlp failed: {str(e)}, trying HTML extraction')
+        # Single item result
+        result.title = info.get('title', 'Untitled')
+        result.description = info.get('description', '')
+        result.author = info.get('uploader', '') or info.get('channel', '')
+        result.duration_seconds = info.get('duration')
+        result.extractor = info.get('extractor', '')
+        result.external_id = info.get('id', '')
+        result.webpage_url = info.get('webpage_url', url)
 
-        return _prefetch_html(url, logger=logger)
+        # Check for video/audio streams
+        formats = info.get('formats', [])
+        result.has_video_streams = any(f.get('vcodec') != 'none' for f in formats)
+        result.has_audio_streams = any(f.get('acodec') != 'none' for f in formats)
 
-
-def _prefetch_html(url, logger=None):
-    """
-    Extract embedded media URL from an HTML page.
-
-    This is a fallback for pages that yt-dlp doesn't recognize.
-    Looks for <audio>, <video>, and <source> tags.
-    """
-    try:
-        from media.html_extractor import extract_media_from_html_page
-
-        extraction = extract_media_from_html_page(url)
-
-        if not extraction['media_url']:
-            raise Exception('No embedded media found in HTML')
+        # Fallback: check top-level codec info (used by some extractors like ApplePodcasts)
+        if not result.has_video_streams and not result.has_audio_streams:
+            result.has_video_streams = info.get('vcodec') not in (None, 'none')
+            result.has_audio_streams = info.get('acodec') not in (None, 'none')
 
         if logger:
-            media_type_str = 'audio' if extraction['media_type'] == 'audio' else 'video'
-            logger(f'Found {media_type_str} source: {extraction["media_url"]}')
-
-        result = PrefetchResult()
-        result.title = extraction['title']
-        result.webpage_url = extraction['webpage_url']
-        result.extracted_media_url = extraction['media_url']
-        result.has_audio_streams = extraction['media_type'] == 'audio'
-        result.has_video_streams = extraction['media_type'] == 'video'
+            logger(f'yt-dlp metadata extracted: {result.title}')
+            logger(f'Extractor: {result.extractor}')
+            logger(
+                f'Has video: {result.has_video_streams}, Has audio: {result.has_audio_streams}'
+            )
 
         return result
-
-    except Exception as e:
-        raise Exception(f'HTML extraction failed: {str(e)}')
 
 
 def resolve_media_type(requested_type, prefetch_result):
