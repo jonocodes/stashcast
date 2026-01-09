@@ -23,6 +23,11 @@ from media.processing import (
     process_files,
 )
 from media.service.strategy import choose_download_strategy
+from media.service.resolve import (
+    prefetch,
+    MultipleItemsDetected,
+    check_multiple_items,
+)
 
 
 class Command(BaseCommand):
@@ -39,12 +44,18 @@ class Command(BaseCommand):
         )
         parser.add_argument('--verbose', action='store_true', help='Verbose output')
         parser.add_argument('--json', action='store_true', help='JSON output')
+        parser.add_argument(
+            '--allow-multiple',
+            action='store_true',
+            help='Allow downloading multiple items from playlists or pages with multiple videos',
+        )
 
     def handle(self, *args, **options):
         url = options['url']
         media_type = options['type']
         verbose = options['verbose']
         json_output = options['json']
+        allow_multiple = options['allow_multiple']
 
         # Map type to MediaItem constants
         if media_type == 'auto':
@@ -54,6 +65,74 @@ class Command(BaseCommand):
         else:
             requested_type = MediaItem.REQUESTED_TYPE_VIDEO
 
+        # First, check for multiple items BEFORE creating any MediaItem
+        strategy = choose_download_strategy(url)
+        if strategy == 'ytdlp':
+            try:
+                prefetch_result = prefetch(url, strategy, logger=None)
+                if prefetch_result.is_multiple:
+                    check_multiple_items(
+                        prefetch_result, allow_multiple=allow_multiple, source='cli'
+                    )
+
+                    # If we get here, allow_multiple is True - process each entry
+                    if verbose:
+                        self.stdout.write(
+                            f'Processing {len(prefetch_result.entries)} items from: '
+                            f'{prefetch_result.playlist_title}'
+                        )
+
+                    results = []
+                    for i, entry in enumerate(prefetch_result.entries):
+                        if verbose:
+                            self.stdout.write(
+                                f'\n[{i + 1}/{len(prefetch_result.entries)}] {entry.title}'
+                            )
+                        result = self._process_single_url(
+                            entry.url, requested_type, verbose, json_output
+                        )
+                        if result:
+                            results.append(result)
+
+                    # Output summary
+                    if json_output:
+                        self.stdout.write(
+                            json.dumps({'status': 'success', 'items': results}, indent=2)
+                        )
+                    else:
+                        self.stdout.write(self.style.SUCCESS(f'\n✓ Completed {len(results)} items'))
+                    return
+
+            except MultipleItemsDetected as e:
+                error_msg = str(e)
+                if json_output:
+                    self.stdout.write(
+                        json.dumps(
+                            {
+                                'status': 'error',
+                                'error': error_msg,
+                                'count': e.count,
+                                'playlist_title': e.playlist_title,
+                            }
+                        )
+                    )
+                else:
+                    self.stderr.write(self.style.ERROR(f'\nError: {error_msg}'))
+                    if e.playlist_title:
+                        self.stderr.write(f'  Playlist: {e.playlist_title}')
+                    self.stderr.write(f'  Items found: {e.count}')
+                    # Show first few items
+                    for i, entry in enumerate(e.entries[:5]):
+                        self.stderr.write(f'    - {entry.title}')
+                    if e.count > 5:
+                        self.stderr.write(f'    ... and {e.count - 5} more')
+                return
+
+        # Single item flow - proceed with original logic
+        self._process_single_url(url, requested_type, verbose, json_output)
+
+    def _process_single_url(self, url, requested_type, verbose, json_output):
+        """Process a single URL and return result dict for JSON output."""
         # Check if this URL already exists with this requested type
         existing_item = MediaItem.objects.filter(
             source_url=url, requested_type=requested_type
@@ -106,50 +185,21 @@ class Command(BaseCommand):
             strategy = choose_download_strategy(item.source_url)
             is_direct = strategy in ('direct', 'file')
 
-            # Check for playlist detection during prefetch
-            try:
-                if is_direct:
-                    # Direct download - minimal metadata
-                    if Path(item.source_url).exists():
-                        prefetch_file(item, tmp_dir, log_path)
-                    else:
-                        prefetch_direct(item, tmp_dir, log_path)
+            # Prefetch metadata
+            if is_direct:
+                # Direct download - minimal metadata
+                if Path(item.source_url).exists():
+                    prefetch_file(item, tmp_dir, log_path)
                 else:
-                    # Use yt-dlp to extract metadata (may fallback to HTML extractor)
-                    prefetch_ytdlp(item, tmp_dir, log_path)
+                    prefetch_direct(item, tmp_dir, log_path)
+            else:
+                # Use yt-dlp to extract metadata (may fallback to HTML extractor)
+                prefetch_ytdlp(item, tmp_dir, log_path)
 
-                    # Re-check if URL is now direct (HTML extractor may have found direct media)
-                    item.refresh_from_db()
-                    strategy = choose_download_strategy(item.source_url)
-                    is_direct = strategy in ('direct', 'file')
-
-            except Exception as e:
-                # Handle playlist detection error
-                if 'playlist' in str(e).lower():
-                    error_msg = (
-                        'Error: URL appears to be a playlist, which is not supported. '
-                        'Please provide a direct link to a single media item.'
-                    )
-                    if json_output:
-                        self.stdout.write(
-                            json.dumps(
-                                {'status': 'error', 'error': error_msg, 'guid': str(item.guid)}
-                            )
-                        )
-                    else:
-                        self.stderr.write(self.style.ERROR(error_msg))
-
-                    # Clean up
-                    item.status = MediaItem.STATUS_ERROR
-                    item.error_message = str(e)
-                    item.save()
-                    if tmp_dir.exists():
-                        shutil.rmtree(tmp_dir)
-
-                    return
-
-                # Re-raise other errors
-                raise
+                # Re-check if URL is now direct (HTML extractor may have found direct media)
+                item.refresh_from_db()
+                strategy = choose_download_strategy(item.source_url)
+                is_direct = strategy in ('direct', 'file')
 
             log(f'Direct media URL: {is_direct}')
 
@@ -194,21 +244,23 @@ class Command(BaseCommand):
             log('=== READY ===')
             log(f'Completed successfully: {item.title}')
 
+            # Build result dict (used for both JSON output and multi-item mode)
+            result = {
+                'status': 'success',
+                'guid': str(item.guid),
+                'slug': item.slug,
+                'title': item.title,
+                'media_type': item.media_type,
+                'directory': str(final_dir),
+                'content_path': str(item.get_absolute_content_path())
+                if item.content_path
+                else None,
+                'file_size': item.file_size,
+                'duration_seconds': item.duration_seconds,
+            }
+
             # Output result
             if json_output:
-                result = {
-                    'status': 'success',
-                    'guid': str(item.guid),
-                    'slug': item.slug,
-                    'title': item.title,
-                    'media_type': item.media_type,
-                    'directory': str(final_dir),
-                    'content_path': str(item.get_absolute_content_path())
-                    if item.content_path
-                    else None,
-                    'file_size': item.file_size,
-                    'duration_seconds': item.duration_seconds,
-                }
                 self.stdout.write(json.dumps(result, indent=2))
             else:
                 self.stdout.write(self.style.SUCCESS('✓ Stash complete'))
@@ -226,6 +278,8 @@ class Command(BaseCommand):
                     secs = item.duration_seconds % 60
                     self.stdout.write(f'  Duration: {mins}:{secs:02d}')
                 self.stdout.write(f'  Directory: {final_dir}')
+
+            return result
 
         except Exception as e:
             # ERROR
@@ -258,4 +312,5 @@ class Command(BaseCommand):
                 if log_path and log_path.exists():
                     self.stderr.write(f'  Log: {log_path}')
 
-            raise
+            # Return None instead of raising to allow multi-item mode to continue
+            return None

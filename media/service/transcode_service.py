@@ -13,7 +13,7 @@ import tempfile
 import shutil
 
 from media.service.strategy import choose_download_strategy
-from media.service.resolve import prefetch, resolve_media_type
+from media.service.resolve import prefetch, resolve_media_type, MultipleItemsDetected
 from media.service.media_info import (
     extract_ffprobe_metadata,
     get_output_extension,
@@ -121,6 +121,18 @@ def transcode_url_to_dir(
     # Use original_url for file strategy, url for others
     prefetch_url = original_url if strategy == 'file' else url
     prefetch_result = prefetch(prefetch_url, strategy, logger=logger)
+
+    # Check for multi-item results (playlists, channels, multi-embed pages)
+    if prefetch_result.is_multiple:
+        count = len(prefetch_result.entries)
+        raise MultipleItemsDetected(
+            message=(
+                f'Found {count} items in this URL (playlist, channel, or page with multiple '
+                f'videos). Use CLI with --allow-multiple flag to download all items.'
+            ),
+            entries=prefetch_result.entries,
+            playlist_title=prefetch_result.playlist_title,
+        )
 
     if not prefetch_result.title:
         prefetch_result.title = 'untitled'

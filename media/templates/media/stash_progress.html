@@ -237,6 +237,27 @@
             display: inline-flex;
             align-items: center;
         }
+
+        .multi-info {
+            margin-bottom: 20px;
+        }
+
+        .multi-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .playlist-title {
+            color: #666;
+            font-size: 14px;
+            margin-top: 8px;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
@@ -244,7 +265,13 @@
     <div class="container">
         <div class="icon">📥</div>
         <h1>StashCast</h1>
-        <p class="subtitle">Processing your media...</p>
+        <p class="subtitle" id="subtitle">Processing your media...</p>
+        <div class="multi-info" id="multi-info" style="display: none;">
+            <div class="multi-badge">
+                <span id="multi-count">0</span> items queued
+            </div>
+            <div class="playlist-title" id="playlist-title"></div>
+        </div>
 
         <div class="status-card">
             <div class="status-label">Status</div>
@@ -317,7 +344,19 @@
 
         const urlParams = new URLSearchParams(window.location.search);
         const closeTabAfter = Number(urlParams.get('closeTabAfter'));
+        const multiCount = Number(urlParams.get('multiCount'));
+        const playlistTitle = urlParams.get('playlistTitle');
         let closeTimerId = null;
+
+        // Show multi-item info if applicable
+        if (multiCount > 1) {
+            document.getElementById('multi-info').style.display = 'block';
+            document.getElementById('multi-count').textContent = multiCount;
+            document.getElementById('subtitle').textContent = 'Processing multiple items...';
+            if (playlistTitle) {
+                document.getElementById('playlist-title').textContent = playlistTitle;
+            }
+        }
 
         function startCloseCountdown() {
             if (!Number.isFinite(closeTabAfter) || closeTabAfter <= 0) {
@@ -386,6 +425,9 @@
             
             // Handle success
             if (data.is_ready) {
+                if (multiCount > 1) {
+                    successMessage.textContent = `This item is ready! ${multiCount - 1} more item(s) processing in background.`;
+                }
                 successMessage.style.display = 'block';
                 viewBtn.style.display = 'inline-block';
                 viewBtn.href = data.detail_url;

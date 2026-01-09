@@ -198,6 +198,14 @@
             <input type="number" id="close-tab-after" min="1" step="1" placeholder="Optional">
             <small>Close the progress tab after the job completes; leave blank to keep it open</small>
         </div>
+
+        <div class="form-group">
+            <label>
+                <input type="checkbox" id="allow-multiple">
+                Allow Multiple Items
+            </label>
+            <small>If enabled, automatically download all items from playlists or pages with multiple videos. If disabled, you'll get an error prompting you to confirm in admin.</small>
+        </div>
     </form>
 
     <h2>2. Your Bookmarklet</h2>
@@ -239,17 +247,19 @@
         const baseUrl = document.getElementById('base-url').value;
         const mediaType = document.getElementById('media-type').value;
         const closeTabAfter = document.getElementById('close-tab-after').value;
+        const allowMultiple = document.getElementById('allow-multiple').checked;
         const closeParam = closeTabAfter ? `&closeTabAfter=${encodeURIComponent(closeTabAfter)}` : '';
+        const multipleParam = allowMultiple ? '&allow_multiple=true' : '';
 
         const code = `javascript:(function(){
             const url = encodeURIComponent(window.location.href);
-            const stashUrl = '${baseUrl}/stash/?token=${userToken}&url=' + url + '&type=${mediaType}';
+            const stashUrl = '${baseUrl}/stash/?token=${userToken}&url=' + url + '&type=${mediaType}${multipleParam}';
             window.open(stashUrl, '_blank');
         })();`;
 
         const progressCode = `javascript:(function(){
             const url = encodeURIComponent(window.location.href);
-            const stashUrl = '${baseUrl}/stash/?token=${userToken}&url=' + url + '&type=${mediaType}&redirect=progress${closeParam}';
+            const stashUrl = '${baseUrl}/stash/?token=${userToken}&url=' + url + '&type=${mediaType}&redirect=progress${closeParam}${multipleParam}';
             window.open(stashUrl, '_blank');
         })();`;
 
@@ -270,6 +280,7 @@
     document.getElementById('base-url').addEventListener('input', generateBookmarklet);
     document.getElementById('media-type').addEventListener('change', generateBookmarklet);
     document.getElementById('close-tab-after').addEventListener('input', generateBookmarklet);
+    document.getElementById('allow-multiple').addEventListener('change', generateBookmarklet);
 
     document.getElementById('test-form').addEventListener('submit', function(e) {
         e.preventDefault();
@@ -277,9 +288,11 @@
         const baseUrl = document.getElementById('base-url').value;
         const mediaType = document.getElementById('media-type').value;
         const closeTabAfter = document.getElementById('close-tab-after').value;
+        const allowMultiple = document.getElementById('allow-multiple').checked;
         const closeParam = closeTabAfter ? `&closeTabAfter=${encodeURIComponent(closeTabAfter)}` : '';
+        const multipleParam = allowMultiple ? '&allow_multiple=true' : '';
 
-        const stashUrl = `${baseUrl}/stash/?token=${userToken}&url=${encodeURIComponent(testUrl)}&type=${mediaType}&redirect=progress${closeParam}`;
+        const stashUrl = `${baseUrl}/stash/?token=${userToken}&url=${encodeURIComponent(testUrl)}&type=${mediaType}&redirect=progress${closeParam}${multipleParam}`;
         window.open(stashUrl, '_blank');
     });
 

@@ -11,7 +11,11 @@ from unittest.mock import patch
 
 from django.test import TestCase
 
-from media.service.resolve import PlaylistNotSupported
+from media.service.resolve import (
+    MultipleItemsDetected,
+    PrefetchResult,
+    EntryInfo,
+)
 from media.service.transcode_service import TranscodeResult, transcode_url_to_dir
 
 
@@ -476,11 +480,22 @@ class TranscodeServiceTest(TestCase):
 
     @patch('media.service.transcode_service.prefetch')
     def test_transcode_playlist_raises_error(self, mock_prefetch):
-        """Test that playlists raise PlaylistNotSupported"""
-        mock_prefetch.side_effect = PlaylistNotSupported('Playlist detected')
+        """Test that playlists raise MultipleItemsDetected"""
+        # Create a mock prefetch result with is_multiple=True
+        mock_result = PrefetchResult(
+            title='Test Playlist',
+            is_multiple=True,
+            playlist_title='Test Playlist',
+            entries=[
+                EntryInfo(url='https://youtube.com/watch?v=abc1', title='Video 1'),
+                EntryInfo(url='https://youtube.com/watch?v=abc2', title='Video 2'),
+            ],
+        )
+        mock_prefetch.return_value = mock_result
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            with self.assertRaises(PlaylistNotSupported):
+            with self.assertRaises(MultipleItemsDetected) as context:
                 transcode_url_to_dir(
                     url='https://youtube.com/playlist?list=abc123', outdir=temp_dir
                 )
+            self.assertEqual(context.exception.count, 2)

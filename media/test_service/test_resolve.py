@@ -7,7 +7,6 @@ from unittest.mock import MagicMock, patch
 from django.test import TestCase
 
 from media.service.resolve import (
-    PlaylistNotSupported,
     PrefetchResult,
     prefetch,
     resolve_media_type,
@@ -139,21 +138,26 @@ class ResolveServiceTest(TestCase):
         self.assertTrue(result.has_audio_streams)
 
     @patch('media.service.resolve.yt_dlp.YoutubeDL')
-    def test_prefetch_ytdlp_playlist_error(self, mock_ytdlp_class):
-        """Test that playlists raise PlaylistNotSupported"""
+    def test_prefetch_ytdlp_playlist_returns_multiple(self, mock_ytdlp_class):
+        """Test that playlists return is_multiple=True with entries"""
         mock_ydl = MagicMock()
         mock_ytdlp_class.return_value.__enter__.return_value = mock_ydl
         mock_ydl.extract_info.return_value = {
+            'title': 'Test Playlist',
             'entries': [
-                {'title': 'Video 1'},
-                {'title': 'Video 2'},
-            ]
+                {'title': 'Video 1', 'webpage_url': 'https://youtube.com/watch?v=abc1'},
+                {'title': 'Video 2', 'webpage_url': 'https://youtube.com/watch?v=abc2'},
+            ],
         }
 
         url = 'https://youtube.com/playlist?list=abc123'
 
-        with self.assertRaises(PlaylistNotSupported):
-            prefetch(url, 'ytdlp')
+        result = prefetch(url, 'ytdlp')
+        self.assertTrue(result.is_multiple)
+        self.assertEqual(len(result.entries), 2)
+        self.assertEqual(result.entries[0].title, 'Video 1')
+        self.assertEqual(result.entries[1].title, 'Video 2')
+        self.assertEqual(result.playlist_title, 'Test Playlist')
 
     def test_prefetch_ytdlp_fallback_to_html(self):
         """Test HTML extraction fallback when yt-dlp fails"""
