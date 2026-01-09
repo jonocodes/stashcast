@@ -264,18 +264,18 @@
                 </div>
             </div>
         </div>
-        {% if require_api_key_for_feeds %}
+        {% if require_user_token_for_feeds %}
         <div class="status-banner protected">
             <span class="status-banner-icon">🔒</span>
             <div>
-                <strong>Feed Protection Enabled</strong> — RSS feeds require an API key for access. Your listening activity is private.
+                <strong>Feed Protection Enabled</strong> — RSS feeds require a user token for access. Your listening activity is private.
             </div>
         </div>
         {% else %}
         <div class="status-banner public">
             <span class="status-banner-icon">🌐</span>
             <div>
-                <strong>Public Feeds</strong> — RSS feeds are publicly accessible without authentication. Set <code>REQUIRE_API_KEY_FOR_FEEDS=true</code> to enable protection.
+                <strong>Public Feeds</strong> — RSS feeds are publicly accessible without authentication. Set <code>REQUIRE_USER_TOKEN_FOR_FEEDS=true</code> to enable protection.
             </div>
         </div>
         {% endif %}
@@ -286,8 +286,8 @@
                     <a class="pill" href="/admin/tools/grid/?type=audio">Grid view</a>
                     <a class="pill" href="/admin/tools/list/?type=audio">List view</a>
                     <!-- <a class="pill" href="/feeds/audio.xml">Subscribe</a> -->
-                    <button class="pill copy-btn" data-url="/feeds/audio.xml{% if require_api_key_for_feeds %}?apikey={{ api_key }}{% endif %}" type="button">Copy subscribe URL</button>
-                    <a class="pill" href="/feeds/audio.xml?{% if require_api_key_for_feeds %}apikey={{ api_key }}&{% endif %}view=1">View RSS feed XML</a>
+                    <button class="pill copy-btn" data-url="/feeds/audio.xml{% if require_user_token_for_feeds %}?token={{ user_token }}{% endif %}" type="button">Copy subscribe URL</button>
+                    <a class="pill" href="/feeds/audio.xml?{% if require_user_token_for_feeds %}token={{ user_token }}&{% endif %}view=1">View RSS feed XML</a>
                     <a class="pill" href="/admin/media/mediaitem/?media_type=audio">Manage</a>
                 </div>
             </div>
@@ -297,8 +297,8 @@
                     <a class="pill" href="/admin/tools/grid/?type=video">Grid view</a>
                     <a class="pill" href="/admin/tools/list/?type=video">List view</a>
                     <!-- <a class="pill" href="/feeds/video.xml">Subscribe</a> -->
-                    <button class="pill copy-btn" data-url="/feeds/video.xml{% if require_api_key_for_feeds %}?apikey={{ api_key }}{% endif %}" type="button">Copy subscribe URL</button>
-                    <a class="pill" href="/feeds/video.xml?{% if require_api_key_for_feeds %}apikey={{ api_key }}&{% endif %}view=1">View RSS feed XML</a>
+                    <button class="pill copy-btn" data-url="/feeds/video.xml{% if require_user_token_for_feeds %}?token={{ user_token }}{% endif %}" type="button">Copy subscribe URL</button>
+                    <a class="pill" href="/feeds/video.xml?{% if require_user_token_for_feeds %}token={{ user_token }}&{% endif %}view=1">View RSS feed XML</a>
                     <a class="pill" href="/admin/media/mediaitem/?media_type=video">Manage</a>
                 </div>
             </div>
@@ -308,8 +308,8 @@
                     <a class="pill" href="/admin/tools/grid/?type=all">Grid view</a>
                     <a class="pill" href="/admin/tools/list/?type=all">List view</a>
                     <!-- <a class="pill" href="/feeds/combined.xml">Subscribe</a> -->
-                    <button class="pill copy-btn" data-url="/feeds/combined.xml{% if require_api_key_for_feeds %}?apikey={{ api_key }}{% endif %}" type="button">Copy subscribe URL</button>
-                    <a class="pill" href="/feeds/combined.xml?{% if require_api_key_for_feeds %}apikey={{ api_key }}&{% endif %}view=1">View RSS feed XML</a>
+                    <button class="pill copy-btn" data-url="/feeds/combined.xml{% if require_user_token_for_feeds %}?token={{ user_token }}{% endif %}" type="button">Copy subscribe URL</button>
+                    <a class="pill" href="/feeds/combined.xml?{% if require_user_token_for_feeds %}token={{ user_token }}&{% endif %}view=1">View RSS feed XML</a>
                     <a class="pill" href="/admin/media/mediaitem/">Manage</a>
                 </div>
             </div>

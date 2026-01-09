@@ -156,12 +156,12 @@
         media you want to download to StashCast.
     </div>
 
-    {% if require_api_key_for_feeds %}
+    {% if require_user_token_for_feeds %}
     <div class="status-info protected">
         <span class="status-info-icon">🔒</span>
         <div>
             <strong>Feed Protection Enabled</strong><br>
-            Your RSS feeds require an API key. Feed URLs in this instance automatically include the key for privacy.
+            Your RSS feeds require a user token. Feed URLs in this instance automatically include the token for privacy.
         </div>
     </div>
     {% else %}
@@ -169,7 +169,7 @@
         <span class="status-info-icon">🌐</span>
         <div>
             <strong>Public Feeds Notice</strong><br>
-            RSS feeds are currently publicly accessible. To require API keys for feeds, set <code>REQUIRE_API_KEY_FOR_FEEDS=true</code> in your environment configuration.
+            RSS feeds are currently publicly accessible. To require user tokens for feeds, set <code>REQUIRE_USER_TOKEN_FOR_FEEDS=true</code> in your environment configuration.
         </div>
     </div>
     {% endif %}
@@ -233,7 +233,7 @@
 </div>
 
 <script>
-    const apiKey = '{{ api_key }}';
+    const userToken = '{{ user_token }}';
 
     function generateBookmarklet() {
         const baseUrl = document.getElementById('base-url').value;
@@ -243,13 +243,13 @@
 
         const code = `javascript:(function(){
             const url = encodeURIComponent(window.location.href);
-            const stashUrl = '${baseUrl}/stash/?apikey=${apiKey}&url=' + url + '&type=${mediaType}';
+            const stashUrl = '${baseUrl}/stash/?token=${userToken}&url=' + url + '&type=${mediaType}';
             window.open(stashUrl, '_blank');
         })();`;
 
         const progressCode = `javascript:(function(){
             const url = encodeURIComponent(window.location.href);
-            const stashUrl = '${baseUrl}/stash/?apikey=${apiKey}&url=' + url + '&type=${mediaType}&redirect=progress${closeParam}';
+            const stashUrl = '${baseUrl}/stash/?token=${userToken}&url=' + url + '&type=${mediaType}&redirect=progress${closeParam}';
             window.open(stashUrl, '_blank');
         })();`;
 
@@ -279,7 +279,7 @@
         const closeTabAfter = document.getElementById('close-tab-after').value;
         const closeParam = closeTabAfter ? `&closeTabAfter=${encodeURIComponent(closeTabAfter)}` : '';
 
-        const stashUrl = `${baseUrl}/stash/?apikey=${apiKey}&url=${encodeURIComponent(testUrl)}&type=${mediaType}&redirect=progress${closeParam}`;
+        const stashUrl = `${baseUrl}/stash/?token=${userToken}&url=${encodeURIComponent(testUrl)}&type=${mediaType}&redirect=progress${closeParam}`;
         window.open(stashUrl, '_blank');
     });
 

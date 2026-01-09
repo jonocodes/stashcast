@@ -22,8 +22,8 @@ def _build_media_url(item, filename, request=None):
 def home_view(request):
     """Landing page with quick access to add URLs."""
     context = {
-        'api_key': settings.STASHCAST_API_KEY,
-        'require_api_key_for_feeds': settings.REQUIRE_API_KEY_FOR_FEEDS,
+        'user_token': settings.STASHCAST_USER_TOKEN,
+        'require_user_token_for_feeds': settings.REQUIRE_USER_TOKEN_FOR_FEEDS,
     }
     return render(request, 'media/home.html', context)
 
@@ -35,7 +35,7 @@ def stash_view(request):
     Public endpoint to stash a URL for download.
 
     Params:
-        apikey (required): API key for authentication
+        token (required): User token for authentication
         url (required): URL to download
         type (required): auto|audio|video
         redirect (optional): If 'progress', redirect to progress page instead of returning JSON
@@ -43,10 +43,10 @@ def stash_view(request):
     Returns:
         JSON response with item details, or redirect to progress page
     """
-    # Check API key
-    api_key = request.GET.get('apikey') or request.POST.get('apikey')
-    if not api_key or api_key != settings.STASHCAST_API_KEY:
-        return JsonResponse({'error': 'Invalid or missing API key'}, status=403)
+    # Check user token
+    user_token = request.GET.get('token') or request.POST.get('token')
+    if not user_token or user_token != settings.STASHCAST_USER_TOKEN:
+        return JsonResponse({'error': 'Invalid or missing user token'}, status=403)
 
     # Get parameters
     url = request.GET.get('url') or request.POST.get('url')
@@ -163,15 +163,15 @@ def bookmarklet_view(request):
     """
     from media.admin import is_demo_readonly
 
-    # Use a bogus API key for demo users so their bookmarklet won't work
-    api_key = (
-        'demo-user-no-access' if is_demo_readonly(request.user) else settings.STASHCAST_API_KEY
+    # Use a bogus user token for demo users so their bookmarklet won't work
+    user_token = (
+        'demo-user-no-access' if is_demo_readonly(request.user) else settings.STASHCAST_USER_TOKEN
     )
 
     context = {
         **admin.site.each_context(request),
         'base_url': request.build_absolute_uri('/').rstrip('/'),
-        'api_key': api_key,
+        'user_token': user_token,
         'title': 'Bookmarklet',
     }
 

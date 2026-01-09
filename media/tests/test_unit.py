@@ -395,7 +395,7 @@ class SlugUtilsTest(TestCase):
 class StashViewTest(TestCase):
     def setUp(self):
         self.client = Client()
-        self.api_key = settings.STASHCAST_API_KEY
+        self.user_token = settings.STASHCAST_USER_TOKEN
         # Mock the process_media task to prevent actual downloads during tests
         self.process_media_patcher = patch('media.views.process_media')
         self.mock_process_media = self.process_media_patcher.start()
@@ -403,22 +403,22 @@ class StashViewTest(TestCase):
     def tearDown(self):
         self.process_media_patcher.stop()
 
-    def test_stash_missing_api_key(self):
-        """Test stash endpoint without API key"""
+    def test_stash_missing_user_token(self):
+        """Test stash endpoint without user token"""
         response = self.client.get('/stash/', {'url': 'https://example.com/video', 'type': 'auto'})
         self.assertEqual(response.status_code, 403)
 
-    def test_stash_invalid_api_key(self):
-        """Test stash endpoint with invalid API key"""
+    def test_stash_invalid_user_token(self):
+        """Test stash endpoint with invalid user token"""
         response = self.client.get(
             '/stash/',
-            {'apikey': 'wrong-key', 'url': 'https://example.com/video', 'type': 'auto'},
+            {'token': 'wrong-token', 'url': 'https://example.com/video', 'type': 'auto'},
         )
         self.assertEqual(response.status_code, 403)
 
     def test_stash_missing_url(self):
         """Test stash endpoint without URL"""
-        response = self.client.get('/stash/', {'apikey': self.api_key, 'type': 'auto'})
+        response = self.client.get('/stash/', {'token': self.user_token, 'type': 'auto'})
         self.assertEqual(response.status_code, 400)
 
     def test_stash_invalid_type(self):
@@ -426,7 +426,7 @@ class StashViewTest(TestCase):
         response = self.client.get(
             '/stash/',
             {
-                'apikey': self.api_key,
+                'token': self.user_token,
                 'url': 'https://example.com/video',
                 'type': 'invalid',
             },
@@ -438,7 +438,7 @@ class StashViewTest(TestCase):
         response = self.client.get(
             '/stash/',
             {
-                'apikey': self.api_key,
+                'token': self.user_token,
                 'url': 'https://example.com/video.mp4',
                 'type': 'auto',
             },
@@ -453,11 +453,11 @@ class StashViewTest(TestCase):
         url = 'https://example.com/video.mp4'
 
         # First request
-        response1 = self.client.get('/stash/', {'apikey': self.api_key, 'url': url, 'type': 'auto'})
+        response1 = self.client.get('/stash/', {'token': self.user_token, 'url': url, 'type': 'auto'})
         guid1 = response1.json()['guid']
 
         # Second request with same URL and same type
-        response2 = self.client.get('/stash/', {'apikey': self.api_key, 'url': url, 'type': 'auto'})
+        response2 = self.client.get('/stash/', {'token': self.user_token, 'url': url, 'type': 'auto'})
         guid2 = response2.json()['guid']
 
         # Should reuse the same GUID for same URL+type
@@ -470,7 +470,7 @@ class StashViewTest(TestCase):
 
         # First request - video
         response1 = self.client.get(
-            '/stash/', {'apikey': self.api_key, 'url': url, 'type': 'video'}
+            '/stash/', {'token': self.user_token, 'url': url, 'type': 'video'}
         )
         guid1 = response1.json()['guid']
         item1 = MediaItem.objects.get(guid=guid1)
@@ -480,7 +480,7 @@ class StashViewTest(TestCase):
 
         # Second request - audio from same URL
         response2 = self.client.get(
-            '/stash/', {'apikey': self.api_key, 'url': url, 'type': 'audio'}
+            '/stash/', {'token': self.user_token, 'url': url, 'type': 'audio'}
         )
         guid2 = response2.json()['guid']
 
@@ -503,7 +503,7 @@ class StashViewTest(TestCase):
         url = 'https://example.com/content'
 
         # First request - auto
-        response1 = self.client.get('/stash/', {'apikey': self.api_key, 'url': url, 'type': 'auto'})
+        response1 = self.client.get('/stash/', {'token': self.user_token, 'url': url, 'type': 'auto'})
         guid1 = response1.json()['guid']
         item1 = MediaItem.objects.get(guid=guid1)
         item1.media_type = 'video'  # Simulate auto detection resulting in video
@@ -512,7 +512,7 @@ class StashViewTest(TestCase):
 
         # Second request - explicit audio
         response2 = self.client.get(
-            '/stash/', {'apikey': self.api_key, 'url': url, 'type': 'audio'}
+            '/stash/', {'token': self.user_token, 'url': url, 'type': 'audio'}
         )
         guid2 = response2.json()['guid']
 
@@ -714,51 +714,51 @@ class FeedProtectionUITest(TestCase):
     def setUp(self):
         self.client = Client()
 
-    @override_settings(REQUIRE_API_KEY_FOR_FEEDS=True)
+    @override_settings(REQUIRE_USER_TOKEN_FOR_FEEDS=True)
     def test_home_page_shows_protected_banner(self):
         """Test that home page shows protected banner when setting is enabled"""
         response = self.client.get('/')
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Feed Protection Enabled')
-        self.assertContains(response, 'RSS feeds require an API key for access')
+        self.assertContains(response, 'RSS feeds require a user token for access')
         self.assertContains(response, '🔒')
-        self.assertNotContains(response, 'REQUIRE_API_KEY_FOR_FEEDS=true')
+        self.assertNotContains(response, 'REQUIRE_USER_TOKEN_FOR_FEEDS=true')
 
-    @override_settings(REQUIRE_API_KEY_FOR_FEEDS=False)
+    @override_settings(REQUIRE_USER_TOKEN_FOR_FEEDS=False)
     def test_home_page_shows_public_banner(self):
         """Test that home page shows public banner when setting is disabled"""
         response = self.client.get('/')
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Public Feeds')
         self.assertContains(response, 'publicly accessible without authentication')
-        self.assertContains(response, 'REQUIRE_API_KEY_FOR_FEEDS=true')
+        self.assertContains(response, 'REQUIRE_USER_TOKEN_FOR_FEEDS=true')
         self.assertContains(response, '🌐')
         self.assertNotContains(response, 'Feed Protection Enabled')
 
-    @override_settings(REQUIRE_API_KEY_FOR_FEEDS=True)
-    def test_home_page_includes_apikey_in_feed_urls(self):
-        """Test that feed URLs include API key when protection is enabled"""
+    @override_settings(REQUIRE_USER_TOKEN_FOR_FEEDS=True)
+    def test_home_page_includes_token_in_feed_urls(self):
+        """Test that feed URLs include user token when protection is enabled"""
         response = self.client.get('/')
         self.assertEqual(response.status_code, 200)
-        # Check that feed URLs contain the apikey parameter
-        self.assertContains(response, f'/feeds/audio.xml?apikey={settings.STASHCAST_API_KEY}')
-        self.assertContains(response, f'/feeds/video.xml?apikey={settings.STASHCAST_API_KEY}')
-        self.assertContains(response, f'/feeds/combined.xml?apikey={settings.STASHCAST_API_KEY}')
+        # Check that feed URLs contain the token parameter
+        self.assertContains(response, f'/feeds/audio.xml?token={settings.STASHCAST_USER_TOKEN}')
+        self.assertContains(response, f'/feeds/video.xml?token={settings.STASHCAST_USER_TOKEN}')
+        self.assertContains(response, f'/feeds/combined.xml?token={settings.STASHCAST_USER_TOKEN}')
 
-    @override_settings(REQUIRE_API_KEY_FOR_FEEDS=False)
-    def test_home_page_excludes_apikey_from_feed_urls(self):
-        """Test that feed URLs don't include API key when protection is disabled"""
+    @override_settings(REQUIRE_USER_TOKEN_FOR_FEEDS=False)
+    def test_home_page_excludes_token_from_feed_urls(self):
+        """Test that feed URLs don't include user token when protection is disabled"""
         response = self.client.get('/')
         self.assertEqual(response.status_code, 200)
-        # Check that feed URLs don't contain apikey parameter in the copy button
+        # Check that feed URLs don't contain token parameter in the copy button
         # (they still have ?view=1 for the view link)
         content = response.content.decode()
-        # The copy button should have feed URL without apikey
+        # The copy button should have feed URL without token
         self.assertIn('data-url="/feeds/audio.xml"', content)
         self.assertIn('data-url="/feeds/video.xml"', content)
         self.assertIn('data-url="/feeds/combined.xml"', content)
 
-    @override_settings(REQUIRE_API_KEY_FOR_FEEDS=True)
+    @override_settings(REQUIRE_USER_TOKEN_FOR_FEEDS=True)
     def test_bookmarklet_page_shows_protected_banner(self):
         """Test that bookmarklet page shows protected banner when setting is enabled"""
         from django.contrib.auth.models import User
@@ -772,10 +772,10 @@ class FeedProtectionUITest(TestCase):
         response = self.client.get('/admin/tools/bookmarklet/')
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Feed Protection Enabled')
-        self.assertContains(response, 'RSS feeds require an API key')
+        self.assertContains(response, 'RSS feeds require a user token')
         self.assertContains(response, '🔒')
 
-    @override_settings(REQUIRE_API_KEY_FOR_FEEDS=False)
+    @override_settings(REQUIRE_USER_TOKEN_FOR_FEEDS=False)
     def test_bookmarklet_page_shows_public_banner(self):
         """Test that bookmarklet page shows public banner when setting is disabled"""
         from django.contrib.auth.models import User
@@ -790,7 +790,7 @@ class FeedProtectionUITest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Public Feeds Notice')
         self.assertContains(response, 'RSS feeds are currently publicly accessible')
-        self.assertContains(response, 'REQUIRE_API_KEY_FOR_FEEDS=true')
+        self.assertContains(response, 'REQUIRE_USER_TOKEN_FOR_FEEDS=true')
         self.assertContains(response, '🌐')
 
 

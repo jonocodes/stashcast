@@ -32,7 +32,7 @@
         <th scope="row"><a href="/feeds/video.xml?view=1" target="_blank">Video Feed</a></th>
       </tr> -->
       <tr class="model-tools">
-        <th scope="row"><a href="/feeds/combined.xml?{% if require_api_key_for_feeds %}apikey={{ api_key }}&{% endif %}view=1" target="_blank">Combined Feed</a></th>
+        <th scope="row"><a href="/feeds/combined.xml?{% if require_user_token_for_feeds %}token={{ user_token }}&{% endif %}view=1" target="_blank">Combined Feed</a></th>
       </tr>
     </table>
   </div>

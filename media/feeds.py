@@ -80,12 +80,12 @@ class BaseFeed(Feed):
     absolute_link = None
 
     def __call__(self, request, *args, **kwargs):
-        # Check if API key is required for feeds
-        if settings.REQUIRE_API_KEY_FOR_FEEDS:
-            api_key = request.GET.get('apikey')
-            if not api_key or api_key != settings.STASHCAST_API_KEY:
+        # Check if user token is required for feeds
+        if settings.REQUIRE_USER_TOKEN_FOR_FEEDS:
+            user_token = request.GET.get('token')
+            if not user_token or user_token != settings.STASHCAST_USER_TOKEN:
                 return HttpResponseForbidden(
-                    'API key required. Add ?apikey=YOUR_KEY to the feed URL.'
+                    'User token required. Add ?token=YOUR_TOKEN to the feed URL.'
                 )
 
         # Store request so we can build absolute URLs everywhere

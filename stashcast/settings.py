@@ -138,10 +138,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # STASHCAST Configuration
 
-STASHCAST_API_KEY = os.environ.get('STASHCAST_API_KEY', 'dev-api-key-change-in-production')
+STASHCAST_USER_TOKEN = os.environ.get('STASHCAST_USER_TOKEN', 'dev-user-token-change-in-production')
 
-# Require API key for RSS feeds (set to 'true' to enable)
-REQUIRE_API_KEY_FOR_FEEDS = os.environ.get('REQUIRE_API_KEY_FOR_FEEDS', 'false').lower() == 'true'
+# Require user token for RSS feeds (set to 'true' to enable)
+REQUIRE_USER_TOKEN_FOR_FEEDS = os.environ.get('REQUIRE_USER_TOKEN_FOR_FEEDS', 'false').lower() == 'true'
 
 # Optional environment variables
 STASHCAST_MEDIA_BASE_URL = os.environ.get('STASHCAST_MEDIA_BASE_URL', None)
