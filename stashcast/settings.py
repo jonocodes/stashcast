@@ -189,7 +189,8 @@ HUEY = {
     'huey_class': 'huey.SqliteHuey',
     'name': 'stashcast',
     'filename': str(STASHCAST_DATA_DIR / 'huey.db'),
-    'immediate': 'test' in sys.argv,  # Execute tasks immediately during tests
+    'immediate': 'test' in sys.argv
+    or 'pytest' in sys.modules,  # Execute tasks immediately during tests
     'consumer': {
         'workers': 2,
         'worker_type': 'thread',

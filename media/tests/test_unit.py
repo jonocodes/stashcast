@@ -1,6 +1,6 @@
 import tempfile
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from django.conf import settings
 from django.test import Client, TestCase, override_settings
@@ -1201,8 +1201,12 @@ Finally we have a fourth sentence to conclude.
         subtitle_file.write_text(subtitle_content)
 
         # Mock sumy components to avoid NLTK data dependency
-        mock_parser.from_string.return_value = SimpleNamespace(document='doc')
-        mock_summarizer.return_value.return_value = ['First half', 'Second half']
+        mock_document = MagicMock()
+        mock_parser.from_string.return_value = SimpleNamespace(document=mock_document)
+        # LexRankSummarizer() returns an instance, and calling that instance returns sentences
+        mock_summarizer_instance = MagicMock()
+        mock_summarizer_instance.return_value = ['First sentence.', 'Second sentence.']
+        mock_summarizer.return_value = mock_summarizer_instance
 
         # Call generate_summary
         generate_summary(item.guid)
@@ -1213,6 +1217,7 @@ Finally we have a fourth sentence to conclude.
         # Summary should be generated
         self.assertIsNotNone(item.summary)
         self.assertTrue(len(item.summary) > 0)
+        self.assertIn('First sentence.', item.summary)
 
 
 class MetadataEmbeddingTest(TestCase):

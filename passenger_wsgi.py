@@ -28,7 +28,7 @@ sys.path.insert(0, PROJECT_DIR)
 
 # Set the Django settings module
 # This must be done before importing Django
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "stashcast.settings")
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'stashcast.settings')
 
 # Create the WSGI application
 # Passenger will call this to handle HTTP requests
