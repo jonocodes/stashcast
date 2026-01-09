@@ -110,8 +110,9 @@ def _prefetch_with_strategy(item, strategy, log_path):
         count = len(result.entries)
         raise MultipleItemsDetected(
             message=(
-                f'Found {count} items in this URL (playlist, channel, or page with multiple videos). '
-                f'Use the admin interface to confirm downloading all items, or use CLI with --allow-multiple.'
+                f'Found {count} items in this URL (playlist, channel, or page with multiple '
+                f'videos). Use the admin interface to confirm downloading all items, or use '
+                f'CLI with --allow-multiple.'
             ),
             entries=result.entries,
             playlist_title=result.playlist_title,

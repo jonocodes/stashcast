@@ -325,8 +325,7 @@ def check_multiple_items(prefetch_result, allow_multiple=False, source='cli'):
         action_hint = 'Run again with --allow-multiple to download all items.'
     elif source == 'api':
         action_hint = (
-            'Add allow_multiple=true parameter to proceed, '
-            'or use the admin interface to confirm.'
+            'Add allow_multiple=true parameter to proceed, or use the admin interface to confirm.'
         )
     else:  # admin or other
         action_hint = 'Use the confirmation page to proceed with all items.'

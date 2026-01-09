@@ -74,14 +74,28 @@ def stash_view(request):
                 count = len(prefetch_result.entries)
 
                 if not allow_multiple:
+                    error_msg = (
+                        f'Found {count} items in this URL (playlist, channel, or page with '
+                        f'multiple videos). Add allow_multiple=true parameter to proceed, '
+                        f'or use the admin interface to confirm.'
+                    )
+                    # Handle redirect for progress page
+                    if redirect_param == 'progress':
+                        item = MediaItem.objects.create(
+                            source_url=url,
+                            requested_type=requested_type,
+                            slug='pending',
+                            status=MediaItem.STATUS_ERROR,
+                            error_message=error_msg,
+                        )
+                        progress_url = request.build_absolute_uri(f'/stash/{item.guid}/progress/')
+                        if close_tab_after:
+                            progress_url = f'{progress_url}?closeTabAfter={close_tab_after}'
+                        return redirect(progress_url)
                     # Return error with actionable message
                     return JsonResponse(
                         {
-                            'error': (
-                                f'Found {count} items in this URL (playlist, channel, or page with '
-                                f'multiple videos). Add allow_multiple=true parameter to proceed, '
-                                f'or use the admin interface to confirm.'
-                            ),
+                            'error': error_msg,
                             'is_multiple': True,
                             'count': count,
                             'playlist_title': prefetch_result.playlist_title,
@@ -126,21 +140,54 @@ def stash_view(request):
 
                     # Enqueue processing task
                     process_media(item.guid)
-                    created_items.append({
-                        'guid': item.guid,
-                        'url': entry_url,
-                        'title': entry.title,
-                    })
+                    created_items.append(
+                        {
+                            'guid': item.guid,
+                            'url': entry_url,
+                            'title': entry.title,
+                        }
+                    )
 
-                return JsonResponse({
-                    'success': True,
-                    'is_multiple': True,
-                    'count': len(created_items),
-                    'playlist_title': prefetch_result.playlist_title,
-                    'items': created_items,
-                })
+                # Handle redirect for progress page (redirect to first item)
+                if redirect_param == 'progress' and created_items:
+                    first_guid = created_items[0]['guid']
+                    progress_url = request.build_absolute_uri(f'/stash/{first_guid}/progress/')
+                    # Build query params
+                    params = []
+                    if close_tab_after:
+                        params.append(f'closeTabAfter={close_tab_after}')
+                    params.append(f'multiCount={len(created_items)}')
+                    if prefetch_result.playlist_title:
+                        from urllib.parse import quote
+                        params.append(f'playlistTitle={quote(prefetch_result.playlist_title)}')
+                    if params:
+                        progress_url = f'{progress_url}?{"&".join(params)}'
+                    return redirect(progress_url)
+
+                return JsonResponse(
+                    {
+                        'success': True,
+                        'is_multiple': True,
+                        'count': len(created_items),
+                        'playlist_title': prefetch_result.playlist_title,
+                        'items': created_items,
+                    }
+                )
 
         except Exception as e:
+            # Create a failed item so we can show progress page with error
+            if redirect_param == 'progress':
+                item = MediaItem.objects.create(
+                    source_url=url,
+                    requested_type=requested_type,
+                    slug='pending',
+                    status=MediaItem.STATUS_ERROR,
+                    error_message=f'Error checking URL: {str(e)}',
+                )
+                progress_url = request.build_absolute_uri(f'/stash/{item.guid}/progress/')
+                if close_tab_after:
+                    progress_url = f'{progress_url}?closeTabAfter={close_tab_after}'
+                return redirect(progress_url)
             return JsonResponse({'error': f'Error checking URL: {str(e)}'}, status=500)
 
     # Single item flow
@@ -294,7 +341,7 @@ def admin_stash_form_view(request):
 
     from media.admin import is_demo_readonly
     from media.service.strategy import choose_download_strategy
-    from media.service.resolve import prefetch, MultipleItemsDetected, check_multiple_items
+    from media.service.resolve import prefetch
 
     if request.method == 'POST':
         # Block demo users from submitting
@@ -323,7 +370,9 @@ def admin_stash_form_view(request):
                             }
                             for e in prefetch_result.entries
                         ]
-                        request.session['multi_item_playlist_title'] = prefetch_result.playlist_title
+                        request.session['multi_item_playlist_title'] = (
+                            prefetch_result.playlist_title
+                        )
                         return redirect('admin_stash_confirm_multiple')
                 except Exception as e:
                     messages.error(request, f'Error checking URL: {str(e)}')

@@ -22,7 +22,7 @@ I created this since friends and family often send me links to listen to a singl
 
 ## Features
 
-- Download media from any URL supported by yt-dlp, direct media URLs, or HTML with embedded media
+- Download media from any URL supported by yt-dlp, direct media URLs, HTML with embedded media, playlists, multiple embeds
 - Async background processing via task queue
 - Automatic media type detection (audio/video)
 - Podcast feed generation (RSS/Atom) for audio and video

@@ -11,7 +11,11 @@ from unittest.mock import patch
 
 from django.test import TestCase
 
-from media.service.resolve import MultipleItemsDetected, PlaylistNotSupported, PrefetchResult, EntryInfo
+from media.service.resolve import (
+    MultipleItemsDetected,
+    PrefetchResult,
+    EntryInfo,
+)
 from media.service.transcode_service import TranscodeResult, transcode_url_to_dir
 
 

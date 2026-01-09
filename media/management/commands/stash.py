@@ -71,7 +71,9 @@ class Command(BaseCommand):
             try:
                 prefetch_result = prefetch(url, strategy, logger=None)
                 if prefetch_result.is_multiple:
-                    check_multiple_items(prefetch_result, allow_multiple=allow_multiple, source='cli')
+                    check_multiple_items(
+                        prefetch_result, allow_multiple=allow_multiple, source='cli'
+                    )
 
                     # If we get here, allow_multiple is True - process each entry
                     if verbose:
@@ -98,9 +100,7 @@ class Command(BaseCommand):
                             json.dumps({'status': 'success', 'items': results}, indent=2)
                         )
                     else:
-                        self.stdout.write(
-                            self.style.SUCCESS(f'\n✓ Completed {len(results)} items')
-                        )
+                        self.stdout.write(self.style.SUCCESS(f'\n✓ Completed {len(results)} items'))
                     return
 
             except MultipleItemsDetected as e:

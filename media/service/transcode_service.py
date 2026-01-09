@@ -127,8 +127,8 @@ def transcode_url_to_dir(
         count = len(prefetch_result.entries)
         raise MultipleItemsDetected(
             message=(
-                f'Found {count} items in this URL (playlist, channel, or page with multiple videos). '
-                f'Use CLI with --allow-multiple flag to download all items.'
+                f'Found {count} items in this URL (playlist, channel, or page with multiple '
+                f'videos). Use CLI with --allow-multiple flag to download all items.'
             ),
             entries=prefetch_result.entries,
             playlist_title=prefetch_result.playlist_title,

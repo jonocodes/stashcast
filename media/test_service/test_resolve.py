@@ -7,7 +7,6 @@ from unittest.mock import MagicMock, patch
 from django.test import TestCase
 
 from media.service.resolve import (
-    PlaylistNotSupported,
     PrefetchResult,
     prefetch,
     resolve_media_type,
@@ -148,7 +147,7 @@ class ResolveServiceTest(TestCase):
             'entries': [
                 {'title': 'Video 1', 'webpage_url': 'https://youtube.com/watch?v=abc1'},
                 {'title': 'Video 2', 'webpage_url': 'https://youtube.com/watch?v=abc2'},
-            ]
+            ],
         }
 
         url = 'https://youtube.com/playlist?list=abc123'

@@ -470,7 +470,7 @@ class StashViewTest(TestCase):
 
     def test_stash_same_url_different_types(self):
         """Test stashing the same URL as both audio and video - should create separate items"""
-        url = 'https://example.com/content'
+        url = 'https://example.com/content.mp4'  # Use .mp4 to avoid ytdlp prefetch
 
         # First request - video
         response1 = self.client.get(
@@ -504,7 +504,7 @@ class StashViewTest(TestCase):
 
     def test_stash_auto_then_explicit_type(self):
         """Test stashing with auto, then explicitly requesting different type"""
-        url = 'https://example.com/content'
+        url = 'https://example.com/content.mp4'  # Use .mp4 to avoid ytdlp prefetch
 
         # First request - auto
         response1 = self.client.get(
