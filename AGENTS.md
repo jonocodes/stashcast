@@ -34,7 +34,7 @@ just dev
 ## Tests
 ```bash
 pip install -r requirements-dev.txt
-coverage run manage.py test
+coverage run -m pytest
 coverage report -m
 ```
 
