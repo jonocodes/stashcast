@@ -72,9 +72,10 @@ class Command(BaseCommand):
 
             # Orphaned directories
             if all_orphaned_dirs:
+                count = len(all_orphaned_dirs)
                 self.stdout.write(
                     self.style.WARNING(
-                        f'\n⚠ Found {len(all_orphaned_dirs)} directory(ies) without database entries:'
+                        f'\n⚠ Found {count} directory(ies) without database entries:'
                     )
                 )
                 for slug in sorted(all_orphaned_dirs)[:10]:

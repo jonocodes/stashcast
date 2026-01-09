@@ -141,7 +141,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 STASHCAST_USER_TOKEN = os.environ.get('STASHCAST_USER_TOKEN', 'dev-user-token-change-in-production')
 
 # Require user token for RSS feeds (set to 'true' to enable)
-REQUIRE_USER_TOKEN_FOR_FEEDS = os.environ.get('REQUIRE_USER_TOKEN_FOR_FEEDS', 'false').lower() == 'true'
+REQUIRE_USER_TOKEN_FOR_FEEDS = (
+    os.environ.get('REQUIRE_USER_TOKEN_FOR_FEEDS', 'false').lower() == 'true'
+)
 
 # Optional environment variables
 STASHCAST_MEDIA_BASE_URL = os.environ.get('STASHCAST_MEDIA_BASE_URL', None)

@@ -110,7 +110,7 @@ Fixed filenames are mandatory.
 ### Required
 
 * `STASHCAST_DATA_DIR=/path/to/data` (media stored in `STASHCAST_DATA_DIR/media`, default `./data`)
-* `STASHCAST_API_KEY=<random string>`
+* `STASHCAST_USER_TOKEN=<random string>`
 
 ### Optional
 

@@ -453,11 +453,15 @@ class StashViewTest(TestCase):
         url = 'https://example.com/video.mp4'
 
         # First request
-        response1 = self.client.get('/stash/', {'token': self.user_token, 'url': url, 'type': 'auto'})
+        response1 = self.client.get(
+            '/stash/', {'token': self.user_token, 'url': url, 'type': 'auto'}
+        )
         guid1 = response1.json()['guid']
 
         # Second request with same URL and same type
-        response2 = self.client.get('/stash/', {'token': self.user_token, 'url': url, 'type': 'auto'})
+        response2 = self.client.get(
+            '/stash/', {'token': self.user_token, 'url': url, 'type': 'auto'}
+        )
         guid2 = response2.json()['guid']
 
         # Should reuse the same GUID for same URL+type
@@ -503,7 +507,9 @@ class StashViewTest(TestCase):
         url = 'https://example.com/content'
 
         # First request - auto
-        response1 = self.client.get('/stash/', {'token': self.user_token, 'url': url, 'type': 'auto'})
+        response1 = self.client.get(
+            '/stash/', {'token': self.user_token, 'url': url, 'type': 'auto'}
+        )
         guid1 = response1.json()['guid']
         item1 = MediaItem.objects.get(guid=guid1)
         item1.media_type = 'video'  # Simulate auto detection resulting in video
@@ -713,32 +719,52 @@ class FeedProtectionUITest(TestCase):
 
     def setUp(self):
         self.client = Client()
+        # Create a staff user for admin pages
+        from django.contrib.auth.models import User
+
+        self.user = User.objects.create_user('testuser', 'test@example.com', 'password')
+        self.user.is_staff = True
+        self.user.save()
+
+    def test_home_page_does_not_expose_feed_urls(self):
+        """Test that home page does not show feed URLs with tokens"""
+        response = self.client.get('/')
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        # Home page should not contain feed URLs or tokens
+        self.assertNotIn('/feeds/audio.xml?token=', content)
+        self.assertNotIn('/feeds/video.xml?token=', content)
+        self.assertNotIn('/feeds/combined.xml?token=', content)
+        # Should link to admin feed links page instead
+        self.assertIn('/admin/tools/feeds/', content)
+        self.assertIn('Subscribe to feeds', content)
 
     @override_settings(REQUIRE_USER_TOKEN_FOR_FEEDS=True)
-    def test_home_page_shows_protected_banner(self):
-        """Test that home page shows protected banner when setting is enabled"""
-        response = self.client.get('/')
+    def test_feed_links_page_shows_protected_banner(self):
+        """Test that feed links page shows protected banner when setting is enabled"""
+        self.client.login(username='testuser', password='password')
+        response = self.client.get('/admin/tools/feeds/')
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Feed Protection Enabled')
-        self.assertContains(response, 'RSS feeds require a user token for access')
+        self.assertContains(response, 'Keep these URLs private')
         self.assertContains(response, '🔒')
-        self.assertNotContains(response, 'REQUIRE_USER_TOKEN_FOR_FEEDS=true')
 
     @override_settings(REQUIRE_USER_TOKEN_FOR_FEEDS=False)
-    def test_home_page_shows_public_banner(self):
-        """Test that home page shows public banner when setting is disabled"""
-        response = self.client.get('/')
+    def test_feed_links_page_shows_public_banner(self):
+        """Test that feed links page shows public banner when setting is disabled"""
+        self.client.login(username='testuser', password='password')
+        response = self.client.get('/admin/tools/feeds/')
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Public Feeds')
-        self.assertContains(response, 'publicly accessible without authentication')
+        self.assertContains(response, 'publicly accessible')
         self.assertContains(response, 'REQUIRE_USER_TOKEN_FOR_FEEDS=true')
         self.assertContains(response, '🌐')
-        self.assertNotContains(response, 'Feed Protection Enabled')
 
     @override_settings(REQUIRE_USER_TOKEN_FOR_FEEDS=True)
-    def test_home_page_includes_token_in_feed_urls(self):
-        """Test that feed URLs include user token when protection is enabled"""
-        response = self.client.get('/')
+    def test_feed_links_page_includes_token_in_urls(self):
+        """Test that feed links page includes user token when protection is enabled"""
+        self.client.login(username='testuser', password='password')
+        response = self.client.get('/admin/tools/feeds/')
         self.assertEqual(response.status_code, 200)
         # Check that feed URLs contain the token parameter
         self.assertContains(response, f'/feeds/audio.xml?token={settings.STASHCAST_USER_TOKEN}')
@@ -746,27 +772,28 @@ class FeedProtectionUITest(TestCase):
         self.assertContains(response, f'/feeds/combined.xml?token={settings.STASHCAST_USER_TOKEN}')
 
     @override_settings(REQUIRE_USER_TOKEN_FOR_FEEDS=False)
-    def test_home_page_excludes_token_from_feed_urls(self):
-        """Test that feed URLs don't include user token when protection is disabled"""
-        response = self.client.get('/')
+    def test_feed_links_page_excludes_token_from_urls(self):
+        """Test that feed links page excludes token when protection is disabled"""
+        self.client.login(username='testuser', password='password')
+        response = self.client.get('/admin/tools/feeds/')
         self.assertEqual(response.status_code, 200)
-        # Check that feed URLs don't contain token parameter in the copy button
-        # (they still have ?view=1 for the view link)
         content = response.content.decode()
-        # The copy button should have feed URL without token
-        self.assertIn('data-url="/feeds/audio.xml"', content)
-        self.assertIn('data-url="/feeds/video.xml"', content)
-        self.assertIn('data-url="/feeds/combined.xml"', content)
+        # Feed URLs should not have token when protection is disabled
+        self.assertIn('/feeds/audio.xml"', content)
+        self.assertIn('/feeds/video.xml"', content)
+        self.assertIn('/feeds/combined.xml"', content)
+        self.assertNotIn(f'token={settings.STASHCAST_USER_TOKEN}', content)
+
+    def test_feed_links_page_requires_login(self):
+        """Test that feed links page requires staff login"""
+        response = self.client.get('/admin/tools/feeds/')
+        # Should redirect to login
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/admin/login/', response.url)
 
     @override_settings(REQUIRE_USER_TOKEN_FOR_FEEDS=True)
     def test_bookmarklet_page_shows_protected_banner(self):
         """Test that bookmarklet page shows protected banner when setting is enabled"""
-        from django.contrib.auth.models import User
-
-        # Create a staff user to access bookmarklet page
-        user = User.objects.create_user('testuser', 'test@example.com', 'password')
-        user.is_staff = True
-        user.save()
         self.client.login(username='testuser', password='password')
 
         response = self.client.get('/admin/tools/bookmarklet/')
@@ -778,12 +805,6 @@ class FeedProtectionUITest(TestCase):
     @override_settings(REQUIRE_USER_TOKEN_FOR_FEEDS=False)
     def test_bookmarklet_page_shows_public_banner(self):
         """Test that bookmarklet page shows public banner when setting is disabled"""
-        from django.contrib.auth.models import User
-
-        # Create a staff user to access bookmarklet page
-        user = User.objects.create_user('testuser', 'test@example.com', 'password')
-        user.is_staff = True
-        user.save()
         self.client.login(username='testuser', password='password')
 
         response = self.client.get('/admin/tools/bookmarklet/')

@@ -22,18 +22,13 @@
       </tr>
 
       <tr class="model-tools">
+        <th scope="row"><a href="{% url 'feed_links' %}">Feed Links</a></th>
+      </tr>
+      
+      <tr class="model-tools">
         <th scope="row"><a href="/">Site Home</a></th>
       </tr>
 
-      <!-- <tr class="model-tools">
-        <th scope="row"><a href="/feeds/audio.xml?view=1" target="_blank">Audio Feed</a></th>
-      </tr>
-      <tr class="model-tools">
-        <th scope="row"><a href="/feeds/video.xml?view=1" target="_blank">Video Feed</a></th>
-      </tr> -->
-      <tr class="model-tools">
-        <th scope="row"><a href="/feeds/combined.xml?{% if require_user_token_for_feeds %}token={{ user_token }}&{% endif %}view=1" target="_blank">Combined Feed</a></th>
-      </tr>
     </table>
   </div>
 

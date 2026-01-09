@@ -184,7 +184,8 @@ class MediaItemAdmin(admin.ModelAdmin, DemoReadOnlyAdminMixin):
             thumb_url = reverse('admin:media_mediaitem_change', args=[obj.guid])
             thumb_url = f'{thumb_url}#thumbnail'
             return format_html(
-                '<img src="{}" width="100%" height="300" alt="Thumbnail" style="object-fit: contain; border-radius: 4px;">',
+                '<img src="{}" width="100%" height="300" alt="Thumbnail" '
+                'style="object-fit: contain; border-radius: 4px;">',
                 thumb_url,
             )
         else:

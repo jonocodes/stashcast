@@ -334,7 +334,7 @@ Use the public site to view/subscribe to your feed.
 
 Use the bookmarklet with your api key to add media outside of admin.
 
-Your api key is a single user secret that you can use to identify yourself, and is set via STASHCAST_API_KEY. I recommend using a random string, or generate a uuid using one of these:
+Your api key is a single user secret that you can use to identify yourself, and is set via STASHCAST_USER_TOKEN. I recommend using a random string, or generate a uuid using one of these:
 
 `uuidgen`
 
@@ -350,7 +350,7 @@ See `.env.example` for all available configuration options.
 #### Required
 
 - `STASHCAST_DATA_DIR`: Base directory for application data (media is stored in `STASHCAST_DATA_DIR/media`; default: `./data`)
-- `STASHCAST_API_KEY`: API key for stash endpoint
+- `STASHCAST_USER_TOKEN`: API key for stash endpoint
 
 #### Optional
 

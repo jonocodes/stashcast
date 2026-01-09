@@ -126,7 +126,10 @@ class Command(BaseCommand):
             except Exception as e:
                 # Handle playlist detection error
                 if 'playlist' in str(e).lower():
-                    error_msg = 'Error: URL appears to be a playlist, which is not supported. Please provide a direct link to a single media item.'
+                    error_msg = (
+                        'Error: URL appears to be a playlist, which is not supported. '
+                        'Please provide a direct link to a single media item.'
+                    )
                     if json_output:
                         self.stdout.write(
                             json.dumps(

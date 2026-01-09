@@ -26,6 +26,7 @@ from media.views import (
     admin_stash_form_view,
     admin_stash_progress_view,
     bookmarklet_view,
+    feed_links_view,
     grid_view,
     home_view,
     item_detail_view,
@@ -51,8 +52,13 @@ urlpatterns = [
     path('', home_view, name='home'),
     # Custom admin tools (must come before admin.site.urls)
     path('admin/tools/bookmarklet/', bookmarklet_view, name='bookmarklet'),
+    path('admin/tools/feeds/', feed_links_view, name='feed_links'),
     path('admin/tools/add-url/', admin_stash_form_view, name='admin_stash_form'),
-    path('admin/tools/add-url/progress/<str:guid>/', admin_stash_progress_view, name='admin_stash_progress'),
+    path(
+        'admin/tools/add-url/progress/<str:guid>/',
+        admin_stash_progress_view,
+        name='admin_stash_progress',
+    ),
     path('admin/tools/grid/', grid_view, name='grid_view'),
     path('admin/tools/list/', list_view, name='list_view'),
     path('admin/tools/item/<str:guid>/', item_detail_view, name='item_detail'),

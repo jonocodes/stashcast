@@ -1,6 +1,8 @@
 """
 Passenger WSGI file for StashCast Django application.
 
+I created this when trying to deploy to cpanel, but we are no longer deployed there due to huey.
+
 This file is used by Passenger (mod_passenger/Phusion Passenger) to run the
 Django application in production environments.
 
@@ -17,6 +19,8 @@ For more information:
 import os
 import sys
 
+from django.core.wsgi import get_wsgi_application
+
 # Add the project directory to the Python path
 # This ensures Django can find the project modules
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -24,10 +28,7 @@ sys.path.insert(0, PROJECT_DIR)
 
 # Set the Django settings module
 # This must be done before importing Django
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'stashcast.settings')
-
-# Import Django's WSGI handler
-from django.core.wsgi import get_wsgi_application
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "stashcast.settings")
 
 # Create the WSGI application
 # Passenger will call this to handle HTTP requests

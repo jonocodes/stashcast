@@ -21,11 +21,12 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument('source', type=str, help='Path to VTT file or URL')
+        default_sentences = settings.STASHCAST_SUMMARY_SENTENCES
         parser.add_argument(
             '--sentences',
             type=int,
-            default=settings.STASHCAST_SUMMARY_SENTENCES,
-            help=f'Number of sentences in summary (default: {settings.STASHCAST_SUMMARY_SENTENCES})',
+            default=default_sentences,
+            help=f'Number of sentences in summary (default: {default_sentences})',
         )
         parser.add_argument(
             '--algorithm',

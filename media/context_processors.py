@@ -1,4 +1,5 @@
 """Context processors for media app."""
+
 from django.conf import settings
 
 

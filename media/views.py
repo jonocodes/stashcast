@@ -21,11 +21,7 @@ def _build_media_url(item, filename, request=None):
 
 def home_view(request):
     """Landing page with quick access to add URLs."""
-    context = {
-        'user_token': settings.STASHCAST_USER_TOKEN,
-        'require_user_token_for_feeds': settings.REQUIRE_USER_TOKEN_FOR_FEEDS,
-    }
-    return render(request, 'media/home.html', context)
+    return render(request, 'media/home.html')
 
 
 @csrf_exempt
@@ -176,6 +172,31 @@ def bookmarklet_view(request):
     }
 
     return render(request, 'admin/bookmarklet.html', context)
+
+
+@staff_member_required
+def feed_links_view(request):
+    """
+    Admin page showing RSS feed subscription links.
+
+    Displays feed URLs with tokens for subscribing in podcast apps.
+    """
+    from media.admin import is_demo_readonly
+
+    # Use a bogus user token for demo users
+    user_token = (
+        'demo-user-no-access' if is_demo_readonly(request.user) else settings.STASHCAST_USER_TOKEN
+    )
+
+    context = {
+        **admin.site.each_context(request),
+        'base_url': request.build_absolute_uri('/').rstrip('/'),
+        'user_token': user_token,
+        'require_user_token_for_feeds': settings.REQUIRE_USER_TOKEN_FOR_FEEDS,
+        'title': 'Feed Links',
+    }
+
+    return render(request, 'admin/feed_links.html', context)
 
 
 @staff_member_required

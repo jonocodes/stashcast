@@ -14,5 +14,6 @@ class Command(BaseCommand):
                 self.stdout.write(f'- {user.username} ({user.email})')
         else:
             self.stdout.write(
-                "No superusers/admins found, but required. You can create one using the './manage.py createsuperuser' command."
+                'No superusers/admins found, but required. '
+                "You can create one using the './manage.py createsuperuser' command."
             )

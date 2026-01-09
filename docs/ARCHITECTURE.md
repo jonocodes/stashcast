@@ -527,7 +527,7 @@ All configuration is centralized in Django settings (via environment variables):
 # Required
 STASHCAST_DATA_DIR = '/path/to/data'
 STASHCAST_MEDIA_DIR = STASHCAST_DATA_DIR / 'media'
-STASHCAST_API_KEY = 'secret'
+STASHCAST_USER_TOKEN = 'verysecret'
 
 # Optional
 STASHCAST_DEFAULT_YTDLP_ARGS_AUDIO = '--format bestaudio'
