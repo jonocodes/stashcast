@@ -41,13 +41,13 @@ coverage report -m
 ## Claude Web environment setup
 When running in Claude Web (Ubuntu container without flox/Docker):
 ```bash
+# System dependencies
+apt-get install -y ffmpeg yt-dlp
+
 # Requires Python 3.12+ (for Django 6.0)
 python3.12 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt -r requirements-dev.txt
-
-# ffmpeg required for transcoding tests
-apt-get install -y ffmpeg
 
 # Run tests
 coverage run -m pytest
