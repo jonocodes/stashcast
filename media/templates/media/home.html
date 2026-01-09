@@ -208,6 +208,38 @@
         .copy-btn:active {
             transform: translateY(0);
         }
+        .status-banner {
+            margin-top: 22px;
+            padding: 14px 18px;
+            border-radius: 12px;
+            border: 1px solid;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .status-banner.protected {
+            background: rgba(34, 197, 94, 0.1);
+            border-color: rgba(34, 197, 94, 0.3);
+            color: #86efac;
+        }
+        .status-banner.public {
+            background: rgba(251, 191, 36, 0.1);
+            border-color: rgba(251, 191, 36, 0.3);
+            color: #fde047;
+        }
+        .status-banner-icon {
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        code {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
     </style>
 </head>
 <body>
@@ -232,6 +264,21 @@
                 </div>
             </div>
         </div>
+        {% if require_api_key_for_feeds %}
+        <div class="status-banner protected">
+            <span class="status-banner-icon">🔒</span>
+            <div>
+                <strong>Feed Protection Enabled</strong> — RSS feeds require an API key for access. Your listening activity is private.
+            </div>
+        </div>
+        {% else %}
+        <div class="status-banner public">
+            <span class="status-banner-icon">🌐</span>
+            <div>
+                <strong>Public Feeds</strong> — RSS feeds are publicly accessible without authentication. Set <code>REQUIRE_API_KEY_FOR_FEEDS=true</code> to enable protection.
+            </div>
+        </div>
+        {% endif %}
         <div class="feeds">
             <div class="feed-card">
                 <img src="{% static 'media/feed-logo-audio.png' %}" alt="Audio feed">
