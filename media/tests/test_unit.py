@@ -1340,9 +1340,7 @@ class ResolveTitleFromMetadataTest(TestCase):
             # when metadata is more descriptive (has spaces or longer)
             self.assertEqual(resolve_title_from_metadata('aud', audio_file), 'Open Source Talk')
             self.assertEqual(resolve_title_from_metadata('vid', audio_file), 'Open Source Talk')
-            self.assertEqual(
-                resolve_title_from_metadata('podcast', audio_file), 'Open Source Talk'
-            )
+            self.assertEqual(resolve_title_from_metadata('podcast', audio_file), 'Open Source Talk')
 
     def test_resolve_keeps_descriptive_title(self):
         """Test that descriptive titles are NOT replaced"""

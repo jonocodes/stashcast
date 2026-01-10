@@ -220,9 +220,7 @@ def _prefetch_ytdlp(url, logger=None):
         if logger:
             logger(f'yt-dlp metadata extracted: {result.title}')
             logger(f'Extractor: {result.extractor}')
-            logger(
-                f'Has video: {result.has_video_streams}, Has audio: {result.has_audio_streams}'
-            )
+            logger(f'Has video: {result.has_video_streams}, Has audio: {result.has_audio_streams}')
 
         return result
 

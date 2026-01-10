@@ -350,7 +350,9 @@ def process_media_batch(guids: List[str]):
                         break
 
             # Create/update MediaItems for all videos (playlists expanded)
-            write_log(batch_log_path, f'Creating MediaItems for {len(prefetch_result.videos)} videos')
+            write_log(
+                batch_log_path, f'Creating MediaItems for {len(prefetch_result.videos)} videos'
+            )
 
             for video_info in prefetch_result.videos:
                 # Check if this is from a playlist or original URL
@@ -427,10 +429,14 @@ def process_media_batch(guids: List[str]):
                     if playlist_title:
                         item.status = MediaItem.STATUS_READY
                         item.title = f'[Playlist] {playlist_title}'
-                        count = sum(1 for v in prefetch_result.videos if v.source_url == item.source_url)
+                        count = sum(
+                            1 for v in prefetch_result.videos if v.source_url == item.source_url
+                        )
                         item.error_message = f'Expanded to {count} individual items'
                         item.save()
-                        write_log(batch_log_path, f'  Playlist expanded: {playlist_title} ({count} items)')
+                        write_log(
+                            batch_log_path, f'  Playlist expanded: {playlist_title} ({count} items)'
+                        )
 
         # === PHASE 2: HANDLE DIRECT DOWNLOADS ===
         for guid, item in direct_items.items():
@@ -467,7 +473,10 @@ def process_media_batch(guids: List[str]):
         # === PHASE 3: SINGLE DOWNLOAD CALL FOR YT-DLP URLS ===
         video_urls = list(guid_by_video_url.keys())
         if video_urls:
-            write_log(batch_log_path, f'=== DOWNLOAD PHASE (single yt-dlp call, {len(video_urls)} videos) ===')
+            write_log(
+                batch_log_path,
+                f'=== DOWNLOAD PHASE (single yt-dlp call, {len(video_urls)} videos) ===',
+            )
 
             # Determine resolved type
             first_video_guid = guid_by_video_url[video_urls[0]]
@@ -545,6 +554,7 @@ def process_media_batch(guids: List[str]):
                 update_progress(guid, MediaItem.STATUS_READY, 100)
 
                 from media.progress_tracker import clear_progress
+
                 clear_progress(guid)
 
                 if item.subtitle_path and settings.STASHCAST_SUMMARY_SENTENCES > 0:

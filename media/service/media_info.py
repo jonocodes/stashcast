@@ -135,7 +135,6 @@ def resolve_title_from_metadata(title, file_path):
     Returns:
         str: Updated title if metadata exists, otherwise original title
     """
-    from pathlib import Path
 
     # Always check for metadata
     meta_title = get_title_from_metadata(file_path)

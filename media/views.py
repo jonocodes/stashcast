@@ -164,6 +164,7 @@ def stash_view(request):
                     params.append(f'multiCount={len(created_items)}')
                     if prefetch_result.playlist_title:
                         from urllib.parse import quote
+
                         params.append(f'playlistTitle={quote(prefetch_result.playlist_title)}')
                     if params:
                         progress_url = f'{progress_url}?{"&".join(params)}'

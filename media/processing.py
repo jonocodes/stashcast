@@ -25,6 +25,7 @@ from media.models import MediaItem
 from media.service.download import download_direct as service_download_direct
 from media.service.download import download_file as service_download_file
 from media.service.download import download_ytdlp as service_download_ytdlp
+
 # Note: add_metadata_without_transcode, process_subtitle, and process_thumbnail
 # from media.service.process are no longer needed since yt-dlp handles these with
 # --embed-metadata, --convert-thumbnails png, and --convert-subs vtt flags
@@ -179,9 +180,7 @@ def extract_metadata_with_ffprobe(item, file_path, log_path):
                 # Update slug to match the new title
                 new_slug = generate_slug(item.title)
                 if new_slug and new_slug != item.slug:
-                    item.slug = ensure_unique_slug(
-                        new_slug, item.source_url, None, item.media_type
-                    )
+                    item.slug = ensure_unique_slug(new_slug, item.source_url, None, item.media_type)
                     write_log(log_path, f'Updated slug: {item.slug}')
 
         # Artist/Author
