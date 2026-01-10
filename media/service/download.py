@@ -369,7 +369,7 @@ def download_ytdlp_batch(
     logger=None,
 ) -> BatchDownloadResult:
     """
-    Download multiple URLs in a single yt-dlp session.
+    Download multiple URLs in a single yt-dlp call.
 
     This is the second of two yt-dlp calls in the batch process.
     All URLs should be individual videos (playlists already expanded).
@@ -377,7 +377,7 @@ def download_ytdlp_batch(
     Args:
         urls: List of video URLs to download (no playlists)
         resolved_type: 'audio' or 'video'
-        temp_dir: Base temporary directory (each URL gets a subdirectory)
+        temp_dir: Base temporary directory (each URL gets a subdirectory by ID)
         ytdlp_extra_args: Additional yt-dlp arguments from settings
         logger: Optional callable(str) for logging
 
@@ -392,15 +392,8 @@ def download_ytdlp_batch(
     temp_dir = Path(temp_dir)
     temp_dir.mkdir(parents=True, exist_ok=True)
 
-    url_to_folder: Dict[str, Path] = {}
     downloads: Dict[str, DownloadedFileInfo] = {}
     errors: Dict[str, str] = {}
-
-    # Create folder for each URL based on hash
-    for url in urls:
-        folder = temp_dir / _url_hash(url)
-        folder.mkdir(parents=True, exist_ok=True)
-        url_to_folder[url] = folder
 
     # Prepare yt-dlp options
     if resolved_type == 'audio':
@@ -408,63 +401,82 @@ def download_ytdlp_batch(
     else:
         format_spec = 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best'
 
+    # Use %(id)s to separate files into folders by video ID
+    # We'll map IDs back to URLs after download
     ydl_opts = {
         'format': format_spec,
+        'outtmpl': str(temp_dir / '%(id)s' / 'download.%(ext)s'),
         'writethumbnail': True,
         'writesubtitles': True,
         'writeautomaticsub': True,
         'subtitleslangs': ['en'],
         'quiet': not logger,
         'ignoreerrors': True,
-        'noplaylist': True,  # Don't expand playlists again - already done in prefetch
+        'noplaylist': True,
     }
 
     # Parse and apply extra args from settings
     ydl_opts = parse_ytdlp_extra_args(ytdlp_extra_args, ydl_opts)
 
-    log(f'Batch downloading {len(urls)} URLs with yt-dlp')
+    log(f'Batch downloading {len(urls)} URLs with single yt-dlp call')
     log(f'Format: {format_spec}')
 
-    # Single yt-dlp context for all downloads
+    # Track URL -> ID mapping via progress hook
+    url_to_id: Dict[str, str] = {}
+
+    def progress_hook(d):
+        if d['status'] in ('downloading', 'finished'):
+            info = d.get('info_dict', {})
+            video_id = info.get('id')
+            url = info.get('webpage_url') or info.get('original_url')
+            if video_id and url:
+                url_to_id[url] = video_id
+
+    ydl_opts['progress_hooks'] = [progress_hook]
+
+    # Single download call for all URLs
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        for url in urls:
-            folder = url_to_folder[url]
-            ydl.params['outtmpl'] = {'default': str(folder / 'download.%(ext)s')}
+        ydl.download(urls)
 
-            log(f'Downloading: {url}')
-            try:
-                ydl.download([url])
+    log(f'Download complete, processing {len(url_to_id)} results')
 
-                # Find downloaded files
-                files = list(folder.iterdir())
-                if not files:
-                    errors[url] = 'No files downloaded'
-                    continue
+    # Process downloaded files - map URLs to their downloaded content
+    for url in urls:
+        video_id = url_to_id.get(url)
+        if not video_id:
+            errors[url] = 'No video ID captured - download may have failed'
+            continue
 
-                content_files = [
-                    f for f in files
-                    if f.suffix in ['.mp4', '.mkv', '.webm', '.mp3', '.m4a', '.ogg', '.opus']
-                ]
-                if not content_files:
-                    errors[url] = 'No media file found after download'
-                    continue
+        folder = temp_dir / video_id
+        if not folder.exists():
+            errors[url] = f'Output folder not found: {video_id}'
+            continue
 
-                content_file = max(content_files, key=lambda f: f.stat().st_size)
-                thumb_files = [f for f in files if f.suffix in ['.jpg', '.jpeg', '.png', '.webp']]
-                subtitle_files = [f for f in files if f.suffix in ['.vtt', '.srt']]
+        files = list(folder.iterdir())
+        if not files:
+            errors[url] = 'No files downloaded'
+            continue
 
-                downloads[url] = DownloadedFileInfo(
-                    path=content_file,
-                    file_size=content_file.stat().st_size,
-                    extension=content_file.suffix,
-                    thumbnail_path=thumb_files[0] if thumb_files else None,
-                    subtitle_path=subtitle_files[0] if subtitle_files else None,
-                )
-                log(f'Downloaded: {content_file.name} ({content_file.stat().st_size} bytes)')
+        content_files = [
+            f for f in files
+            if f.suffix in ['.mp4', '.mkv', '.webm', '.mp3', '.m4a', '.ogg', '.opus']
+        ]
+        if not content_files:
+            errors[url] = 'No media file found after download'
+            continue
 
-            except Exception as e:
-                errors[url] = str(e)
-                log(f'Error downloading {url}: {e}')
+        content_file = max(content_files, key=lambda f: f.stat().st_size)
+        thumb_files = [f for f in files if f.suffix in ['.jpg', '.jpeg', '.png', '.webp']]
+        subtitle_files = [f for f in files if f.suffix in ['.vtt', '.srt']]
+
+        downloads[url] = DownloadedFileInfo(
+            path=content_file,
+            file_size=content_file.stat().st_size,
+            extension=content_file.suffix,
+            thumbnail_path=thumb_files[0] if thumb_files else None,
+            subtitle_path=subtitle_files[0] if subtitle_files else None,
+        )
+        log(f'Processed: {content_file.name} ({content_file.stat().st_size} bytes)')
 
     log(f'Batch complete: {len(downloads)} successful, {len(errors)} failed')
     return BatchDownloadResult(downloads=downloads, errors=errors)
