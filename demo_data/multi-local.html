@@ -1,0 +1,78 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bike Commute</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+        h1 {
+            margin: 0 0 10px 0;
+            font-size: 2em;
+        }
+        .meta {
+            opacity: 0.9;
+            margin-bottom: 30px;
+            font-size: 0.9em;
+        }
+        video {
+            width: 100%;
+            margin: 20px 0;
+            border-radius: 10px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        }
+        .description {
+            line-height: 1.6;
+            opacity: 0.95;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Multiple Embeds</h1>
+        <div class="meta">
+            <strong>Type:</strong> Video<br>
+            <strong>Format:</strong> local video and audio files
+        </div>
+
+        <img src="pecha-kucha-aud/thumbnail.webp" alt="Pecha Kucha Thumbnail" class="thumbnail">
+
+        <audio controls>
+            <source src="pecha-kucha-aud/aud.mp3" type="audio/mpeg">
+            Your browser does not support the audio element.
+        </audio>
+
+        <hr>
+
+        <video controls poster="pecha-kucha-vid/thumbnail.webp">
+            <source src="pecha-kucha-vid/vid.mp4" type="video/mp4">
+            <track kind="subtitles" src="pecha-kucha-vid/subtitles.vtt" srclang="en" label="English" default>
+            Your browser does not support the video tag.
+        </video>
+
+
+        <div class="description">
+            <h3>About</h3>
+            <p>
+                Multiple embedded youtube videos and a local mp3 audio file.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

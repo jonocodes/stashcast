@@ -299,20 +299,22 @@ def prefetch_ytdlp_batch(
                             has_video = entry.get('vcodec') not in (None, 'none')
                             has_audio = entry.get('acodec') not in (None, 'none')
 
-                        videos.append(VideoInfo(
-                            url=video_url,
-                            title=entry.get('title', 'Untitled'),
-                            description=entry.get('description', ''),
-                            author=entry.get('uploader') or entry.get('channel', ''),
-                            duration_seconds=entry.get('duration'),
-                            has_video=has_video if has_video or has_audio else True,
-                            has_audio=has_audio if has_video or has_audio else True,
-                            webpage_url=video_url,
-                            extractor=entry.get('extractor', ''),
-                            external_id=entry.get('id', ''),
-                            source_url=url,
-                            playlist_title=playlist_title,
-                        ))
+                        videos.append(
+                            VideoInfo(
+                                url=video_url,
+                                title=entry.get('title', 'Untitled'),
+                                description=entry.get('description', ''),
+                                author=entry.get('uploader') or entry.get('channel', ''),
+                                duration_seconds=entry.get('duration'),
+                                has_video=has_video if has_video or has_audio else True,
+                                has_audio=has_audio if has_video or has_audio else True,
+                                webpage_url=video_url,
+                                extractor=entry.get('extractor', ''),
+                                external_id=entry.get('id', ''),
+                                source_url=url,
+                                playlist_title=playlist_title,
+                            )
+                        )
                 else:
                     # Single video
                     video_url = info.get('webpage_url') or url
@@ -327,20 +329,22 @@ def prefetch_ytdlp_batch(
                         has_video = info.get('vcodec') not in (None, 'none')
                         has_audio = info.get('acodec') not in (None, 'none')
 
-                    videos.append(VideoInfo(
-                        url=video_url,
-                        title=info.get('title', 'Untitled'),
-                        description=info.get('description', ''),
-                        author=info.get('uploader') or info.get('channel', ''),
-                        duration_seconds=info.get('duration'),
-                        has_video=has_video if has_video or has_audio else True,
-                        has_audio=has_audio if has_video or has_audio else True,
-                        webpage_url=video_url,
-                        extractor=info.get('extractor', ''),
-                        external_id=info.get('id', ''),
-                        source_url=url,
-                        playlist_title=None,
-                    ))
+                    videos.append(
+                        VideoInfo(
+                            url=video_url,
+                            title=info.get('title', 'Untitled'),
+                            description=info.get('description', ''),
+                            author=info.get('uploader') or info.get('channel', ''),
+                            duration_seconds=info.get('duration'),
+                            has_video=has_video if has_video or has_audio else True,
+                            has_audio=has_audio if has_video or has_audio else True,
+                            webpage_url=video_url,
+                            extractor=info.get('extractor', ''),
+                            external_id=info.get('id', ''),
+                            source_url=url,
+                            playlist_title=None,
+                        )
+                    )
                     log(f'  Single video: {info.get("title", "Untitled")}')
 
             except Exception as e:
@@ -458,7 +462,8 @@ def download_ytdlp_batch(
             continue
 
         content_files = [
-            f for f in files
+            f
+            for f in files
             if f.suffix in ['.mp4', '.mkv', '.webm', '.mp3', '.m4a', '.ogg', '.opus']
         ]
         if not content_files:

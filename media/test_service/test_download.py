@@ -375,8 +375,18 @@ class BatchPrefetchTest(TestCase):
                 return {
                     'title': 'My Playlist',
                     'entries': [
-                        {'title': 'PL Video 1', 'webpage_url': 'https://youtube.com/watch?v=pl1', 'id': 'pl1', 'formats': []},
-                        {'title': 'PL Video 2', 'webpage_url': 'https://youtube.com/watch?v=pl2', 'id': 'pl2', 'formats': []},
+                        {
+                            'title': 'PL Video 1',
+                            'webpage_url': 'https://youtube.com/watch?v=pl1',
+                            'id': 'pl1',
+                            'formats': [],
+                        },
+                        {
+                            'title': 'PL Video 2',
+                            'webpage_url': 'https://youtube.com/watch?v=pl2',
+                            'id': 'pl2',
+                            'formats': [],
+                        },
                     ],
                 }
             else:
@@ -389,10 +399,12 @@ class BatchPrefetchTest(TestCase):
 
         mock_ydl.extract_info.side_effect = mock_extract
 
-        result = prefetch_ytdlp_batch([
-            'https://youtube.com/watch?v=single',
-            'https://youtube.com/playlist?list=PL123',
-        ])
+        result = prefetch_ytdlp_batch(
+            [
+                'https://youtube.com/watch?v=single',
+                'https://youtube.com/playlist?list=PL123',
+            ]
+        )
 
         # Should have 3 videos total (1 single + 2 from playlist)
         self.assertEqual(len(result.videos), 3)
@@ -421,10 +433,12 @@ class BatchPrefetchTest(TestCase):
 
         mock_ydl.extract_info.side_effect = mock_extract
 
-        result = prefetch_ytdlp_batch([
-            'https://youtube.com/watch?v=good',
-            'https://youtube.com/watch?v=bad',
-        ])
+        result = prefetch_ytdlp_batch(
+            [
+                'https://youtube.com/watch?v=good',
+                'https://youtube.com/watch?v=bad',
+            ]
+        )
 
         self.assertEqual(len(result.videos), 1)
         self.assertEqual(result.videos[0].title, 'Good Video')
@@ -457,13 +471,14 @@ class BatchDownloadTest(TestCase):
 
             # Simulate progress hook capturing URL->ID mapping
             def capture_hook(hooks):
-                for url, vid_id in [('https://youtube.com/watch?v=vid1', 'vid1'),
-                                    ('https://youtube.com/watch?v=vid2', 'vid2')]:
+                for url, vid_id in [
+                    ('https://youtube.com/watch?v=vid1', 'vid1'),
+                    ('https://youtube.com/watch?v=vid2', 'vid2'),
+                ]:
                     for hook in hooks:
-                        hook({
-                            'status': 'finished',
-                            'info_dict': {'id': vid_id, 'webpage_url': url}
-                        })
+                        hook(
+                            {'status': 'finished', 'info_dict': {'id': vid_id, 'webpage_url': url}}
+                        )
 
             def mock_download(url_list):
                 # Create output folders and files
@@ -486,7 +501,7 @@ class BatchDownloadTest(TestCase):
                 mock_ytdlp_class.call_args[0][0] if mock_ytdlp_class.call_args else {}
             )
 
-            result = download_ytdlp_batch(urls, 'video', temp_dir)
+            download_ytdlp_batch(urls, 'video', temp_dir)
 
             # Verify download was called once with all URLs
             mock_ydl.download.assert_called_once_with(urls)
@@ -516,18 +531,13 @@ class BatchDownloadTest(TestCase):
                 hooks = mock_ytdlp_class.call_args[0][0].get('progress_hooks', [])
                 for url, vid_id in url_id_map.items():
                     for hook in hooks:
-                        hook({
-                            'status': 'finished',
-                            'info_dict': {'id': vid_id, 'webpage_url': url}
-                        })
+                        hook(
+                            {'status': 'finished', 'info_dict': {'id': vid_id, 'webpage_url': url}}
+                        )
 
             mock_ydl.download.side_effect = mock_download
 
-            result = download_ytdlp_batch(
-                list(url_id_map.keys()),
-                'video',
-                temp_dir
-            )
+            result = download_ytdlp_batch(list(url_id_map.keys()), 'video', temp_dir)
 
             self.assertEqual(len(result.downloads), 2)
             self.assertIn('https://youtube.com/watch?v=abc123', result.downloads)
@@ -550,10 +560,15 @@ class BatchDownloadTest(TestCase):
             def mock_download(urls):
                 hooks = mock_ytdlp_class.call_args[0][0].get('progress_hooks', [])
                 for hook in hooks:
-                    hook({
-                        'status': 'finished',
-                        'info_dict': {'id': 'good123', 'webpage_url': 'https://youtube.com/watch?v=good'}
-                    })
+                    hook(
+                        {
+                            'status': 'finished',
+                            'info_dict': {
+                                'id': 'good123',
+                                'webpage_url': 'https://youtube.com/watch?v=good',
+                            },
+                        }
+                    )
                 # bad URL not reported - simulates failure
 
             mock_ydl.download.side_effect = mock_download
@@ -561,7 +576,7 @@ class BatchDownloadTest(TestCase):
             result = download_ytdlp_batch(
                 ['https://youtube.com/watch?v=good', 'https://youtube.com/watch?v=bad'],
                 'video',
-                temp_dir
+                temp_dir,
             )
 
             self.assertEqual(len(result.downloads), 1)

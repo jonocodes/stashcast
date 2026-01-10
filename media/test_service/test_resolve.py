@@ -159,6 +159,46 @@ class ResolveServiceTest(TestCase):
         self.assertEqual(result.entries[1].title, 'Video 2')
         self.assertEqual(result.playlist_title, 'Test Playlist')
 
+    @patch('media.service.resolve.yt_dlp.YoutubeDL')
+    def test_prefetch_ytdlp_html_page_prefers_url_over_webpage_url(self, mock_ytdlp_class):
+        """Test that HTML pages with embedded media prefer 'url' over 'webpage_url'.
+
+        Regression test for bug where we used webpage_url first, causing all entries
+        from HTML pages to resolve to the same parent page URL instead of the actual
+        media URLs.
+        """
+        mock_ydl = MagicMock()
+        mock_ytdlp_class.return_value.__enter__.return_value = mock_ydl
+        mock_ydl.extract_info.return_value = {
+            'title': 'Page with Embedded Media',
+            'entries': [
+                {
+                    'title': 'Audio File',
+                    'url': 'http://localhost:8001/audio.mp3',
+                    'webpage_url': 'http://localhost:8001/page.html',
+                },
+                {
+                    'title': 'Video File',
+                    'url': 'http://localhost:8001/video.mp4',
+                    'webpage_url': 'http://localhost:8001/page.html',
+                },
+            ],
+        }
+
+        url = 'http://localhost:8001/page.html'
+        result = prefetch(url, 'ytdlp')
+
+        self.assertTrue(result.is_multiple)
+        self.assertEqual(len(result.entries), 2)
+
+        # Verify that 'url' (direct media) is used, not 'webpage_url' (HTML page)
+        self.assertEqual(result.entries[0].url, 'http://localhost:8001/audio.mp3')
+        self.assertEqual(result.entries[1].url, 'http://localhost:8001/video.mp4')
+
+        # Ensure they don't all point to the same webpage
+        self.assertNotEqual(result.entries[0].url, 'http://localhost:8001/page.html')
+        self.assertNotEqual(result.entries[1].url, 'http://localhost:8001/page.html')
+
     def test_resolve_media_type_explicit_audio(self):
         """Test explicit audio type request"""
         result = PrefetchResult()

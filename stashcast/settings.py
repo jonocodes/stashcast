@@ -150,16 +150,25 @@ STASHCAST_MEDIA_BASE_URL = os.environ.get('STASHCAST_MEDIA_BASE_URL', None)
 
 # Default yt-dlp args optimized for mobile playback
 # Audio: AAC codec in M4A container is widely supported
+# Metadata and thumbnails are embedded directly into the media file
+# Thumbnails are converted to PNG, subtitles to VTT format
 STASHCAST_DEFAULT_YTDLP_ARGS_AUDIO = os.environ.get(
-    'STASHCAST_DEFAULT_YTDLP_ARGS_AUDIO', '--audio-format m4a --audio-quality 128K'
+    'STASHCAST_DEFAULT_YTDLP_ARGS_AUDIO',
+    '--audio-format m4a --audio-quality 128K '
+    '--embed-metadata --embed-thumbnail '
+    '--convert-thumbnails png --convert-subs vtt',
 )
 
 # Video: H.264/AAC in MP4 container for maximum mobile compatibility
 # Limit to 720p to balance quality and file size
 # Format filter: prefer best video ≤720p + best audio, fallback to combined format ≤720p
+# Metadata and thumbnails are embedded, subtitles converted to VTT and embedded
 STASHCAST_DEFAULT_YTDLP_ARGS_VIDEO = os.environ.get(
     'STASHCAST_DEFAULT_YTDLP_ARGS_VIDEO',
-    '--format "bv*[height<=720][vcodec^=avc]+ba/b[height<=720]" --merge-output-format mp4',
+    '--format "bv*[height<=720][vcodec^=avc]+ba/b[height<=720]" '
+    '--merge-output-format mp4 '
+    '--embed-metadata --embed-thumbnail '
+    '--convert-thumbnails png --convert-subs vtt --embed-subs',
 )
 
 # FFmpeg args for transcoding (if needed)
