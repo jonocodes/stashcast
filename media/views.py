@@ -109,6 +109,7 @@ def stash_view(request):
 
                 # allow_multiple is True - create items for each entry
                 created_items = []
+                created_guids = []
                 for entry in prefetch_result.entries:
                     entry_url = entry.url
                     if not entry_url:
@@ -138,8 +139,7 @@ def stash_view(request):
                             slug='pending',
                         )
 
-                    # Enqueue processing task
-                    process_media(item.guid)
+                    created_guids.append(item.guid)
                     created_items.append(
                         {
                             'guid': item.guid,
@@ -147,6 +147,11 @@ def stash_view(request):
                             'title': entry.title,
                         }
                     )
+
+                # Use batch processing to avoid SQLite lock contention
+                # This processes items sequentially with proper rate limiting
+                if created_guids:
+                    process_media_batch(created_guids)
 
                 # Handle redirect for progress page (redirect to first item)
                 if redirect_param == 'progress' and created_items:
@@ -523,8 +528,8 @@ def admin_stash_confirm_multiple_view(request):
         del request.session['multi_item_entries']
         del request.session['multi_item_playlist_title']
 
-        # Create MediaItem for each entry and queue processing
-        created_count = 0
+        # Create MediaItem for each entry and queue batch processing
+        created_guids = []
         for entry in entries:
             entry_url = entry.get('url')
             if not entry_url:
@@ -552,11 +557,13 @@ def admin_stash_confirm_multiple_view(request):
                     source_url=entry_url, requested_type=media_type, slug='pending'
                 )
 
-            # Enqueue processing
-            process_media(item.guid)
-            created_count += 1
+            created_guids.append(item.guid)
 
-        messages.success(request, f'Queued {created_count} items for download')
+        # Use batch processing to avoid SQLite lock contention
+        if created_guids:
+            process_media_batch(created_guids)
+
+        messages.success(request, f'Queued {len(created_guids)} items for download')
         return redirect('admin_stash_form')
 
     context = {
