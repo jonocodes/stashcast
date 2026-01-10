@@ -25,11 +25,9 @@ from media.models import MediaItem
 from media.service.download import download_direct as service_download_direct
 from media.service.download import download_file as service_download_file
 from media.service.download import download_ytdlp as service_download_ytdlp
-from media.service.process import (
-    add_metadata_without_transcode,
-    process_subtitle,
-    process_thumbnail,
-)
+# Note: add_metadata_without_transcode, process_subtitle, and process_thumbnail
+# from media.service.process are no longer needed since yt-dlp handles these with
+# --embed-metadata, --convert-thumbnails png, and --convert-subs vtt flags
 from media.service.media_info import (
     extract_ffprobe_metadata,
     get_output_extension,
@@ -302,11 +300,10 @@ def process_files(item, tmp_dir, log_path):
     """
     Process downloaded files in tmp directory.
 
-    - Embeds metadata into content file
-    - Converts thumbnail to PNG
-    - Converts subtitles to VTT
-    - Sets MIME type
-    - Transcodes if needed (with progress tracking)
+    Note: yt-dlp now handles metadata embedding, thumbnail conversion, and subtitle
+    conversion automatically with --embed-metadata, --convert-thumbnails png, and
+    --convert-subs vtt flags. This function now just verifies files and updates
+    database paths.
 
     Args:
         item: MediaItem instance
@@ -314,15 +311,16 @@ def process_files(item, tmp_dir, log_path):
         log_path: Path to log file
     """
 
-    # Add metadata to content file
+    # Check if content file exists and update title from metadata if needed
     if item.content_path:
         content_file = tmp_dir / item.content_path
         if content_file.exists():
             # If title is still a generic fallback, try to read from media metadata
+            # yt-dlp should have already embedded metadata, so check if it's there
             resolved_title = resolve_title_from_metadata(item.title, content_file)
             if resolved_title and resolved_title != item.title:
                 item.title = resolved_title
-                write_log(log_path, f'Updated title from media metadata: {resolved_title}')
+                write_log(log_path, f'Updated title from embedded metadata: {resolved_title}')
                 # Update slug to match the resolved title
                 new_slug = generate_slug(item.title)
                 if new_slug and new_slug != item.slug:
@@ -345,65 +343,49 @@ def process_files(item, tmp_dir, log_path):
                         write_log(log_path, f'Updated slug: {item.slug}')
                 item.save()
 
-            # Create metadata dict
-            metadata = {}
-            if item.title:
-                metadata['title'] = item.title
-            if item.author:
-                metadata['author'] = item.author
-            if item.description:
-                metadata['description'] = item.description
+            write_log(
+                log_path,
+                'Metadata already embedded by yt-dlp (--embed-metadata, --embed-thumbnail)',
+            )
 
-            # If we have metadata, embed it using the centralized service
-            if metadata:
-                try:
-                    # Use proper extension for temp file so ffmpeg can detect format
-                    temp_file = (
-                        content_file.parent / f'{content_file.stem}_tmp{content_file.suffix}'
-                    )
+    # Look for thumbnail files - yt-dlp converts them to PNG automatically
+    # Check for both thumbnail_temp* (from download.py renaming) and direct thumbnail.png
+    thumb_file = None
+    for pattern in ['thumbnail_temp*.png', 'thumbnail.png', 'thumbnail_temp*']:
+        matches = list(tmp_dir.glob(pattern))
+        if matches:
+            thumb_file = matches[0]
+            break
 
-                    # Use centralized metadata embedding from service.process
-                    add_metadata_without_transcode(
-                        content_file,
-                        temp_file,
-                        metadata=metadata,
-                        logger=lambda msg: write_log(log_path, msg),
-                    )
+    if thumb_file and thumb_file.exists():
+        # If it's not already named thumbnail.png, rename it
+        if thumb_file.name != 'thumbnail.png':
+            final_thumb = tmp_dir / 'thumbnail.png'
+            shutil.move(str(thumb_file), str(final_thumb))
+            write_log(log_path, f'Thumbnail found and renamed: {thumb_file.name} -> thumbnail.png')
+        else:
+            write_log(log_path, 'Thumbnail found: thumbnail.png')
+        item.thumbnail_path = 'thumbnail.png'
 
-                    # Replace original with metadata-embedded version
-                    if temp_file.exists():
-                        temp_file.replace(content_file)
-                        write_log(log_path, 'Metadata embedded successfully')
-                except Exception as e:
-                    write_log(
-                        log_path,
-                        f'Metadata embedding error: {type(e).__name__}: {str(e)}',
-                    )
-                    # Clean up temp file if it exists
-                    if 'temp_file' in locals() and temp_file.exists():
-                        temp_file.unlink()
+    # Look for subtitle files - yt-dlp converts them to VTT automatically
+    # Check for both subtitles_temp* (from download.py renaming) and direct subtitles.vtt
+    sub_file = None
+    for pattern in ['subtitles_temp*.vtt', 'subtitles.vtt', 'subtitles_temp*']:
+        matches = list(tmp_dir.glob(pattern))
+        if matches:
+            sub_file = matches[0]
+            break
 
-    # Process thumbnail
-    for thumb_file in tmp_dir.glob('thumbnail_temp*'):
-        png_path = tmp_dir / 'thumbnail.png'
-        try:
-            # Use centralized thumbnail processing
-            process_thumbnail(thumb_file, png_path, logger=lambda msg: write_log(log_path, msg))
-            item.thumbnail_path = 'thumbnail.png'
-            thumb_file.unlink()
-        except Exception as e:
-            write_log(log_path, f'Thumbnail conversion failed: {e}')
-
-    # Process subtitles - convert to VTT
-    for sub_file in tmp_dir.glob('subtitles_temp*'):
-        vtt_path = tmp_dir / 'subtitles.vtt'
-        try:
-            # Use centralized subtitle processing
-            process_subtitle(sub_file, vtt_path, logger=lambda msg: write_log(log_path, msg))
-            item.subtitle_path = 'subtitles.vtt'
-            sub_file.unlink()
-        except Exception as e:
-            write_log(log_path, f'Subtitle processing failed: {e}')
+    if sub_file and sub_file.exists():
+        # If it's not already named subtitles.vtt, rename it
+        if sub_file.name != 'subtitles.vtt':
+            final_sub = tmp_dir / 'subtitles.vtt'
+            shutil.move(str(sub_file), str(final_sub))
+            write_log(log_path, f'Subtitles found and renamed: {sub_file.name} -> subtitles.vtt')
+        else:
+            write_log(log_path, 'Subtitles found: subtitles.vtt')
+        item.subtitle_path = 'subtitles.vtt'
+        write_log(log_path, 'Subtitles embedded in video by yt-dlp (--embed-subs for video)')
 
     # Determine MIME type
     if item.content_path:

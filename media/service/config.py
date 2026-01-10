@@ -138,6 +138,37 @@ def parse_ytdlp_extra_args(args_string, base_opts):
                 i += 2
             else:
                 i += 1
+        elif arg == '--embed-metadata':
+            base_opts['postprocessors'] = base_opts.get('postprocessors', []) + [
+                {'key': 'FFmpegMetadata', 'add_metadata': True}
+            ]
+            i += 1
+        elif arg == '--embed-thumbnail':
+            base_opts['postprocessors'] = base_opts.get('postprocessors', []) + [
+                {'key': 'EmbedThumbnail'}
+            ]
+            i += 1
+        elif arg == '--convert-thumbnails':
+            if i + 1 < len(args_list):
+                base_opts['postprocessors'] = base_opts.get('postprocessors', []) + [
+                    {'key': 'FFmpegThumbnailsConvertor', 'format': args_list[i + 1]}
+                ]
+                i += 2
+            else:
+                i += 1
+        elif arg == '--convert-subs':
+            if i + 1 < len(args_list):
+                base_opts['postprocessors'] = base_opts.get('postprocessors', []) + [
+                    {'key': 'FFmpegSubtitlesConvertor', 'format': args_list[i + 1]}
+                ]
+                i += 2
+            else:
+                i += 1
+        elif arg == '--embed-subs':
+            base_opts['postprocessors'] = base_opts.get('postprocessors', []) + [
+                {'key': 'FFmpegEmbedSubtitle'}
+            ]
+            i += 1
         else:
             # Skip unknown args
             i += 1
