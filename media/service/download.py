@@ -4,9 +4,10 @@ Download service for media files.
 Handles both direct HTTP downloads and yt-dlp downloads.
 """
 
+import hashlib
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Dict, List
 import shutil
 import requests
 import yt_dlp
@@ -192,3 +193,156 @@ def download_ytdlp(url, resolved_type, temp_dir, ytdlp_extra_args='', logger=Non
         thumbnail_path=thumbnail_path,
         subtitle_path=subtitle_path,
     )
+
+
+def _url_hash(url: str) -> str:
+    """Generate a short hash for a URL to use as folder name."""
+    return hashlib.md5(url.encode()).hexdigest()[:12]
+
+
+@dataclass
+class BatchDownloadResult:
+    """Result from batch downloading multiple URLs."""
+
+    # Map of URL -> DownloadedFileInfo (for successful downloads)
+    downloads: Dict[str, DownloadedFileInfo]
+    # Map of URL -> error message (for failed downloads)
+    errors: Dict[str, str]
+
+
+def download_ytdlp_batch(
+    urls: List[str],
+    resolved_type: str,
+    temp_dir,
+    ytdlp_extra_args: str = '',
+    logger=None,
+) -> BatchDownloadResult:
+    """
+    Download multiple URLs using a single yt-dlp process.
+
+    This leverages yt-dlp's built-in rate limiting and backoff handling
+    for multiple URLs, which is more efficient than spawning separate
+    processes for each URL.
+
+    Args:
+        urls: List of URLs to download
+        resolved_type: 'audio' or 'video'
+        temp_dir: Base temporary directory (each URL gets a subdirectory)
+        ytdlp_extra_args: Additional yt-dlp arguments from settings
+        logger: Optional callable(str) for logging
+
+    Returns:
+        BatchDownloadResult with successful downloads and errors
+    """
+
+    def log(message):
+        if logger:
+            logger(message)
+
+    temp_dir = Path(temp_dir)
+    temp_dir.mkdir(parents=True, exist_ok=True)
+
+    # Track which URL is currently being processed and results
+    url_to_folder: Dict[str, Path] = {}
+    downloads: Dict[str, DownloadedFileInfo] = {}
+    errors: Dict[str, str] = {}
+
+    # Create folder for each URL based on hash
+    for url in urls:
+        folder = temp_dir / _url_hash(url)
+        folder.mkdir(parents=True, exist_ok=True)
+        url_to_folder[url] = folder
+
+    # Prepare yt-dlp options
+    if resolved_type == 'audio':
+        format_spec = 'bestaudio/best'
+    else:
+        format_spec = 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best'
+
+    # Track current URL being downloaded via progress hook
+    current_url = {'url': None, 'folder': None}
+
+    def progress_hook(d):
+        if d['status'] == 'downloading':
+            # Extract the original URL from info_dict
+            info = d.get('info_dict', {})
+            url = info.get('original_url') or info.get('webpage_url')
+            if url and url in url_to_folder:
+                current_url['url'] = url
+                current_url['folder'] = url_to_folder[url]
+
+    # Use a custom output template that puts files in URL-specific folders
+    # We'll use the progress hook to determine which folder to use
+    ydl_opts = {
+        'format': format_spec,
+        'writethumbnail': True,
+        'writesubtitles': True,
+        'writeautomaticsub': True,
+        'subtitleslangs': ['en'],
+        'quiet': not logger,
+        'progress_hooks': [progress_hook],
+        'ignoreerrors': True,  # Continue on errors
+        # Path template - each URL downloads to its hashed folder
+        'paths': {'home': str(temp_dir)},
+    }
+
+    # Parse and apply extra args from settings
+    ydl_opts = parse_ytdlp_extra_args(ytdlp_extra_args, ydl_opts)
+
+    log(f'Batch downloading {len(urls)} URLs with yt-dlp')
+    log(f'Format: {format_spec}')
+
+    # Download each URL to its own folder
+    # We process one at a time to ensure proper folder separation
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        for url in urls:
+            folder = url_to_folder[url]
+            # Update output template for this URL's folder
+            ydl.params['outtmpl'] = {'default': str(folder / 'download.%(ext)s')}
+
+            log(f'Downloading: {url}')
+            try:
+                ydl.download([url])
+
+                # Find downloaded files in this folder
+                files = list(folder.iterdir())
+                if not files:
+                    errors[url] = 'No files downloaded'
+                    continue
+
+                # Find main content file
+                content_files = [
+                    f
+                    for f in files
+                    if f.suffix in ['.mp4', '.mkv', '.webm', '.mp3', '.m4a', '.ogg', '.opus']
+                ]
+                if not content_files:
+                    errors[url] = 'No media file found after download'
+                    continue
+
+                content_file = max(content_files, key=lambda f: f.stat().st_size)
+
+                # Find thumbnail
+                thumb_files = [f for f in files if f.suffix in ['.jpg', '.jpeg', '.png', '.webp']]
+                thumbnail_path = thumb_files[0] if thumb_files else None
+
+                # Find subtitles
+                subtitle_files = [f for f in files if f.suffix in ['.vtt', '.srt']]
+                subtitle_path = subtitle_files[0] if subtitle_files else None
+
+                downloads[url] = DownloadedFileInfo(
+                    path=content_file,
+                    file_size=content_file.stat().st_size,
+                    extension=content_file.suffix,
+                    thumbnail_path=thumbnail_path,
+                    subtitle_path=subtitle_path,
+                )
+                log(f'Downloaded: {content_file.name} ({content_file.stat().st_size} bytes)')
+
+            except Exception as e:
+                errors[url] = str(e)
+                log(f'Error downloading {url}: {e}')
+
+    log(f'Batch complete: {len(downloads)} successful, {len(errors)} failed')
+
+    return BatchDownloadResult(downloads=downloads, errors=errors)

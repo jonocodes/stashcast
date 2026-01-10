@@ -10,7 +10,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
 from media.models import MediaItem
-from media.tasks import process_media
+from media.tasks import process_media, process_media_batch
 from media.utils import build_media_url
 
 
@@ -362,8 +362,8 @@ def admin_stash_form_view(request):
                 messages.error(request, 'No valid URLs found in bulk input')
                 return redirect(request.path)
 
-            # Process each URL
-            created_count = 0
+            # Create MediaItems for all valid URLs
+            created_guids = []
             skipped_count = 0
             first_guid = None
 
@@ -395,15 +395,16 @@ def admin_stash_form_view(request):
                         source_url=bulk_url, requested_type=media_type, slug='pending'
                     )
 
-                # Enqueue processing
-                process_media(item.guid)
-                created_count += 1
+                created_guids.append(item.guid)
 
                 if first_guid is None:
                     first_guid = item.guid
 
-            if created_count > 0:
-                msg = f'Queued {created_count} URLs for download'
+            if created_guids:
+                # Enqueue batch processing task (single yt-dlp process for all URLs)
+                process_media_batch(created_guids)
+
+                msg = f'Queued {len(created_guids)} URLs for batch download'
                 if skipped_count > 0:
                     msg += f' ({skipped_count} invalid URLs skipped)'
                 messages.success(request, msg)
