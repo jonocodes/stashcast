@@ -159,17 +159,15 @@ class DownloadProcessingTest(TestCase):
             self.assertTrue((tmp_dir / 'subtitles_temp.vtt').exists())
 
     @patch('media.processing.resolve_title_from_metadata', return_value='Real Title')
-    @patch('media.processing.add_metadata_without_transcode')
-    def test_process_files_updates_title_and_slug(self, mock_add_metadata, _mock_title):
+    def test_process_files_updates_title_and_slug(self, _mock_title):
+        """Test that process_files updates title and slug from metadata.
+
+        Note: yt-dlp now handles metadata embedding with --embed-metadata flag,
+        so we no longer need to mock add_metadata_without_transcode.
+        """
         from pathlib import Path
 
         from media.processing import process_files
-
-        def mock_add_metadata_func(input_path, output_path, metadata=None, logger=None):
-            output_path = Path(output_path)
-            output_path.write_bytes(b'output data')
-
-        mock_add_metadata.side_effect = mock_add_metadata_func
 
         with tempfile.TemporaryDirectory() as tmp_dir_str:
             tmp_dir = Path(tmp_dir_str)
@@ -1088,120 +1086,10 @@ Finally we have a fourth sentence to conclude.
         self.assertIn('First sentence.', item.summary)
 
 
-class MetadataEmbeddingTest(TestCase):
-    """Tests for metadata embedding without transcoding"""
-
-    def test_metadata_embedded_in_file(self):
-        """Test that metadata is embedded in media files"""
-        import json
-        import subprocess
-        import tempfile
-        from pathlib import Path
-
-        from media.service.process import add_metadata_without_transcode
-
-        # Create a temporary directory
-        with tempfile.TemporaryDirectory() as temp_dir:
-            temp_dir = Path(temp_dir)
-
-            # Create a minimal valid MP4 file (empty but valid structure)
-            input_file = temp_dir / 'input.mp4'
-            output_file = temp_dir / 'output.mp4'
-
-            # Create a minimal MP4 using ffmpeg
-            subprocess.run(
-                [
-                    'ffmpeg',
-                    '-f',
-                    'lavfi',
-                    '-i',
-                    'anullsrc=duration=1',
-                    '-c:a',
-                    'aac',
-                    '-t',
-                    '1',
-                    str(input_file),
-                ],
-                capture_output=True,
-                check=True,
-            )
-
-            # Add metadata
-            metadata = {
-                'title': 'Test Title',
-                'author': 'Test Author',
-                'description': 'Test Description',
-            }
-
-            add_metadata_without_transcode(input_file, output_file, metadata=metadata)
-
-            # Verify metadata was embedded using ffprobe
-            result = subprocess.run(
-                [
-                    'ffprobe',
-                    '-v',
-                    'quiet',
-                    '-show_format',
-                    '-of',
-                    'json',
-                    str(output_file),
-                ],
-                capture_output=True,
-                text=True,
-                check=True,
-            )
-
-            probe_data = json.loads(result.stdout)
-            tags = probe_data.get('format', {}).get('tags', {})
-
-            # Check metadata is present (ffprobe returns lowercase keys)
-            self.assertEqual(tags.get('title'), 'Test Title')
-            self.assertEqual(tags.get('artist'), 'Test Author')
-            self.assertEqual(tags.get('comment'), 'Test Description')
-
-    def test_metadata_without_transcode_no_quality_loss(self):
-        """Test that metadata embedding doesn't re-encode the file"""
-        import subprocess
-        import tempfile
-        from pathlib import Path
-
-        from media.service.process import add_metadata_without_transcode
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            temp_dir = Path(temp_dir)
-
-            input_file = temp_dir / 'input.mp4'
-            output_file = temp_dir / 'output.mp4'
-
-            # Create a test file
-            subprocess.run(
-                [
-                    'ffmpeg',
-                    '-f',
-                    'lavfi',
-                    '-i',
-                    'anullsrc=duration=1',
-                    '-c:a',
-                    'aac',
-                    '-t',
-                    '1',
-                    str(input_file),
-                ],
-                capture_output=True,
-                check=True,
-            )
-
-            input_size = input_file.stat().st_size
-
-            # Add metadata
-            metadata = {'title': 'Test'}
-            add_metadata_without_transcode(input_file, output_file, metadata=metadata)
-
-            output_size = output_file.stat().st_size
-
-            # File sizes should be very similar (within 5% due to metadata overhead)
-            size_diff_percent = abs(output_size - input_size) / input_size * 100
-            self.assertLess(size_diff_percent, 5)
+# NOTE: MetadataEmbeddingTest class removed - these tests were for the
+# add_metadata_without_transcode() function which has been removed.
+# yt-dlp now handles metadata embedding automatically with --embed-metadata flag.
+# The functionality is tested implicitly by integration tests that use yt-dlp.
 
 
 class SlugPathSecurityTest(TestCase):
