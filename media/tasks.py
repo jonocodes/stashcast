@@ -19,6 +19,7 @@ from media.processing import (
 )
 from media.progress_tracker import update_progress
 from media.service.download import download_ytdlp_batch
+from media.service.resolve import MultipleItemsDetected
 from media.service.strategy import choose_download_strategy
 
 
@@ -318,7 +319,20 @@ def process_media_batch(guids: List[str]):
         # === PREFETCHING PHASE ===
         write_log(batch_log_path, '=== PREFETCHING ALL ITEMS ===')
 
-        for guid, item in items.items():
+        # Process items - may expand if playlists are found
+        guids_to_process = list(items.keys())
+        processed_guids = set()
+
+        while guids_to_process:
+            guid = guids_to_process.pop(0)
+            if guid in processed_guids:
+                continue
+            processed_guids.add(guid)
+
+            item = items.get(guid)
+            if not item:
+                continue
+
             # Create per-item tmp directory
             tmp_dir = batch_tmp_dir / f'item-{guid}'
             tmp_dir.mkdir(exist_ok=True)
@@ -339,7 +353,7 @@ def process_media_batch(guids: List[str]):
 
                 if strategy in ('direct', 'file'):
                     # Direct downloads handled individually
-                    write_log(log_path, f'Direct download - will process individually')
+                    write_log(log_path, 'Direct download - will process individually')
                     if Path(item.source_url).exists():
                         prefetch_file(item, tmp_dir, log_path)
                     else:
@@ -351,6 +365,45 @@ def process_media_batch(guids: List[str]):
                     guid_by_url[item.source_url] = guid
 
                 write_log(batch_log_path, f'Prefetched: {item.title or item.source_url}')
+
+            except MultipleItemsDetected as e:
+                # Playlist detected - expand it by creating items for each entry
+                write_log(log_path, f'Playlist detected: {e.playlist_title} ({e.count} items)')
+                write_log(batch_log_path, f'Expanding playlist: {e.playlist_title} ({e.count} items)')
+
+                # Mark the original playlist item as completed (it's just a container)
+                item.status = MediaItem.STATUS_READY
+                item.title = f'[Playlist] {e.playlist_title}'
+                item.error_message = f'Expanded to {e.count} individual items'
+                item.save()
+
+                # Create MediaItems for each entry in the playlist
+                for entry in e.entries:
+                    entry_url = entry.url
+                    if not entry_url:
+                        continue
+
+                    # Check if this URL already exists
+                    existing = MediaItem.objects.filter(
+                        source_url=entry_url, requested_type=item.requested_type
+                    ).first()
+
+                    if existing:
+                        new_item = existing
+                        new_item.status = MediaItem.STATUS_PREFETCHING
+                        new_item.error_message = ''
+                        new_item.save()
+                    else:
+                        new_item = MediaItem.objects.create(
+                            source_url=entry_url,
+                            requested_type=item.requested_type,
+                            slug='pending',
+                        )
+
+                    # Add to batch processing
+                    items[new_item.guid] = new_item
+                    guids_to_process.append(new_item.guid)
+                    write_log(batch_log_path, f'  Added from playlist: {entry.title or entry_url}')
 
             except Exception as e:
                 item.status = MediaItem.STATUS_ERROR
