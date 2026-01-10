@@ -351,7 +351,70 @@ def admin_stash_form_view(request):
 
         url = request.POST.get('url', '').strip()
         media_type = request.POST.get('type', 'auto')
+        bulk_urls_raw = request.POST.get('bulk_urls', '').strip()
 
+        # Check if bulk URLs were provided
+        if bulk_urls_raw:
+            # Parse bulk URLs (one per line)
+            bulk_urls = [u.strip() for u in bulk_urls_raw.split('\n') if u.strip()]
+
+            if not bulk_urls:
+                messages.error(request, 'No valid URLs found in bulk input')
+                return redirect(request.path)
+
+            # Process each URL
+            created_count = 0
+            skipped_count = 0
+            first_guid = None
+
+            for bulk_url in bulk_urls:
+                # Basic URL validation
+                if not bulk_url.startswith(('http://', 'https://', '/')):
+                    skipped_count += 1
+                    continue
+
+                # Check if item already exists
+                existing_item = None
+                if media_type == 'auto':
+                    existing_item = MediaItem.objects.filter(
+                        source_url=bulk_url, requested_type='auto'
+                    ).first()
+                else:
+                    existing_item = MediaItem.objects.filter(
+                        source_url=bulk_url, media_type=media_type
+                    ).first()
+
+                if existing_item:
+                    item = existing_item
+                    item.requested_type = media_type
+                    item.status = MediaItem.STATUS_PREFETCHING
+                    item.error_message = ''
+                    item.save()
+                else:
+                    item = MediaItem.objects.create(
+                        source_url=bulk_url, requested_type=media_type, slug='pending'
+                    )
+
+                # Enqueue processing
+                process_media(item.guid)
+                created_count += 1
+
+                if first_guid is None:
+                    first_guid = item.guid
+
+            if created_count > 0:
+                msg = f'Queued {created_count} URLs for download'
+                if skipped_count > 0:
+                    msg += f' ({skipped_count} invalid URLs skipped)'
+                messages.success(request, msg)
+
+                # Redirect to progress page for first item
+                return redirect('admin_stash_progress', guid=first_guid)
+            else:
+                messages.error(request, 'No valid URLs were processed')
+                return redirect(request.path)
+
+        # Single URL mode
         if url:
             # Check for multiple items first
             strategy = choose_download_strategy(url)
