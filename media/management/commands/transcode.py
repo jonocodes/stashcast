@@ -79,7 +79,12 @@ class Command(BaseCommand):
                                 f'\n[{i + 1}/{len(prefetch_result.entries)}] {entry.title}'
                             )
                         result = self._transcode_single_url(
-                            entry.url, outdir, requested_type, verbose, output_json
+                            entry.url,
+                            outdir,
+                            requested_type,
+                            verbose,
+                            output_json,
+                            title_override=entry.title,
                         )
                         if result:
                             results.append(result)
@@ -159,14 +164,20 @@ class Command(BaseCommand):
         # Single item flow
         self._transcode_single_url(input_url, outdir, requested_type, verbose, output_json)
 
-    def _transcode_single_url(self, input_url, outdir, requested_type, verbose, output_json):
+    def _transcode_single_url(
+        self, input_url, outdir, requested_type, verbose, output_json, title_override=None
+    ):
         """Transcode a single URL and return result dict for JSON output."""
         try:
             if not output_json and verbose:
                 self.stdout.write(self.style.NOTICE(f'Transcoding: {input_url}'))
 
             result = transcode_url_to_dir(
-                url=input_url, outdir=outdir, requested_type=requested_type, verbose=verbose
+                url=input_url,
+                outdir=outdir,
+                requested_type=requested_type,
+                verbose=verbose,
+                title_override=title_override,
             )
 
             # Build result dict
