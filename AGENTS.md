@@ -38,6 +38,21 @@ coverage run -m pytest
 coverage report -m
 ```
 
+## Claude Web environment setup
+When running in Claude Web (Ubuntu container without flox/Docker):
+```bash
+# System dependencies
+apt-get install -y ffmpeg yt-dlp just
+
+# Requires Python 3.12+ (for Django 6.0)
+python3.12 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt -r requirements-dev.txt
+
+# Run tests
+coverage run -m pytest
+```
+
 ## Notes for changes
 - Prefer touching only the relevant app (`media/`) or Django settings in `stashcast/`.
 - Background tasks are queued; consider the Huey worker when debugging async flows.
