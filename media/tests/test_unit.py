@@ -1141,10 +1141,280 @@ Finally we have a fourth sentence to conclude.
         self.assertIn('First sentence.', item.summary)
 
 
-# NOTE: MetadataEmbeddingTest class removed - these tests were for the
-# add_metadata_without_transcode() function which has been removed.
-# yt-dlp now handles metadata embedding automatically with --embed-metadata flag.
-# The functionality is tested implicitly by integration tests that use yt-dlp.
+class MetadataEmbeddingTest(TestCase):
+    """Tests for metadata embedding without transcoding.
+
+    Note: These functions are still used by transcode_service.py for direct/file downloads
+    (non-yt-dlp strategies) where yt-dlp postprocessors don't run.
+    """
+
+    def test_add_metadata_embedded_in_file(self):
+        """Test that add_metadata_without_transcode embeds metadata in media files"""
+        import json
+        import subprocess
+        import tempfile
+        from pathlib import Path
+
+        from media.service.process import add_metadata_without_transcode
+
+        # Create a temporary directory
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_dir = Path(temp_dir)
+
+            # Create a minimal valid MP4 file
+            input_file = temp_dir / 'input.mp4'
+            output_file = temp_dir / 'output.mp4'
+
+            # Create a minimal MP4 using ffmpeg
+            subprocess.run(
+                [
+                    'ffmpeg',
+                    '-f',
+                    'lavfi',
+                    '-i',
+                    'anullsrc=duration=1',
+                    '-c:a',
+                    'aac',
+                    '-t',
+                    '1',
+                    str(input_file),
+                ],
+                capture_output=True,
+                check=True,
+            )
+
+            # Add metadata
+            metadata = {
+                'title': 'Test Title',
+                'author': 'Test Author',
+                'description': 'Test Description',
+            }
+
+            add_metadata_without_transcode(input_file, output_file, metadata=metadata)
+
+            # Verify metadata was embedded using ffprobe
+            result = subprocess.run(
+                [
+                    'ffprobe',
+                    '-v',
+                    'quiet',
+                    '-show_format',
+                    '-of',
+                    'json',
+                    str(output_file),
+                ],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+
+            probe_data = json.loads(result.stdout)
+            tags = probe_data.get('format', {}).get('tags', {})
+
+            # Check metadata is present (ffprobe returns lowercase keys)
+            self.assertEqual(tags.get('title'), 'Test Title')
+            self.assertEqual(tags.get('artist'), 'Test Author')
+            self.assertEqual(tags.get('comment'), 'Test Description')
+
+    def test_add_metadata_no_quality_loss(self):
+        """Test that add_metadata_without_transcode doesn't re-encode the file"""
+        import subprocess
+        import tempfile
+        from pathlib import Path
+
+        from media.service.process import add_metadata_without_transcode
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_dir = Path(temp_dir)
+
+            input_file = temp_dir / 'input.mp4'
+            output_file = temp_dir / 'output.mp4'
+
+            # Create a test file
+            subprocess.run(
+                [
+                    'ffmpeg',
+                    '-f',
+                    'lavfi',
+                    '-i',
+                    'anullsrc=duration=1',
+                    '-c:a',
+                    'aac',
+                    '-t',
+                    '1',
+                    str(input_file),
+                ],
+                capture_output=True,
+                check=True,
+            )
+
+            input_size = input_file.stat().st_size
+
+            # Add metadata
+            metadata = {'title': 'Test'}
+            add_metadata_without_transcode(input_file, output_file, metadata=metadata)
+
+            output_size = output_file.stat().st_size
+
+            # File sizes should be very similar (within 5% due to metadata overhead)
+            size_diff_percent = abs(output_size - input_size) / input_size * 100
+            self.assertLess(size_diff_percent, 5)
+
+
+class ResolveTitleFromMetadataTest(TestCase):
+    """Tests for resolve_title_from_metadata function"""
+
+    def test_resolve_generic_title(self):
+        """Test that generic titles are replaced with embedded metadata"""
+        import subprocess
+        import tempfile
+        from pathlib import Path
+
+        from media.service.media_info import resolve_title_from_metadata
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_dir = Path(temp_dir)
+            audio_file = temp_dir / 'test.mp3'
+
+            # Create MP3 with embedded title
+            subprocess.run(
+                [
+                    'ffmpeg',
+                    '-f',
+                    'lavfi',
+                    '-i',
+                    'anullsrc=duration=1',
+                    '-c:a',
+                    'libmp3lame',
+                    '-metadata',
+                    'title=Real Title',
+                    '-t',
+                    '1',
+                    str(audio_file),
+                ],
+                capture_output=True,
+                check=True,
+            )
+
+            # Test generic titles are replaced
+            self.assertEqual(resolve_title_from_metadata('content', audio_file), 'Real Title')
+            self.assertEqual(resolve_title_from_metadata('untitled', audio_file), 'Real Title')
+            self.assertEqual(
+                resolve_title_from_metadata('downloaded-media', audio_file), 'Real Title'
+            )
+            self.assertEqual(resolve_title_from_metadata(None, audio_file), 'Real Title')
+
+    def test_resolve_filename_like_title(self):
+        """Test that filename-like titles are replaced with embedded metadata"""
+        import subprocess
+        import tempfile
+        from pathlib import Path
+
+        from media.service.media_info import resolve_title_from_metadata
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_dir = Path(temp_dir)
+            audio_file = temp_dir / 'test.mp3'
+
+            # Create MP3 with embedded title
+            subprocess.run(
+                [
+                    'ffmpeg',
+                    '-f',
+                    'lavfi',
+                    '-i',
+                    'anullsrc=duration=1',
+                    '-c:a',
+                    'libmp3lame',
+                    '-metadata',
+                    'title=Open Source Talk',
+                    '-t',
+                    '1',
+                    str(audio_file),
+                ],
+                capture_output=True,
+                check=True,
+            )
+
+            # Short filename-like titles (< 30 chars, no spaces) should be replaced
+            # when metadata is more descriptive (has spaces or longer)
+            self.assertEqual(resolve_title_from_metadata('aud', audio_file), 'Open Source Talk')
+            self.assertEqual(resolve_title_from_metadata('vid', audio_file), 'Open Source Talk')
+            self.assertEqual(
+                resolve_title_from_metadata('podcast', audio_file), 'Open Source Talk'
+            )
+
+    def test_resolve_keeps_descriptive_title(self):
+        """Test that descriptive titles are NOT replaced"""
+        import subprocess
+        import tempfile
+        from pathlib import Path
+
+        from media.service.media_info import resolve_title_from_metadata
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_dir = Path(temp_dir)
+            audio_file = temp_dir / 'test.mp3'
+
+            # Create MP3 with embedded title
+            subprocess.run(
+                [
+                    'ffmpeg',
+                    '-f',
+                    'lavfi',
+                    '-i',
+                    'anullsrc=duration=1',
+                    '-c:a',
+                    'libmp3lame',
+                    '-metadata',
+                    'title=Embedded Title',
+                    '-t',
+                    '1',
+                    str(audio_file),
+                ],
+                capture_output=True,
+                check=True,
+            )
+
+            # Long or descriptive titles should NOT be replaced
+            descriptive_title = 'My Descriptive Podcast Title'
+            self.assertEqual(
+                resolve_title_from_metadata(descriptive_title, audio_file), descriptive_title
+            )
+
+    def test_resolve_no_metadata_returns_original(self):
+        """Test that when there's no metadata, original title is returned"""
+        import subprocess
+        import tempfile
+        from pathlib import Path
+
+        from media.service.media_info import resolve_title_from_metadata
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_dir = Path(temp_dir)
+            audio_file = temp_dir / 'test.mp3'
+
+            # Create MP3 WITHOUT embedded title
+            subprocess.run(
+                [
+                    'ffmpeg',
+                    '-f',
+                    'lavfi',
+                    '-i',
+                    'anullsrc=duration=1',
+                    '-c:a',
+                    'libmp3lame',
+                    '-t',
+                    '1',
+                    str(audio_file),
+                ],
+                capture_output=True,
+                check=True,
+            )
+
+            # Should return original title when no metadata exists
+            self.assertEqual(resolve_title_from_metadata('original', audio_file), 'original')
+            self.assertEqual(resolve_title_from_metadata('content', audio_file), 'content')
 
 
 class SlugPathSecurityTest(TestCase):
