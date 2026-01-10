@@ -66,7 +66,12 @@ class TranscodeResult:
 
 
 def transcode_url_to_dir(
-    url, outdir='.', requested_type='auto', download_only=False, verbose=False
+    url,
+    outdir='.',
+    requested_type='auto',
+    download_only=False,
+    verbose=False,
+    title_override=None,
 ):
     """
     Download and transcode media from a URL or file path to a directory.
@@ -84,6 +89,8 @@ def transcode_url_to_dir(
         requested_type: 'auto', 'audio', or 'video' (default: 'auto')
         download_only: If True, skip transcoding (default: False)
         verbose: If True, enable verbose logging (default: False)
+        title_override: Optional title to use instead of prefetched title
+                       (useful when processing entries from a multi-item result)
 
     Returns:
         TranscodeResult with details about the operation
@@ -133,10 +140,15 @@ def transcode_url_to_dir(
             playlist_title=prefetch_result.playlist_title,
         )
 
-    if not prefetch_result.title:
+    # Use title_override if provided (e.g., from multi-item entry), otherwise use prefetched title
+    if title_override:
+        prefetch_result.title = title_override
+        logger(f'Title (from entry): {prefetch_result.title}')
+    elif not prefetch_result.title:
         prefetch_result.title = 'untitled'
-
-    logger(f'Title: {prefetch_result.title}')
+        logger(f'Title: {prefetch_result.title}')
+    else:
+        logger(f'Title: {prefetch_result.title}')
 
     # Generate slug from title
     slug = generate_slug(prefetch_result.title)
@@ -169,13 +181,15 @@ def transcode_url_to_dir(
 
         logger(f'Downloaded: {download_info.path} ({download_info.file_size} bytes)')
 
-        # If the title is still generic, try to use embedded media metadata
-        resolved_title = resolve_title_from_metadata(prefetch_result.title, download_info.path)
-        if resolved_title and resolved_title != prefetch_result.title:
-            prefetch_result.title = resolved_title
-            slug = generate_slug(prefetch_result.title)
-            logger(f'Updated title from metadata: {prefetch_result.title}')
-            logger(f'Updated slug: {slug}')
+        # If the title is still generic and no title_override was provided,
+        # try to use embedded media metadata
+        if not title_override:
+            resolved_title = resolve_title_from_metadata(prefetch_result.title, download_info.path)
+            if resolved_title and resolved_title != prefetch_result.title:
+                prefetch_result.title = resolved_title
+                slug = generate_slug(prefetch_result.title)
+                logger(f'Updated title from metadata: {prefetch_result.title}')
+                logger(f'Updated slug: {slug}')
 
         # Determine output filename using slug
         if download_only:

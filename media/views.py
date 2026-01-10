@@ -10,7 +10,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
 from media.models import MediaItem
-from media.tasks import process_media
+from media.tasks import process_media, process_media_batch
 from media.utils import build_media_url
 
 
@@ -109,6 +109,7 @@ def stash_view(request):
 
                 # allow_multiple is True - create items for each entry
                 created_items = []
+                created_guids = []
                 for entry in prefetch_result.entries:
                     entry_url = entry.url
                     if not entry_url:
@@ -138,8 +139,7 @@ def stash_view(request):
                             slug='pending',
                         )
 
-                    # Enqueue processing task
-                    process_media(item.guid)
+                    created_guids.append(item.guid)
                     created_items.append(
                         {
                             'guid': item.guid,
@@ -147,6 +147,11 @@ def stash_view(request):
                             'title': entry.title,
                         }
                     )
+
+                # Use batch processing to avoid SQLite lock contention
+                # This processes items sequentially with proper rate limiting
+                if created_guids:
+                    process_media_batch(created_guids)
 
                 # Handle redirect for progress page (redirect to first item)
                 if redirect_param == 'progress' and created_items:
@@ -351,7 +356,71 @@ def admin_stash_form_view(request):
 
         url = request.POST.get('url', '').strip()
         media_type = request.POST.get('type', 'auto')
+        bulk_urls_raw = request.POST.get('bulk_urls', '').strip()
 
+        # Check if bulk URLs were provided
+        if bulk_urls_raw:
+            # Parse bulk URLs (one per line)
+            bulk_urls = [u.strip() for u in bulk_urls_raw.split('\n') if u.strip()]
+
+            if not bulk_urls:
+                messages.error(request, 'No valid URLs found in bulk input')
+                return redirect(request.path)
+
+            # Create MediaItems for all valid URLs
+            created_guids = []
+            skipped_count = 0
+            first_guid = None
+
+            for bulk_url in bulk_urls:
+                # Basic URL validation
+                if not bulk_url.startswith(('http://', 'https://', '/')):
+                    skipped_count += 1
+                    continue
+
+                # Check if item already exists
+                existing_item = None
+                if media_type == 'auto':
+                    existing_item = MediaItem.objects.filter(
+                        source_url=bulk_url, requested_type='auto'
+                    ).first()
+                else:
+                    existing_item = MediaItem.objects.filter(
+                        source_url=bulk_url, media_type=media_type
+                    ).first()
+
+                if existing_item:
+                    item = existing_item
+                    item.requested_type = media_type
+                    item.status = MediaItem.STATUS_PREFETCHING
+                    item.error_message = ''
+                    item.save()
+                else:
+                    item = MediaItem.objects.create(
+                        source_url=bulk_url, requested_type=media_type, slug='pending'
+                    )
+
+                created_guids.append(item.guid)
+
+                if first_guid is None:
+                    first_guid = item.guid
+
+            if created_guids:
+                # Enqueue batch processing task (single yt-dlp process for all URLs)
+                process_media_batch(created_guids)
+
+                msg = f'Queued {len(created_guids)} URLs for batch download'
+                if skipped_count > 0:
+                    msg += f' ({skipped_count} invalid URLs skipped)'
+                messages.success(request, msg)
+
+                # Redirect to progress page for first item
+                return redirect('admin_stash_progress', guid=first_guid)
+            else:
+                messages.error(request, 'No valid URLs were processed')
+                return redirect(request.path)
+
+        # Single URL mode
         if url:
             # Check for multiple items first
             strategy = choose_download_strategy(url)
@@ -459,8 +528,8 @@ def admin_stash_confirm_multiple_view(request):
         del request.session['multi_item_entries']
         del request.session['multi_item_playlist_title']
 
-        # Create MediaItem for each entry and queue processing
-        created_count = 0
+        # Create MediaItem for each entry and queue batch processing
+        created_guids = []
         for entry in entries:
             entry_url = entry.get('url')
             if not entry_url:
@@ -488,11 +557,13 @@ def admin_stash_confirm_multiple_view(request):
                     source_url=entry_url, requested_type=media_type, slug='pending'
                 )
 
-            # Enqueue processing
-            process_media(item.guid)
-            created_count += 1
+            created_guids.append(item.guid)
 
-        messages.success(request, f'Queued {created_count} items for download')
+        # Use batch processing to avoid SQLite lock contention
+        if created_guids:
+            process_media_batch(created_guids)
+
+        messages.success(request, f'Queued {len(created_guids)} items for download')
         return redirect('admin_stash_form')
 
     context = {

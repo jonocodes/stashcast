@@ -4,9 +4,10 @@ Download service for media files.
 Handles both direct HTTP downloads and yt-dlp downloads.
 """
 
+import hashlib
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Dict, List
 import shutil
 import requests
 import yt_dlp
@@ -192,3 +193,290 @@ def download_ytdlp(url, resolved_type, temp_dir, ytdlp_extra_args='', logger=Non
         thumbnail_path=thumbnail_path,
         subtitle_path=subtitle_path,
     )
+
+
+def _url_hash(url: str) -> str:
+    """Generate a short hash for a URL to use as folder name."""
+    return hashlib.md5(url.encode()).hexdigest()[:12]
+
+
+@dataclass
+class VideoInfo:
+    """Information about a single video from prefetch."""
+
+    url: str
+    title: Optional[str] = None
+    description: Optional[str] = None
+    author: Optional[str] = None
+    duration_seconds: Optional[int] = None
+    has_video: bool = True
+    has_audio: bool = True
+    webpage_url: Optional[str] = None
+    extractor: Optional[str] = None
+    external_id: Optional[str] = None
+    # For tracking which original URL this came from (for playlists)
+    source_url: Optional[str] = None
+    playlist_title: Optional[str] = None
+
+
+@dataclass
+class BatchPrefetchResult:
+    """Result from batch prefetching multiple URLs."""
+
+    # List of all videos (playlists expanded)
+    videos: List[VideoInfo]
+    # Map of original URL -> error message (for failed prefetches)
+    errors: Dict[str, str]
+
+
+def prefetch_ytdlp_batch(
+    urls: List[str],
+    logger=None,
+) -> BatchPrefetchResult:
+    """
+    Prefetch metadata for multiple URLs in a single yt-dlp session.
+
+    Expands playlists automatically and returns info for all individual videos.
+    This is the first of two yt-dlp calls in the batch process.
+
+    Args:
+        urls: List of URLs to prefetch (may include playlists)
+        logger: Optional callable(str) for logging
+
+    Returns:
+        BatchPrefetchResult with video info and errors
+    """
+
+    def log(message):
+        if logger:
+            logger(message)
+
+    videos: List[VideoInfo] = []
+    errors: Dict[str, str] = {}
+
+    ydl_opts = {
+        'quiet': True,
+        'no_warnings': True,
+        'extract_flat': False,  # We need full info for metadata
+        'ignoreerrors': True,
+    }
+
+    log(f'Batch prefetching {len(urls)} URLs with yt-dlp')
+
+    # Single yt-dlp context for all prefetch operations
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        for url in urls:
+            log(f'Prefetching: {url}')
+            try:
+                info = ydl.extract_info(url, download=False)
+
+                if info is None:
+                    errors[url] = 'No info returned'
+                    continue
+
+                # Check if this is a playlist/channel (has entries)
+                if 'entries' in info:
+                    playlist_title = info.get('title', 'Untitled Playlist')
+                    entries = list(info.get('entries', []))
+                    log(f'  Playlist detected: {playlist_title} ({len(entries)} items)')
+
+                    for entry in entries:
+                        if entry is None:
+                            continue
+
+                        # Get video URL
+                        video_url = entry.get('webpage_url') or entry.get('url')
+                        if not video_url:
+                            continue
+
+                        # Check for video/audio streams
+                        formats = entry.get('formats', [])
+                        has_video = any(f.get('vcodec') != 'none' for f in formats)
+                        has_audio = any(f.get('acodec') != 'none' for f in formats)
+
+                        # Fallback to top-level codec info
+                        if not has_video and not has_audio:
+                            has_video = entry.get('vcodec') not in (None, 'none')
+                            has_audio = entry.get('acodec') not in (None, 'none')
+
+                        videos.append(VideoInfo(
+                            url=video_url,
+                            title=entry.get('title', 'Untitled'),
+                            description=entry.get('description', ''),
+                            author=entry.get('uploader') or entry.get('channel', ''),
+                            duration_seconds=entry.get('duration'),
+                            has_video=has_video if has_video or has_audio else True,
+                            has_audio=has_audio if has_video or has_audio else True,
+                            webpage_url=video_url,
+                            extractor=entry.get('extractor', ''),
+                            external_id=entry.get('id', ''),
+                            source_url=url,
+                            playlist_title=playlist_title,
+                        ))
+                else:
+                    # Single video
+                    video_url = info.get('webpage_url') or url
+
+                    # Check for video/audio streams
+                    formats = info.get('formats', [])
+                    has_video = any(f.get('vcodec') != 'none' for f in formats)
+                    has_audio = any(f.get('acodec') != 'none' for f in formats)
+
+                    # Fallback to top-level codec info
+                    if not has_video and not has_audio:
+                        has_video = info.get('vcodec') not in (None, 'none')
+                        has_audio = info.get('acodec') not in (None, 'none')
+
+                    videos.append(VideoInfo(
+                        url=video_url,
+                        title=info.get('title', 'Untitled'),
+                        description=info.get('description', ''),
+                        author=info.get('uploader') or info.get('channel', ''),
+                        duration_seconds=info.get('duration'),
+                        has_video=has_video if has_video or has_audio else True,
+                        has_audio=has_audio if has_video or has_audio else True,
+                        webpage_url=video_url,
+                        extractor=info.get('extractor', ''),
+                        external_id=info.get('id', ''),
+                        source_url=url,
+                        playlist_title=None,
+                    ))
+                    log(f'  Single video: {info.get("title", "Untitled")}')
+
+            except Exception as e:
+                errors[url] = str(e)
+                log(f'  Error: {e}')
+
+    log(f'Prefetch complete: {len(videos)} videos found, {len(errors)} errors')
+    return BatchPrefetchResult(videos=videos, errors=errors)
+
+
+@dataclass
+class BatchDownloadResult:
+    """Result from batch downloading multiple URLs."""
+
+    # Map of URL -> DownloadedFileInfo (for successful downloads)
+    downloads: Dict[str, DownloadedFileInfo]
+    # Map of URL -> error message (for failed downloads)
+    errors: Dict[str, str]
+
+
+def download_ytdlp_batch(
+    urls: List[str],
+    resolved_type: str,
+    temp_dir,
+    ytdlp_extra_args: str = '',
+    logger=None,
+) -> BatchDownloadResult:
+    """
+    Download multiple URLs in a single yt-dlp call.
+
+    This is the second of two yt-dlp calls in the batch process.
+    All URLs should be individual videos (playlists already expanded).
+
+    Args:
+        urls: List of video URLs to download (no playlists)
+        resolved_type: 'audio' or 'video'
+        temp_dir: Base temporary directory (each URL gets a subdirectory by ID)
+        ytdlp_extra_args: Additional yt-dlp arguments from settings
+        logger: Optional callable(str) for logging
+
+    Returns:
+        BatchDownloadResult with successful downloads and errors
+    """
+
+    def log(message):
+        if logger:
+            logger(message)
+
+    temp_dir = Path(temp_dir)
+    temp_dir.mkdir(parents=True, exist_ok=True)
+
+    downloads: Dict[str, DownloadedFileInfo] = {}
+    errors: Dict[str, str] = {}
+
+    # Prepare yt-dlp options
+    if resolved_type == 'audio':
+        format_spec = 'bestaudio/best'
+    else:
+        format_spec = 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best'
+
+    # Use %(id)s to separate files into folders by video ID
+    # We'll map IDs back to URLs after download
+    ydl_opts = {
+        'format': format_spec,
+        'outtmpl': str(temp_dir / '%(id)s' / 'download.%(ext)s'),
+        'writethumbnail': True,
+        'writesubtitles': True,
+        'writeautomaticsub': True,
+        'subtitleslangs': ['en'],
+        'quiet': not logger,
+        'ignoreerrors': True,
+        'noplaylist': True,
+    }
+
+    # Parse and apply extra args from settings
+    ydl_opts = parse_ytdlp_extra_args(ytdlp_extra_args, ydl_opts)
+
+    log(f'Batch downloading {len(urls)} URLs with single yt-dlp call')
+    log(f'Format: {format_spec}')
+
+    # Track URL -> ID mapping via progress hook
+    url_to_id: Dict[str, str] = {}
+
+    def progress_hook(d):
+        if d['status'] in ('downloading', 'finished'):
+            info = d.get('info_dict', {})
+            video_id = info.get('id')
+            url = info.get('webpage_url') or info.get('original_url')
+            if video_id and url:
+                url_to_id[url] = video_id
+
+    ydl_opts['progress_hooks'] = [progress_hook]
+
+    # Single download call for all URLs
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        ydl.download(urls)
+
+    log(f'Download complete, processing {len(url_to_id)} results')
+
+    # Process downloaded files - map URLs to their downloaded content
+    for url in urls:
+        video_id = url_to_id.get(url)
+        if not video_id:
+            errors[url] = 'No video ID captured - download may have failed'
+            continue
+
+        folder = temp_dir / video_id
+        if not folder.exists():
+            errors[url] = f'Output folder not found: {video_id}'
+            continue
+
+        files = list(folder.iterdir())
+        if not files:
+            errors[url] = 'No files downloaded'
+            continue
+
+        content_files = [
+            f for f in files
+            if f.suffix in ['.mp4', '.mkv', '.webm', '.mp3', '.m4a', '.ogg', '.opus']
+        ]
+        if not content_files:
+            errors[url] = 'No media file found after download'
+            continue
+
+        content_file = max(content_files, key=lambda f: f.stat().st_size)
+        thumb_files = [f for f in files if f.suffix in ['.jpg', '.jpeg', '.png', '.webp']]
+        subtitle_files = [f for f in files if f.suffix in ['.vtt', '.srt']]
+
+        downloads[url] = DownloadedFileInfo(
+            path=content_file,
+            file_size=content_file.stat().st_size,
+            extension=content_file.suffix,
+            thumbnail_path=thumb_files[0] if thumb_files else None,
+            subtitle_path=subtitle_files[0] if subtitle_files else None,
+        )
+        log(f'Processed: {content_file.name} ({content_file.stat().st_size} bytes)')
+
+    log(f'Batch complete: {len(downloads)} successful, {len(errors)} failed')
+    return BatchDownloadResult(downloads=downloads, errors=errors)

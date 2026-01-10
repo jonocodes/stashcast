@@ -148,6 +148,83 @@
         font-size: 12px;
         color: var(--sc-panel-fg);
     }
+    /* Advanced Options */
+    .advanced-toggle {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        color: var(--sc-muted);
+        font-size: 13px;
+        margin-top: 10px;
+        user-select: none;
+    }
+    .advanced-toggle:hover {
+        color: var(--sc-primary);
+    }
+    .advanced-toggle svg {
+        transition: transform 0.2s ease;
+    }
+    .advanced-toggle.open svg {
+        transform: rotate(90deg);
+    }
+    .advanced-options {
+        display: none;
+        margin-top: 15px;
+        padding: 15px;
+        background: var(--sc-surface);
+        border: 1px solid var(--sc-border);
+        border-radius: 4px;
+    }
+    .advanced-options.show {
+        display: block;
+    }
+    .advanced-options label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 8px;
+        color: var(--sc-panel-fg);
+    }
+    .advanced-options textarea {
+        width: 100%;
+        min-height: 120px;
+        padding: 10px;
+        border: 1px solid var(--sc-border);
+        border-radius: 4px;
+        font-size: 13px;
+        font-family: monospace;
+        box-sizing: border-box;
+        background: var(--sc-panel-bg);
+        color: var(--sc-panel-fg);
+        resize: vertical;
+    }
+    .advanced-options textarea:focus {
+        outline: none;
+        border-color: var(--sc-primary);
+        box-shadow: 0 0 0 2px color-mix(in srgb, var(--sc-primary) 25%, transparent);
+    }
+    .advanced-options small {
+        display: block;
+        margin-top: 5px;
+        color: var(--sc-muted);
+        font-size: 12px;
+    }
+    .mode-indicator {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 500;
+        margin-left: 10px;
+    }
+    .mode-single {
+        background: color-mix(in srgb, var(--sc-primary) 20%, transparent);
+        color: var(--sc-primary);
+    }
+    .mode-bulk {
+        background: color-mix(in srgb, #28a745 20%, transparent);
+        color: #28a745;
+    }
 </style>
 {% endblock %}
 
@@ -203,8 +280,32 @@
                 <small>Auto-detect will determine if the content is audio or video</small>
             </div>
 
+            <div class="form-row">
+                <div class="advanced-toggle" id="advancedToggle">
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                        <path d="M4 2l4 4-4 4z"/>
+                    </svg>
+                    Advanced Options
+                    <span class="mode-indicator mode-single" id="modeIndicator">Single URL</span>
+                </div>
+                <div class="advanced-options" id="advancedOptions">
+                    <label for="bulk_urls">Bulk Download (Multiple URLs)</label>
+                    <textarea
+                        id="bulk_urls"
+                        name="bulk_urls"
+                        placeholder="https://example.com/video1
+https://example.com/video2
+https://example.com/video3"
+                    ></textarea>
+                    <small>
+                        Enter one URL per line. When bulk URLs are provided, the single URL field above is ignored.
+                        Each URL will be queued as a separate download.
+                    </small>
+                </div>
+            </div>
+
             <div class="submit-row">
-                <input type="submit" value="Add to StashCast">
+                <input type="submit" value="Add to StashCast" id="submitBtn">
             </div>
         </form>
     </div>
@@ -246,4 +347,42 @@
     </div>
     {% endif %}
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const toggle = document.getElementById('advancedToggle');
+    const options = document.getElementById('advancedOptions');
+    const bulkUrls = document.getElementById('bulk_urls');
+    const singleUrl = document.getElementById('url');
+    const modeIndicator = document.getElementById('modeIndicator');
+    const submitBtn = document.getElementById('submitBtn');
+
+    // Toggle advanced options visibility
+    toggle.addEventListener('click', function() {
+        toggle.classList.toggle('open');
+        options.classList.toggle('show');
+    });
+
+    // Update mode indicator and button text based on bulk URLs content
+    function updateMode() {
+        const urls = bulkUrls.value.trim().split('\n').filter(u => u.trim());
+        if (urls.length > 0) {
+            modeIndicator.textContent = `Bulk (${urls.length} URLs)`;
+            modeIndicator.classList.remove('mode-single');
+            modeIndicator.classList.add('mode-bulk');
+            submitBtn.value = `Add ${urls.length} URLs to StashCast`;
+            singleUrl.removeAttribute('required');
+        } else {
+            modeIndicator.textContent = 'Single URL';
+            modeIndicator.classList.remove('mode-bulk');
+            modeIndicator.classList.add('mode-single');
+            submitBtn.value = 'Add to StashCast';
+            singleUrl.setAttribute('required', '');
+        }
+    }
+
+    bulkUrls.addEventListener('input', updateMode);
+    updateMode();
+});
+</script>
 {% endblock %}

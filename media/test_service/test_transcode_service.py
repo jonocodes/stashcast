@@ -499,3 +499,124 @@ class TranscodeServiceTest(TestCase):
                     url='https://youtube.com/playlist?list=abc123', outdir=temp_dir
                 )
             self.assertEqual(context.exception.count, 2)
+
+    @patch('media.service.transcode_service.add_metadata_without_transcode')
+    @patch('media.service.transcode_service.needs_transcode', return_value=False)
+    @patch('media.service.transcode_service.download_direct')
+    @patch('media.service.transcode_service.prefetch')
+    @patch('media.service.transcode_service.choose_download_strategy')
+    def test_transcode_title_override(
+        self,
+        mock_strategy,
+        mock_prefetch,
+        mock_download,
+        _mock_needs_transcode,
+        mock_add_metadata,
+    ):
+        """Test that title_override takes precedence over prefetched title.
+
+        This is important for multi-item results where we already have the
+        correct title from the initial playlist prefetch, but re-prefetching
+        individual entry URLs (especially direct media URLs) would only get
+        the filename.
+        """
+        mock_strategy.return_value = 'direct'
+
+        # Simulate a prefetch that only extracts filename (what happens with direct URLs)
+        prefetch_result = PrefetchResult()
+        prefetch_result.title = 'multi-local-1'  # Generic filename-based title
+        prefetch_result.has_audio_streams = True
+        prefetch_result.file_extension = '.mp3'
+        mock_prefetch.return_value = prefetch_result
+
+        def mock_download_func(url, out_path, logger=None):
+            out_path = Path(out_path)
+            out_path.write_bytes(b'fake mp3 data')
+            from media.service.download import DownloadedFileInfo
+
+            return DownloadedFileInfo(
+                path=out_path,
+                file_size=len(b'fake mp3 data'),
+                extension='.mp3',
+                mime_type='audio/mpeg',
+            )
+
+        def mock_add_metadata_func(input_path, output_path, metadata=None, logger=None):
+            output_path = Path(output_path)
+            output_path.write_bytes(b'output data')
+
+        mock_download.side_effect = mock_download_func
+        mock_add_metadata.side_effect = mock_add_metadata_func
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Call with title_override (as would happen when processing multi-item entries)
+            result = transcode_url_to_dir(
+                url='http://localhost:8001/file.mp3',
+                outdir=temp_dir,
+                requested_type='auto',
+                title_override='Bike Commute Episode 1',  # Title from playlist entry
+            )
+
+            # Verify the override title was used, not the prefetched filename
+            self.assertEqual(result.title, 'Bike Commute Episode 1')
+            self.assertEqual(result.slug, 'bike-commute-episode-1')
+            self.assertEqual(result.output_path.name, 'bike-commute-episode-1.mp3')
+
+    @patch('media.service.transcode_service.add_metadata_without_transcode')
+    @patch('media.service.transcode_service.needs_transcode', return_value=False)
+    @patch('media.service.transcode_service.download_direct')
+    @patch('media.service.transcode_service.prefetch')
+    @patch('media.service.transcode_service.choose_download_strategy')
+    def test_transcode_title_override_preserves_metadata_update(
+        self,
+        mock_strategy,
+        mock_prefetch,
+        mock_download,
+        _mock_needs_transcode,
+        mock_add_metadata,
+    ):
+        """Test that title_override doesn't prevent metadata-based title updates.
+
+        Even with title_override, if the downloaded file has embedded metadata
+        with a better title, it should NOT override it (title_override is the
+        authoritative source when provided).
+        """
+        mock_strategy.return_value = 'direct'
+
+        prefetch_result = PrefetchResult()
+        prefetch_result.title = 'generic-filename'
+        prefetch_result.has_audio_streams = True
+        mock_prefetch.return_value = prefetch_result
+
+        def mock_download_func(url, out_path, logger=None):
+            out_path = Path(out_path)
+            out_path.write_bytes(b'fake mp3 data')
+            from media.service.download import DownloadedFileInfo
+
+            return DownloadedFileInfo(
+                path=out_path, file_size=13, extension='.mp3', mime_type='audio/mpeg'
+            )
+
+        def mock_add_metadata_func(input_path, output_path, metadata=None, logger=None):
+            output_path = Path(output_path)
+            output_path.write_bytes(b'output data')
+
+        mock_download.side_effect = mock_download_func
+        mock_add_metadata.side_effect = mock_add_metadata_func
+
+        # Mock resolve_title_from_metadata to return a different title
+        with patch(
+            'media.service.transcode_service.resolve_title_from_metadata',
+            return_value='Embedded Metadata Title',
+        ):
+            with tempfile.TemporaryDirectory() as temp_dir:
+                result = transcode_url_to_dir(
+                    url='http://example.com/file.mp3',
+                    outdir=temp_dir,
+                    title_override='Playlist Entry Title',
+                )
+
+                # title_override should be used, NOT the embedded metadata
+                # (because title_override means we already have the correct title)
+                self.assertEqual(result.title, 'Playlist Entry Title')
+                self.assertEqual(result.slug, 'playlist-entry-title')
