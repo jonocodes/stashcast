@@ -124,6 +124,10 @@ def resolve_title_from_metadata(title, file_path):
     """
     Resolve a generic title by checking embedded media metadata.
 
+    Replaces the title with embedded metadata if:
+    1. Current title is generic (content, untitled, etc.), OR
+    2. Current title looks like a filename (short, no spaces, likely from URL)
+
     Args:
         title: Current title
         file_path: Path to media file
@@ -131,10 +135,31 @@ def resolve_title_from_metadata(title, file_path):
     Returns:
         str: Updated title if metadata exists, otherwise original title
     """
-    if title not in GENERIC_TITLES:
-        return title
+    from pathlib import Path
+
+    # Always check for metadata
     meta_title = get_title_from_metadata(file_path)
-    return meta_title or title
+
+    # If no metadata, return original
+    if not meta_title:
+        return title
+
+    # Replace generic titles
+    if title in GENERIC_TITLES:
+        return meta_title
+
+    # Replace titles that look like filenames:
+    # - Short (< 30 chars)
+    # - No spaces
+    # - Likely extracted from URL path
+    # This handles direct downloads where title defaults to filename from URL
+    if title and len(title) < 30 and ' ' not in title:
+        # Also check if the metadata title is more descriptive (has spaces/longer)
+        if ' ' in meta_title or len(meta_title) > len(title):
+            return meta_title
+
+    # Keep original title if it's meaningful
+    return title
 
 
 def get_output_extension(resolved_type, source_extension=None):

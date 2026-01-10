@@ -189,6 +189,61 @@ class DownloadProcessingTest(TestCase):
             self.assertEqual(item.title, 'Real Title')
             self.assertEqual(item.slug, 'real-title')
 
+    def test_extract_metadata_updates_title_and_slug(self):
+        """Test that extract_metadata_with_ffprobe updates both title and slug.
+
+        This is a regression test for a bug where title was updated from embedded
+        metadata but slug was not, causing title/slug mismatch.
+        """
+        import subprocess
+        import tempfile
+        from pathlib import Path
+
+        from media.processing import extract_metadata_with_ffprobe
+
+        with tempfile.TemporaryDirectory() as tmp_dir_str:
+            tmp_dir = Path(tmp_dir_str)
+            audio_file = tmp_dir / 'test.mp3'
+
+            # Create a minimal MP3 with embedded metadata using ffmpeg
+            subprocess.run(
+                [
+                    'ffmpeg',
+                    '-f',
+                    'lavfi',
+                    '-i',
+                    'anullsrc=duration=1',
+                    '-c:a',
+                    'libmp3lame',
+                    '-metadata',
+                    'title=Open Source Talk',
+                    '-metadata',
+                    'artist=Test Artist',
+                    '-t',
+                    '1',
+                    str(audio_file),
+                ],
+                capture_output=True,
+                check=True,
+            )
+
+            # Create item with generic filename title/slug
+            item = MediaItem.objects.create(
+                source_url='http://example.com/aud.mp3',
+                requested_type=MediaItem.REQUESTED_TYPE_AUDIO,
+                media_type=MediaItem.MEDIA_TYPE_AUDIO,
+                title='aud',
+                slug='aud',
+            )
+
+            # Extract metadata - should update both title and slug
+            extract_metadata_with_ffprobe(item, audio_file, None)
+
+            item.refresh_from_db()
+            self.assertEqual(item.title, 'Open Source Talk')
+            self.assertEqual(item.slug, 'open-source-talk')
+            self.assertEqual(item.author, 'Test Artist')
+
     def test_same_slug_different_media_type_suffixes(self):
         """Test that same slug across media types gets a unique suffix"""
         MediaItem.objects.create(

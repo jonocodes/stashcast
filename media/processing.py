@@ -172,9 +172,17 @@ def extract_metadata_with_ffprobe(item, file_path, log_path):
         # Title from tags (only if not extracted from HTML)
         if not item.webpage_url:
             title = tags.get('title')
-            if title:
+            if title and title != item.title:
                 item.title = title
                 write_log(log_path, f'Title: {item.title}')
+
+                # Update slug to match the new title
+                new_slug = generate_slug(item.title)
+                if new_slug and new_slug != item.slug:
+                    item.slug = ensure_unique_slug(
+                        new_slug, item.source_url, None, item.media_type
+                    )
+                    write_log(log_path, f'Updated slug: {item.slug}')
 
         # Artist/Author
         author = tags.get('artist') or tags.get('author')
