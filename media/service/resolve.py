@@ -11,6 +11,7 @@ from pathlib import Path
 import yt_dlp
 
 from media.service.media_info import get_streams_from_extension
+from media.service.constants import MEDIA_EXTENSIONS
 
 
 class PlaylistNotSupported(Exception):
@@ -162,8 +163,22 @@ def _prefetch_ytdlp(url, logger=None):
             for entry in entries_list:
                 if entry is None:
                     continue
+                # Determine the best URL for this entry
+                # For generic extractor with embedded media, 'url' is the direct media URL
+                # For platforms like YouTube, 'webpage_url' is the video page URL
+                entry_url = entry.get('url', '')
+                entry_webpage_url = entry.get('webpage_url', '')
+
+                # Prefer direct media URL if it ends with a media extension
+                if entry_url and any(entry_url.lower().endswith(ext) for ext in MEDIA_EXTENSIONS):
+                    best_url = entry_url
+                elif entry_webpage_url:
+                    best_url = entry_webpage_url
+                else:
+                    best_url = entry_url
+
                 entry_info = EntryInfo(
-                    url=entry.get('webpage_url') or entry.get('url', ''),
+                    url=best_url,
                     title=entry.get('title', 'Untitled'),
                     duration_seconds=entry.get('duration'),
                     thumbnail_url=entry.get('thumbnail'),
