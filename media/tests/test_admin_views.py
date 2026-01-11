@@ -340,7 +340,7 @@ class SSEStatusStreamTest(TestCase):
             status=MediaItem.STATUS_DOWNLOADING,
         )
 
-        response = self.client.get(f'/stash/{item.guid}/status-stream/')
+        response = self.client.get(f'/stash/{item.guid}/stream/')
 
         # Verify response type and headers
         self.assertEqual(response.status_code, 200)
@@ -358,7 +358,7 @@ class SSEStatusStreamTest(TestCase):
             status=MediaItem.STATUS_DOWNLOADING,
         )
 
-        response = self.client.get(f'/stash/{item.guid}/status-stream/')
+        response = self.client.get(f'/stash/{item.guid}/stream/')
 
         # Get first event from stream
         chunks = list(response.streaming_content)
@@ -388,7 +388,7 @@ class SSEStatusStreamTest(TestCase):
             status=MediaItem.STATUS_READY,
         )
 
-        response = self.client.get(f'/stash/{item.guid}/status-stream/')
+        response = self.client.get(f'/stash/{item.guid}/stream/')
 
         # Get all events
         chunks = list(response.streaming_content)
@@ -411,7 +411,7 @@ class SSEStatusStreamTest(TestCase):
             error_message='Test error',
         )
 
-        response = self.client.get(f'/stash/{item.guid}/status-stream/')
+        response = self.client.get(f'/stash/{item.guid}/stream/')
 
         # Get all events
         chunks = list(response.streaming_content)
@@ -430,7 +430,7 @@ class SSEStatusStreamTest(TestCase):
 
     def test_sse_endpoint_handles_missing_item(self):
         """Test that SSE gracefully handles deleted items"""
-        response = self.client.get('/stash/nonexistent-guid/status-stream/')
+        response = self.client.get('/stash/nonexistent-guid/stream/')
 
         chunks = list(response.streaming_content)
 

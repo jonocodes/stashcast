@@ -17,7 +17,7 @@ class StashUrlOperationTest(TestCase):
 
     def setUp(self):
         # Mock process_media task to prevent actual downloads
-        self.process_media_patcher = patch('media.operations.process_media')
+        self.process_media_patcher = patch('media.tasks.process_media')
         self.mock_process_media = self.process_media_patcher.start()
 
     def tearDown(self):

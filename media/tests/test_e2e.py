@@ -123,7 +123,7 @@ class VideoE2ETest(TestCase):
         response = self.client.get(
             '/stash/',
             {
-                'apikey': settings.STASHCAST_API_KEY,
+                'token': settings.STASHCAST_USER_TOKEN,
                 'url': url,
                 'type': 'auto',
             },
@@ -164,7 +164,7 @@ class VideoE2ETest(TestCase):
         response = self.client.get(
             '/stash/',
             {
-                'apikey': settings.STASHCAST_API_KEY,
+                'token': settings.STASHCAST_USER_TOKEN,
                 'url': url,
                 'type': 'video',
             },
@@ -223,7 +223,7 @@ class HTMLExtractionE2ETest(TestCase):
         response = self.client.get(
             '/stash/',
             {
-                'apikey': settings.STASHCAST_API_KEY,
+                'token': settings.STASHCAST_USER_TOKEN,
                 'url': url,
                 'type': 'auto',
             },
@@ -251,7 +251,7 @@ class HTMLExtractionE2ETest(TestCase):
         response = self.client.get(
             '/stash/',
             {
-                'apikey': settings.STASHCAST_API_KEY,
+                'token': settings.STASHCAST_USER_TOKEN,
                 'url': url,
                 'type': 'auto',
             },
@@ -303,7 +303,7 @@ class TypeCoercionE2ETest(TestCase):
         response = self.client.get(
             '/stash/',
             {
-                'apikey': settings.STASHCAST_API_KEY,
+                'token': settings.STASHCAST_USER_TOKEN,
                 'url': url,
                 'type': 'audio',
             },
@@ -365,7 +365,7 @@ class SummaryE2ETest(TestCase):
         response = self.client.get(
             '/stash/',
             {
-                'apikey': settings.STASHCAST_API_KEY,
+                'token': settings.STASHCAST_USER_TOKEN,
                 'url': url,
                 'type': 'video',
             },
