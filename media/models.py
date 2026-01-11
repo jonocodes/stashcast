@@ -2,6 +2,7 @@ from pathlib import Path
 
 from django.conf import settings
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 from nanoid import generate
 
 
@@ -22,11 +23,11 @@ class MediaItem(models.Model):
     STATUS_ERROR = 'ERROR'
 
     STATUS_CHOICES = [
-        (STATUS_PREFETCHING, 'Prefetching'),
-        (STATUS_DOWNLOADING, 'Downloading'),
-        (STATUS_PROCESSING, 'Processing'),
-        (STATUS_READY, 'Ready'),
-        (STATUS_ERROR, 'Error'),
+        (STATUS_PREFETCHING, _('Prefetching')),
+        (STATUS_DOWNLOADING, _('Downloading')),
+        (STATUS_PROCESSING, _('Processing')),
+        (STATUS_READY, _('Ready')),
+        (STATUS_ERROR, _('Error')),
     ]
 
     # Media type choices
@@ -34,8 +35,8 @@ class MediaItem(models.Model):
     MEDIA_TYPE_VIDEO = 'video'
 
     MEDIA_TYPE_CHOICES = [
-        (MEDIA_TYPE_AUDIO, 'Audio'),
-        (MEDIA_TYPE_VIDEO, 'Video'),
+        (MEDIA_TYPE_AUDIO, _('Audio')),
+        (MEDIA_TYPE_VIDEO, _('Video')),
     ]
 
     # Requested type choices
@@ -44,9 +45,9 @@ class MediaItem(models.Model):
     REQUESTED_TYPE_VIDEO = 'video'
 
     REQUESTED_TYPE_CHOICES = [
-        (REQUESTED_TYPE_AUTO, 'Auto'),
-        (REQUESTED_TYPE_AUDIO, 'Audio'),
-        (REQUESTED_TYPE_VIDEO, 'Video'),
+        (REQUESTED_TYPE_AUTO, _('Auto')),
+        (REQUESTED_TYPE_AUDIO, _('Audio')),
+        (REQUESTED_TYPE_VIDEO, _('Video')),
     ]
 
     # Primary key

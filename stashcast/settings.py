@@ -114,13 +114,40 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+# Language code from environment variable (e.g., 'en', 'es', 'fr', 'de', 'ja', 'zh-hans')
+# This sets the UI language and the language for video subtitles/transcripts
+LANGUAGE_CODE = os.environ.get('LANGUAGE_CODE', 'en-us')
+
+# Supported languages (add more as translations are added)
+LANGUAGES = [
+    ('en', 'English'),
+    ('es', 'Español'),
+    ('fr', 'Français'),
+    ('de', 'Deutsch'),
+    ('ja', '日本語'),
+    ('zh-hans', '简体中文'),
+    ('zh-hant', '繁體中文'),
+    ('pt', 'Português'),
+    ('it', 'Italiano'),
+    ('ru', 'Русский'),
+    ('ar', 'العربية'),
+    ('ko', '한국어'),
+]
+
+# Path to translation files
+LOCALE_PATHS = [
+    BASE_DIR / 'locale',
+]
 
 TIME_ZONE = 'UTC'
 
 USE_I18N = True
 
 USE_TZ = True
+
+# Extract the primary language code for yt-dlp subtitles (e.g., 'en' from 'en-us')
+# This will be used to download subtitles/transcripts in the configured language
+STASHCAST_SUBTITLE_LANGUAGE = LANGUAGE_CODE.split('-')[0]
 
 
 # Static files (CSS, JavaScript, Images)

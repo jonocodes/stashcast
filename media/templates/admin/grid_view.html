@@ -1,5 +1,5 @@
 {% extends "admin/base_site.html" %}
-{% load static %}
+{% load static i18n %}
 {% load media_filters %}
 
 {% block title %}{{ title }} - StashCast{% endblock %}
@@ -180,25 +180,25 @@
 
 {% block content %}
 <div class="grid-container">
-    <h1>Media Grid</h1>
+    <h1>{% trans "Media Grid" %}</h1>
 
     <div class="filters">
         <form method="get" style="display: flex; gap: 15px; align-items: center; flex: 1;">
-            <label for="type">Type:</label>
+            <label for="type">{% trans "Type:" %}</label>
             <select name="type" id="type" onchange="this.form.submit()">
-                <option value="all" {% if media_type_filter == 'all' %}selected{% endif %}>All</option>
-                <option value="audio" {% if media_type_filter == 'audio' %}selected{% endif %}>Audio</option>
-                <option value="video" {% if media_type_filter == 'video' %}selected{% endif %}>Video</option>
+                <option value="all" {% if media_type_filter == 'all' %}selected{% endif %}>{% trans "All" %}</option>
+                <option value="audio" {% if media_type_filter == 'audio' %}selected{% endif %}>{% trans "Audio" %}</option>
+                <option value="video" {% if media_type_filter == 'video' %}selected{% endif %}>{% trans "Video" %}</option>
             </select>
 
             <div class="storage-info">
-                Total Storage: {{ total_storage_bytes|filesize }}
+                {% trans "Total Storage:" %} {{ total_storage_bytes|filesize }}
             </div>
         </form>
 
         <div class="view-switcher">
-            <a href="{% url 'grid_view' %}?type={{ media_type_filter }}" class="active">Grid</a>
-            <a href="{% url 'list_view' %}?type={{ media_type_filter }}">List</a>
+            <a href="{% url 'grid_view' %}?type={{ media_type_filter }}" class="active">{% trans "Grid" %}</a>
+            <a href="{% url 'list_view' %}?type={{ media_type_filter }}">{% trans "List" %}</a>
         </div>
     </div>
 
@@ -221,9 +221,9 @@
                 <div class="item-meta">
                     <span class="type-badge">
                         {% if data.item.media_type == 'audio' %}
-                            <i class="fa-solid fa-headphones" aria-label="Audio"></i>
+                            <i class="fa-solid fa-headphones" aria-label="{% trans 'Audio' %}"></i>
                         {% else %}
-                            <i class="fa-solid fa-video" aria-label="Video"></i>
+                            <i class="fa-solid fa-video" aria-label="{% trans 'Video' %}"></i>
                         {% endif %}
                     </span>
                     {% if data.item.status != 'READY' %}
@@ -242,8 +242,8 @@
     </div>
     {% else %}
     <div class="empty-state">
-        <h2>No items found</h2>
-        <p>Try adjusting your filters or add some media items.</p>
+        <h2>{% trans "No items found" %}</h2>
+        <p>{% trans "Try adjusting your filters or add some media items." %}</p>
     </div>
     {% endif %}
 </div>

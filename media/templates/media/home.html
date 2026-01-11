@@ -1,6 +1,6 @@
-{% load static %}
+{% load static i18n %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ LANGUAGE_CODE }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -208,58 +208,57 @@
     <main class="panel">
         <div class="hero">
             <div class="hero-image">
-                <img src="{% static 'media/header-transparent.png' %}" alt="StashCast illustration">
+                <img src="{% static 'media/header-transparent.png' %}" alt="{% trans 'StashCast illustration' %}">
             </div>
             <div>
                 <div class="eyebrow">
                     <span class="logo-dot" aria-hidden="true"></span>
-                    <span>StashCast Console</span>
+                    <span>{% trans "StashCast Console" %}</span>
                 </div>
-                <h1>Capture, stash, and stream your media.</h1>
+                <h1>{% trans "Capture, stash, and stream your media." %}</h1>
                 <p class="lede">
-                    Drop in any URL supported by yt-dlp and StashCast will download, process, and publish it to your feeds.
-                    Jump straight to the add form to start a new download.
+                    {% trans "Drop in any URL supported by yt-dlp and StashCast will download, process, and publish it to your feeds. Jump straight to the add form to start a new download." %}
                 </p>
                 <div class="cta-row">
-                    <a class="cta" href="{% url 'admin_stash_form' %}">Add</a>
-                    <span class="note">Requires an admin login.</span>
+                    <a class="cta" href="{% url 'admin_stash_form' %}">{% trans "Add" %}</a>
+                    <span class="note">{% trans "Requires an admin login." %}</span>
                 </div>
             </div>
         </div>
         <div class="feeds">
             <div class="feed-card">
-                <img src="{% static 'media/feed-logo-audio.png' %}" alt="Audio feed">
+                <img src="{% static 'media/feed-logo-audio.png' %}" alt="{% trans 'Audio feed' %}">
                 <div class="feed-links">
-                    <a class="pill" href="/admin/tools/grid/?type=audio">Grid view</a>
-                    <a class="pill" href="/admin/tools/list/?type=audio">List view</a>
-                    <a class="pill" href="/admin/media/mediaitem/?media_type=audio">Manage</a>
+                    <a class="pill" href="/admin/tools/grid/?type=audio">{% trans "Grid view" %}</a>
+                    <a class="pill" href="/admin/tools/list/?type=audio">{% trans "List view" %}</a>
+                    <a class="pill" href="/admin/media/mediaitem/?media_type=audio">{% trans "Manage" %}</a>
                 </div>
             </div>
             <div class="feed-card">
-                <img src="{% static 'media/feed-logo-video.png' %}" alt="Video feed">
+                <img src="{% static 'media/feed-logo-video.png' %}" alt="{% trans 'Video feed' %}">
                 <div class="feed-links">
-                    <a class="pill" href="/admin/tools/grid/?type=video">Grid view</a>
-                    <a class="pill" href="/admin/tools/list/?type=video">List view</a>
-                    <a class="pill" href="/admin/media/mediaitem/?media_type=video">Manage</a>
+                    <a class="pill" href="/admin/tools/grid/?type=video">{% trans "Grid view" %}</a>
+                    <a class="pill" href="/admin/tools/list/?type=video">{% trans "List view" %}</a>
+                    <a class="pill" href="/admin/media/mediaitem/?media_type=video">{% trans "Manage" %}</a>
                 </div>
             </div>
             <div class="feed-card">
-                <img src="{% static 'media/feed-logo-combined.png' %}" alt="Combined feed">
+                <img src="{% static 'media/feed-logo-combined.png' %}" alt="{% trans 'Combined feed' %}">
                 <div class="feed-links">
-                    <a class="pill" href="/admin/tools/grid/?type=all">Grid view</a>
-                    <a class="pill" href="/admin/tools/list/?type=all">List view</a>
-                    <a class="pill" href="/admin/media/mediaitem/">Manage</a>
+                    <a class="pill" href="/admin/tools/grid/?type=all">{% trans "Grid view" %}</a>
+                    <a class="pill" href="/admin/tools/list/?type=all">{% trans "List view" %}</a>
+                    <a class="pill" href="/admin/media/mediaitem/">{% trans "Manage" %}</a>
                 </div>
             </div>
         </div>
         <div class="links">
             <a class="link-card" href="{% url 'feed_links' %}">
-                <strong>Subscribe to feeds</strong>
-                <span>Get RSS feed URLs for your podcast app</span>
+                <strong>{% trans "Subscribe to feeds" %}</strong>
+                <span>{% trans "Get RSS feed URLs for your podcast app" %}</span>
             </a>
             <a class="link-card" href="/admin/">
-                <strong>Admin dashboard</strong>
-                <span>Manage media items and jobs</span>
+                <strong>{% trans "Admin dashboard" %}</strong>
+                <span>{% trans "Manage media items and jobs" %}</span>
             </a>
         </div>
     </main>

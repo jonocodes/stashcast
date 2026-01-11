@@ -1,7 +1,7 @@
 {% extends "admin/base_site.html" %}
-{% load static %}
+{% load static i18n %}
 
-{% block title %}Add URL - StashCast{% endblock %}
+{% block title %}{% trans "Add URL" %} - StashCast{% endblock %}
 
 {% block extrastyle %}
 <style>
@@ -230,29 +230,29 @@
 
 {% block breadcrumbs %}
 <div class="breadcrumbs">
-    <a href="{% url 'admin:index' %}">Home</a>
-    &rsaquo; Add URL
+    <a href="{% url 'admin:index' %}">{% trans "Home" %}</a>
+    &rsaquo; {% trans "Add URL" %}
 </div>
 {% endblock %}
 
 {% block content %}
 <div class="stash-form-container">
     <div class="stash-form">
-        <h1>Add URL to StashCast</h1>
-        <p>Download media from any URL supported by yt-dlp or direct media links.</p>
+        <h1>{% trans "Add URL to StashCast" %}</h1>
+        <p>{% trans "Download media from any URL supported by yt-dlp or direct media links." %}</p>
 
         <div class="example-urls">
-            <h3>Example URLs to try:</h3>
+            <h3>{% trans "Example URLs to try:" %}</h3>
             <ul>
                 <li><strong>YouTube:</strong> <code>https://www.youtube.com/watch?v=Vi039BihSAk</code></li>
 
-                <li><strong>Apple Podcast:</strong> <code>https://podcasts.apple.com/us/podcast/take-a-penny-leave-a-penny-get-rid-of-the-penny/id1320118593?i=1000739741482</code></li>
+                <li><strong>{% trans "Apple Podcast:" %}</strong> <code>https://podcasts.apple.com/us/podcast/take-a-penny-leave-a-penny-get-rid-of-the-penny/id1320118593?i=1000739741482</code></li>
 
-                <li><strong>Test Server (embeded media):</strong> <code>http://localhost:8001/pecha-kucha-vid/view.html</code></li>
+                <li><strong>{% trans "Test Server (embedded media):" %}</strong> <code>http://localhost:8001/pecha-kucha-vid/view.html</code></li>
 
-                <li><strong>Test Server (direct media):</strong> <code>http://localhost:8001/pecha-kucha-vid/vid.mp4</code></li>
+                <li><strong>{% trans "Test Server (direct media):" %}</strong> <code>http://localhost:8001/pecha-kucha-vid/vid.mp4</code></li>
 
-                <li><strong>Direct media:</strong> Any URL ending in .mp3, .mp4, .m4a, etc.</li>
+                <li><strong>{% trans "Direct media:" %}</strong> {% trans "Any URL ending in .mp3, .mp4, .m4a, etc." %}</li>
             </ul>
         </div>
 
@@ -260,24 +260,24 @@
             {% csrf_token %}
 
             <div class="form-row">
-                <label for="url">URL *</label>
+                <label for="url">{% trans "URL" %} *</label>
                 <input type="url"
                        id="url"
                        name="url"
                        placeholder="https://example.com/video"
                        required
                        autofocus>
-                <small>Enter any URL supported by yt-dlp or a direct media file URL</small>
+                <small>{% trans "Enter any URL supported by yt-dlp or a direct media file URL" %}</small>
             </div>
 
             <div class="form-row">
-                <label for="type">Media Type *</label>
+                <label for="type">{% trans "Media Type" %} *</label>
                 <select id="type" name="type" required>
-                    <option value="auto" selected>Auto-detect</option>
-                    <option value="audio">Audio only</option>
-                    <option value="video">Video</option>
+                    <option value="auto" selected>{% trans "Auto-detect" %}</option>
+                    <option value="audio">{% trans "Audio only" %}</option>
+                    <option value="video">{% trans "Video" %}</option>
                 </select>
-                <small>Auto-detect will determine if the content is audio or video</small>
+                <small>{% trans "Auto-detect will determine if the content is audio or video" %}</small>
             </div>
 
             <div class="form-row">
@@ -285,11 +285,11 @@
                     <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
                         <path d="M4 2l4 4-4 4z"/>
                     </svg>
-                    Advanced Options
-                    <span class="mode-indicator mode-single" id="modeIndicator">Single URL</span>
+                    {% trans "Advanced Options" %}
+                    <span class="mode-indicator mode-single" id="modeIndicator">{% trans "Single URL" %}</span>
                 </div>
                 <div class="advanced-options" id="advancedOptions">
-                    <label for="bulk_urls">Bulk Download (Multiple URLs)</label>
+                    <label for="bulk_urls">{% trans "Bulk Download (Multiple URLs)" %}</label>
                     <textarea
                         id="bulk_urls"
                         name="bulk_urls"
@@ -298,29 +298,28 @@ https://example.com/video2
 https://example.com/video3"
                     ></textarea>
                     <small>
-                        Enter one URL per line. When bulk URLs are provided, the single URL field above is ignored.
-                        Each URL will be queued as a separate download.
+                        {% trans "Enter one URL per line. When bulk URLs are provided, the single URL field above is ignored. Each URL will be queued as a separate download." %}
                     </small>
                 </div>
             </div>
 
             <div class="submit-row">
-                <input type="submit" value="Add to StashCast" id="submitBtn">
+                <input type="submit" value="{% trans 'Add to StashCast' %}" id="submitBtn">
             </div>
         </form>
     </div>
 
     {% if recent_items %}
     <div class="recent-items">
-        <h2>Recent Items</h2>
+        <h2>{% trans "Recent Items" %}</h2>
         <table>
             <thead>
                 <tr>
-                    <th>Title</th>
-                    <th>Type</th>
-                    <th>Status</th>
-                    <th>Created</th>
-                    <th>Actions</th>
+                    <th>{% trans "Title" %}</th>
+                    <th>{% trans "Type" %}</th>
+                    <th>{% trans "Status" %}</th>
+                    <th>{% trans "Created" %}</th>
+                    <th>{% trans "Actions" %}</th>
                 </tr>
             </thead>
             <tbody>
@@ -333,11 +332,11 @@ https://example.com/video3"
                             {{ item.get_status_display }}
                         </span>
                     </td>
-                    <td>{{ item.created_at|timesince }} ago</td>
+                    <td>{{ item.created_at|timesince }} {% trans "ago" %}</td>
                     <td>
-                        <a href="{% url 'admin:media_mediaitem_change' item.guid %}">View</a>
+                        <a href="{% url 'admin:media_mediaitem_change' item.guid %}">{% trans "View" %}</a>
                         {% if item.is_ready %}
-                        | <a href="{% url 'item_detail' item.guid %}" target="_blank">Preview</a>
+                        | <a href="{% url 'item_detail' item.guid %}" target="_blank">{% trans "Preview" %}</a>
                         {% endif %}
                     </td>
                 </tr>
