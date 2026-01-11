@@ -332,12 +332,13 @@ class SSEStatusStreamTest(TestCase):
 
     def test_sse_endpoint_returns_stream(self):
         """Test that SSE endpoint returns correct response type and headers"""
+        # Create item that's already READY so stream terminates immediately
         item = MediaItem.objects.create(
             source_url='http://example.com/test.mp3',
             requested_type=MediaItem.REQUESTED_TYPE_AUDIO,
-            slug='pending',
+            slug='test-audio',
             title='Test Audio',
-            status=MediaItem.STATUS_DOWNLOADING,
+            status=MediaItem.STATUS_READY,
         )
 
         response = self.client.get(f'/stash/{item.guid}/stream/')
@@ -350,12 +351,13 @@ class SSEStatusStreamTest(TestCase):
 
     def test_sse_endpoint_returns_valid_data(self):
         """Test that SSE endpoint returns valid event data"""
+        # Create item that's already READY so we can check the data format
         item = MediaItem.objects.create(
             source_url='http://example.com/test.mp3',
             requested_type=MediaItem.REQUESTED_TYPE_AUDIO,
-            slug='pending',
+            slug='test-audio',
             title='Test Audio',
-            status=MediaItem.STATUS_DOWNLOADING,
+            status=MediaItem.STATUS_READY,
         )
 
         response = self.client.get(f'/stash/{item.guid}/stream/')
@@ -373,9 +375,9 @@ class SSEStatusStreamTest(TestCase):
         data = json.loads(json_str)
 
         # Verify expected fields
-        self.assertEqual(data['status'], 'downloading')
+        self.assertEqual(data['status'], 'ready')
         self.assertEqual(data['title'], 'Test Audio')
-        self.assertFalse(data['is_ready'])
+        self.assertTrue(data['is_ready'])
         self.assertFalse(data['has_error'])
 
     def test_sse_endpoint_completes_on_ready(self):
