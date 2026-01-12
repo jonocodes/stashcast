@@ -1,7 +1,8 @@
 {% extends "admin/base_site.html" %}
 {% load static %}
+{% load i18n %}
 
-{% block title %}Confirm Download - {{ count }} Items{% endblock %}
+{% block title %}{% trans "Confirm Download" %} - {{ count }} {% trans "Items" %}{% endblock %}
 
 {% block extrastyle %}
 <style>
@@ -156,20 +157,20 @@
 
 {% block breadcrumbs %}
 <div class="breadcrumbs">
-    <a href="{% url 'admin:index' %}">Home</a>
-    &rsaquo; <a href="{% url 'admin_stash_form' %}">Add URL</a>
-    &rsaquo; Confirm Multiple Items
+    <a href="{% url 'admin:index' %}">{% trans "Home" %}</a>
+    &rsaquo; <a href="{% url 'admin_stash_form' %}">{% trans "Add URL" %}</a>
+    &rsaquo; {% trans "Confirm Multiple Items" %}
 </div>
 {% endblock %}
 
 {% block content %}
 <div class="confirm-container">
     <div class="confirm-panel">
-        <h1>Confirm Download <span class="count-badge">{{ count }} items</span></h1>
+        <h1>{% trans "Confirm Download" %} <span class="count-badge">{{ count }} {% trans "items" %}</span></h1>
 
         <div class="warning-box">
-            <h3>Multiple items detected</h3>
-            <p>This URL contains multiple videos/audio files. Please confirm you want to download all {{ count }} items.</p>
+            <h3>{% trans "Multiple items detected" %}</h3>
+            <p>{% blocktrans count counter=count %}This URL contains multiple videos/audio files. Please confirm you want to download all {{ counter }} items.{% endblocktrans %}</p>
         </div>
 
         <div class="source-info">
@@ -177,15 +178,15 @@
             <code>{{ url }}</code>
         </div>
 
-        <p>Media type: <strong>{{ media_type|title }}</strong></p>
+        <p>{% trans "Media type:" %} <strong>{{ media_type|title }}</strong></p>
 
         <div class="items-list">
             <table>
                 <thead>
                     <tr>
                         <th>#</th>
-                        <th>Title</th>
-                        <th>Duration</th>
+                        <th>{% trans "Title" %}</th>
+                        <th>{% trans "Duration" %}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -211,8 +212,8 @@
         <form method="post">
             {% csrf_token %}
             <div class="button-row">
-                <a href="{% url 'admin_stash_form' %}" class="btn btn-secondary">Cancel</a>
-                <button type="submit" class="btn btn-primary">Download All {{ count }} Items</button>
+                <a href="{% url 'admin_stash_form' %}" class="btn btn-secondary">{% trans "Cancel" %}</a>
+                <button type="submit" class="btn btn-primary">{% blocktrans count counter=count %}Download All {{ counter }} Items{% endblocktrans %}</button>
             </div>
         </form>
     </div>
