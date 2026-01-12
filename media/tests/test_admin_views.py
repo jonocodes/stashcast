@@ -375,7 +375,7 @@ class SSEStatusStreamTest(TestCase):
         data = json.loads(json_str)
 
         # Verify expected fields
-        self.assertEqual(data['status'], 'ready')
+        self.assertEqual(data['status'], MediaItem.STATUS_READY)  # Uppercase constant
         self.assertEqual(data['title'], 'Test Audio')
         self.assertTrue(data['is_ready'])
         self.assertFalse(data['has_error'])
@@ -426,7 +426,7 @@ class SSEStatusStreamTest(TestCase):
         json_str = first_event[6:].strip()
         data = json.loads(json_str)
 
-        self.assertEqual(data['status'], 'error')
+        self.assertEqual(data['status'], MediaItem.STATUS_ERROR)  # Uppercase constant
         self.assertTrue(data['has_error'])
         self.assertEqual(data['error_message'], 'Test error')
 
