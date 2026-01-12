@@ -100,7 +100,7 @@ cp .env.example .env
 # - STASHCAST_DATA_DIR (base path; media is stored in STASHCAST_DATA_DIR/media)
 # - STASHCAST_USER_TOKEN
 # - LANGUAGE_CODE (optional, default: 'en-us'. Sets UI language and video subtitle language)
-#   Examples: 'en', 'es', 'fr', 'de', 'ja', 'zh-hans', 'pt', 'it', 'ru', 'ar', 'ko'
+#   Supported: 'en' (English), 'es' (Spanish)
 ```
 
 ### 3. Download the dependencies and setup the db

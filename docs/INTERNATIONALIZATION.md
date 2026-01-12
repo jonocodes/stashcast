@@ -9,25 +9,18 @@ StashCast now supports multiple languages! The UI language and video subtitle la
 Add to your `.env` file:
 
 ```bash
-# Set language code (e.g., 'en', 'es', 'fr', 'de', 'ja', 'zh-hans')
+# Set language code ('en' for English, 'es' for Spanish)
 LANGUAGE_CODE=es
 ```
 
 ### Supported Languages
 
-Currently supported languages:
-- `en` - English (default)
+**Currently supported with full translations:**
+- `en` / `en-us` - English (default)
 - `es` - Español (Spanish)
-- `fr` - Français (French)
-- `de` - Deutsch (German)
-- `ja` - 日本語 (Japanese)
-- `zh-hans` - 简体中文 (Simplified Chinese)
-- `zh-hant` - 繁體中文 (Traditional Chinese)
-- `pt` - Português (Portuguese)
-- `it` - Italiano (Italian)
-- `ru` - Русский (Russian)
-- `ar` - العربية (Arabic)
-- `ko` - 한국어 (Korean)
+
+**Adding more languages:**
+Additional languages can be added by creating translation files (`.po`) and compiling them. See the "Creating Translations" section below for instructions on how to contribute translations for other languages.
 
 ## How It Works
 

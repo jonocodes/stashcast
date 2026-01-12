@@ -114,24 +114,14 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 
-# Language code from environment variable (e.g., 'en', 'es', 'fr', 'de', 'ja', 'zh-hans')
+# Language code from environment variable (e.g., 'en', 'en-us', 'es')
 # This sets the UI language and the language for video subtitles/transcripts
 LANGUAGE_CODE = os.environ.get('LANGUAGE_CODE', 'en-us')
 
-# Supported languages (add more as translations are added)
+# Supported languages
 LANGUAGES = [
     ('en', 'English'),
     ('es', 'Español'),
-    ('fr', 'Français'),
-    ('de', 'Deutsch'),
-    ('ja', '日本語'),
-    ('zh-hans', '简体中文'),
-    ('zh-hant', '繁體中文'),
-    ('pt', 'Português'),
-    ('it', 'Italiano'),
-    ('ru', 'Русский'),
-    ('ar', 'العربية'),
-    ('ko', '한국어'),
 ]
 
 # Path to translation files
