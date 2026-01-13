@@ -1,9 +1,10 @@
+{% load i18n %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StashCast - Processing Media</title>
+    <title>{% trans "StashCast - Processing Media" %}</title>
     <style>
         * {
             margin: 0;
@@ -261,23 +262,23 @@
     </style>
 </head>
 <body>
-    <a class="home-link" href="{% url 'home' %}">&larr; Home</a>
+    <a class="home-link" href="{% url 'home' %}">&larr; {% trans "Home" %}</a>
     <div class="container">
         <div class="icon">📥</div>
         <h1>StashCast</h1>
-        <p class="subtitle" id="subtitle">Processing your media...</p>
+        <p class="subtitle" id="subtitle">{% trans "Processing your media..." %}</p>
         <div class="multi-info" id="multi-info" style="display: none;">
             <div class="multi-badge">
-                <span id="multi-count">0</span> items queued
+                <span id="multi-count">0</span> {% trans "items queued" %}
             </div>
             <div class="playlist-title" id="playlist-title"></div>
         </div>
 
         <div class="status-card">
-            <div class="status-label">Status</div>
+            <div class="status-label">{% trans "Status" %}</div>
             <div class="status-value prefetching" id="status-value">
                 <span class="loading">
-                    <span id="status-text">Initializing</span>
+                    <span id="status-text">{% trans "Initializing" %}</span>
                     <span class="spinner"></span>
                 </span>
             </div>
@@ -288,27 +289,27 @@
         </div>
 
         <div class="info-row">
-            <span class="info-label">Title</span>
-            <span class="info-value" id="title-value">Loading...</span>
+            <span class="info-label">{% trans "Title" %}</span>
+            <span class="info-value" id="title-value">{% trans "Loading..." %}</span>
         </div>
 
         <div class="info-row">
-            <span class="info-label">Media Type</span>
+            <span class="info-label">{% trans "Media Type" %}</span>
             <span class="info-value" id="media-type-value">--</span>
         </div>
 
         <div class="info-row">
-            <span class="info-label">Item ID</span>
+            <span class="info-label">{% trans "Item ID" %}</span>
             <span class="info-value" id="guid-value">{{ guid }}</span>
         </div>
 
         <div class="error-message" id="error-message"></div>
         <div class="success-message" id="success-message">
-            Your media is ready!
+            {% trans "Your media is ready!" %}
         </div>
         <div class="close-timer" id="close-timer"></div>
 
-        <a href="#" class="btn" id="view-btn">View Media</a>
+        <a href="#" class="btn" id="view-btn">{% trans "View Media" %}</a>
     </div>
 
     <script>

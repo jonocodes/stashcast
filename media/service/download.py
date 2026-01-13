@@ -11,6 +11,7 @@ from typing import Optional, Dict, List
 import shutil
 import requests
 import yt_dlp
+from django.conf import settings
 
 from media.service.config import parse_ytdlp_extra_args
 
@@ -140,7 +141,7 @@ def download_ytdlp(url, resolved_type, temp_dir, ytdlp_extra_args='', logger=Non
         'writethumbnail': True,
         'writesubtitles': True,
         'writeautomaticsub': True,
-        'subtitleslangs': ['en'],
+        'subtitleslangs': [settings.STASHCAST_SUBTITLE_LANGUAGE],
         # Note: noplaylist removed to allow multi-item downloads
         # Multi-item handling is done at prefetch stage with --allow-multiple flag
         'quiet': not logger,  # Show output if logger is provided
@@ -413,7 +414,7 @@ def download_ytdlp_batch(
         'writethumbnail': True,
         'writesubtitles': True,
         'writeautomaticsub': True,
-        'subtitleslangs': ['en'],
+        'subtitleslangs': [settings.STASHCAST_SUBTITLE_LANGUAGE],
         'quiet': not logger,
         'ignoreerrors': True,
         'noplaylist': True,

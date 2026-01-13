@@ -1,7 +1,8 @@
 {% extends "admin/base_site.html" %}
 {% load static %}
+{% load i18n %}
 
-{% block title %}Bookmarklet Tool{% endblock %}
+{% block title %}{% trans "Bookmarklet Tool" %}{% endblock %}
 
 {% block extrastyle %}
 <style>
@@ -147,96 +148,93 @@
 
 {% block content %}
 <div class="container">
-    <h1>StashCast Bookmarklet Tool</h1>
+    <h1>{% trans "StashCast Bookmarklet Tool" %}</h1>
 
     <div class="explainer">
-        <strong>What is a bookmarklet?</strong><br>
-        A bookmarklet is a bookmark that runs JavaScript to perform actions on the current page.
-        Drag the bookmarklet link below to your bookmarks bar, then click it on any page with
-        media you want to download to StashCast.
+        <strong>{% trans "What is a bookmarklet?" %}</strong><br>
+        {% trans "A bookmarklet is a bookmark that runs JavaScript to perform actions on the current page. Drag the bookmarklet link below to your bookmarks bar, then click it on any page with media you want to download to StashCast." %}
     </div>
 
     {% if require_user_token_for_feeds %}
     <div class="status-info protected">
         <span class="status-info-icon">🔒</span>
         <div>
-            <strong>Feed Protection Enabled</strong><br>
-            Your RSS feeds require a user token. Feed URLs in this instance automatically include the token for privacy.
+            <strong>{% trans "Feed Protection Enabled" %}</strong><br>
+            {% trans "Your RSS feeds require a user token. Feed URLs in this instance automatically include the token for privacy." %}
         </div>
     </div>
     {% else %}
     <div class="status-info public">
         <span class="status-info-icon">🌐</span>
         <div>
-            <strong>Public Feeds Notice</strong><br>
-            RSS feeds are currently publicly accessible. To require user tokens for feeds, set <code>REQUIRE_USER_TOKEN_FOR_FEEDS=true</code> in your environment configuration.
+            <strong>{% trans "Public Feeds Notice" %}</strong><br>
+            {% trans "RSS feeds are currently publicly accessible. To require user tokens for feeds, set REQUIRE_USER_TOKEN_FOR_FEEDS=true in your environment configuration." %}
         </div>
     </div>
     {% endif %}
 
-    <h2>1. Configure Bookmarklet</h2>
+    <h2>{% trans "1. Configure Bookmarklet" %}</h2>
 
     <form id="bookmarklet-form">
         <div class="form-group">
-            <label for="base-url">Base URL:</label>
+            <label for="base-url">{% trans "Base URL:" %}</label>
             <input type="url" id="base-url" value="{{ base_url }}" required>
-            <small>The base URL of your StashCast instance</small>
+            <small>{% trans "The base URL of your StashCast instance" %}</small>
         </div>
 
         <div class="form-group">
-            <label for="media-type">Default Media Type:</label>
+            <label for="media-type">{% trans "Default Media Type:" %}</label>
             <select id="media-type">
-                <option value="auto" selected>Auto</option>
-                <option value="audio">Audio</option>
-                <option value="video">Video</option>
+                <option value="auto" selected>{% trans "Auto" %}</option>
+                <option value="audio">{% trans "Audio" %}</option>
+                <option value="video">{% trans "Video" %}</option>
             </select>
-            <small>What type of media to download by default</small>
+            <small>{% trans "What type of media to download by default" %}</small>
         </div>
 
         <div class="form-group">
-            <label for="close-tab-after">Auto-close Progress Tab (seconds):</label>
-            <input type="number" id="close-tab-after" min="1" step="1" placeholder="Optional">
-            <small>Close the progress tab after the job completes; leave blank to keep it open</small>
+            <label for="close-tab-after">{% trans "Auto-close Progress Tab (seconds):" %}</label>
+            <input type="number" id="close-tab-after" min="1" step="1" placeholder="{% trans 'Optional' %}">
+            <small>{% trans "Close the progress tab after the job completes; leave blank to keep it open" %}</small>
         </div>
 
         <div class="form-group">
             <label>
                 <input type="checkbox" id="allow-multiple">
-                Allow Multiple Items
+                {% trans "Allow Multiple Items" %}
             </label>
-            <small>If enabled, automatically download all items from playlists or pages with multiple videos. If disabled, you'll get an error prompting you to confirm in admin.</small>
+            <small>{% trans "If enabled, automatically download all items from playlists or pages with multiple videos. If disabled, you'll get an error prompting you to confirm in admin." %}</small>
         </div>
     </form>
 
-    <h2>2. Your Bookmarklet</h2>
+    <h2>{% trans "2. Your Bookmarklet" %}</h2>
 
     <div class="instruction">
-        <strong>Installation:</strong> Drag the button below to your bookmarks bar. If your bookmarks
-        bar is hidden, enable it in your browser settings first.
+        <strong>{% trans "Installation:" %}</strong> {% trans "Drag the button below to your bookmarks bar. If your bookmarks bar is hidden, enable it in your browser settings first." %}
     </div>
 
     <a href="#" id="bookmarklet" class="bookmarklet-link">
-        📥 Stash to StashCast
+        📥 {% trans "Stash to StashCast" %}
     </a>
 
-    <h2>3. JavaScript Code</h2>
+    <h2>{% trans "3. JavaScript Code" %}</h2>
 
-    <p>You can also copy the JavaScript code below and create a bookmark manually:</p>
+    <p>{% trans "You can also copy the JavaScript code below and create a bookmark manually:" %}</p>
 
     <textarea id="bookmarklet-code" readonly></textarea>
 
     <div style="margin-top: 10px;">
-        <button class="copy-button" onclick="copyCode()">Copy Code</button>
+        <button class="copy-button" onclick="copyCode()">{% trans "Copy Code" %}</button>
     </div>
 
-    <h2>4. Test It</h2>
+    <h2>{% trans "4. Test It" %}</h2>
 
     <form id="test-form" style="margin-top: 20px;">
         <div class="form-group">
-            <label for="test-url">Test URL:</label>
+            <label for="test-url">{% trans "Test URL:" %}</label>
             <input type="url" id="test-url" placeholder="https://example.com/video" required>
         </div>
-        <button type="submit">Test Bookmarklet</button>
+        <button type="submit">{% trans "Test Bookmarklet" %}</button>
     </form>
 </div>
 

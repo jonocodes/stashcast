@@ -1,7 +1,8 @@
 {% extends "admin/base_site.html" %}
 {% load static %}
+{% load i18n %}
 
-{% block title %}Processing Media - StashCast{% endblock %}
+{% block title %}{% trans "Processing Media - StashCast" %}{% endblock %}
 
 {% block extrastyle %}
 <style>
@@ -182,9 +183,9 @@
 
 {% block breadcrumbs %}
 <div class="breadcrumbs">
-    <a href="{% url 'admin:index' %}">Home</a>
-    &rsaquo; <a href="{% url 'admin_stash_form' %}">Add URL</a>
-    &rsaquo; Processing
+    <a href="{% url 'admin:index' %}">{% trans "Home" %}</a>
+    &rsaquo; <a href="{% url 'admin_stash_form' %}">{% trans "Add URL" %}</a>
+    &rsaquo; {% trans "Processing" %}
 </div>
 {% endblock %}
 
@@ -193,13 +194,13 @@
     <div class="progress-card">
         <div class="icon">📥</div>
         <h1>StashCast</h1>
-        <p class="subtitle">Processing your media...</p>
+        <p class="subtitle">{% trans "Processing your media..." %}</p>
 
         <div class="status-card">
-            <div class="status-label">Status</div>
+            <div class="status-label">{% trans "Status" %}</div>
             <div class="status-value prefetching" id="status-value">
                 <span class="loading">
-                    <span id="status-text">Initializing</span>
+                    <span id="status-text">{% trans "Initializing" %}</span>
                     <span class="spinner"></span>
                 </span>
             </div>
@@ -210,27 +211,27 @@
         </div>
 
         <div class="info-row">
-            <span class="info-label">Title</span>
-            <span class="info-value" id="title-value">Loading...</span>
+            <span class="info-label">{% trans "Title" %}</span>
+            <span class="info-value" id="title-value">{% trans "Loading..." %}</span>
         </div>
 
         <div class="info-row">
-            <span class="info-label">Media Type</span>
+            <span class="info-label">{% trans "Media Type" %}</span>
             <span class="info-value" id="media-type-value">--</span>
         </div>
 
         <div class="info-row">
-            <span class="info-label">Item ID</span>
+            <span class="info-label">{% trans "Item ID" %}</span>
             <span class="info-value" id="guid-value">{{ guid }}</span>
         </div>
 
         <div class="error-message" id="error-message"></div>
         <div class="success-message" id="success-message">
-            Your media is ready!
+            {% trans "Your media is ready!" %}
         </div>
 
-        <a href="#" class="btn" id="view-btn">View Media</a>
-        <a href="{% url 'admin_stash_form' %}" class="btn" id="add-another-btn">Add Another URL</a>
+        <a href="#" class="btn" id="view-btn">{% trans "View Media" %}</a>
+        <a href="{% url 'admin_stash_form' %}" class="btn" id="add-another-btn">{% trans "Add Another URL" %}</a>
     </div>
 </div>
 

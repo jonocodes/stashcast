@@ -1,0 +1,725 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-01-12 21:06+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: media/models.py:26 media/templates/admin/item_detail.html:120
+msgid "Prefetching"
+msgstr ""
+
+#: media/models.py:27 media/templates/admin/item_detail.html:118
+msgid "Downloading"
+msgstr ""
+
+#: media/models.py:28 media/templates/admin/admin_stash_progress.html:188
+#: media/templates/admin/item_detail.html:116
+msgid "Processing"
+msgstr ""
+
+#: media/models.py:29 media/templates/admin/item_detail.html:112
+msgid "Ready"
+msgstr ""
+
+#: media/models.py:30 media/templates/admin/item_detail.html:114
+msgid "Error"
+msgstr ""
+
+#: media/models.py:38 media/models.py:49
+#: media/templates/admin/bookmarklet.html:189
+#: media/templates/admin/grid_view.html:190
+#: media/templates/admin/grid_view.html:224
+#: media/templates/admin/list_view.html:231
+#: media/templates/admin/list_view.html:268
+msgid "Audio"
+msgstr ""
+
+#: media/models.py:39 media/models.py:50
+#: media/templates/admin/admin_stash_form.html:278
+#: media/templates/admin/bookmarklet.html:190
+#: media/templates/admin/grid_view.html:191
+#: media/templates/admin/grid_view.html:226
+#: media/templates/admin/list_view.html:232
+#: media/templates/admin/list_view.html:270
+msgid "Video"
+msgstr ""
+
+#: media/models.py:48 media/templates/admin/bookmarklet.html:188
+msgid "Auto"
+msgstr ""
+
+#: media/templates/admin/admin_stash_confirm_multiple.html:5
+#: media/templates/admin/admin_stash_confirm_multiple.html:169
+msgid "Confirm Download"
+msgstr ""
+
+#: media/templates/admin/admin_stash_confirm_multiple.html:5
+msgid "Items"
+msgstr ""
+
+#: media/templates/admin/admin_stash_confirm_multiple.html:160
+#: media/templates/admin/admin_stash_form.html:233
+#: media/templates/admin/admin_stash_progress.html:186
+#: media/templates/media/stash_progress.html:265
+msgid "Home"
+msgstr ""
+
+#: media/templates/admin/admin_stash_confirm_multiple.html:161
+#: media/templates/admin/admin_stash_form.html:4
+#: media/templates/admin/admin_stash_form.html:234
+#: media/templates/admin/admin_stash_progress.html:187
+#: media/templates/admin/nav_sidebar.html:12
+msgid "Add URL"
+msgstr ""
+
+#: media/templates/admin/admin_stash_confirm_multiple.html:162
+msgid "Confirm Multiple Items"
+msgstr ""
+
+#: media/templates/admin/admin_stash_confirm_multiple.html:169
+msgid "items"
+msgstr ""
+
+#: media/templates/admin/admin_stash_confirm_multiple.html:172
+msgid "Multiple items detected"
+msgstr ""
+
+#: media/templates/admin/admin_stash_confirm_multiple.html:173
+#, python-format
+msgid ""
+"This URL contains multiple videos/audio files. Please confirm you want to "
+"download all %(counter)s items."
+msgstr ""
+
+#: media/templates/admin/admin_stash_confirm_multiple.html:181
+msgid "Media type:"
+msgstr ""
+
+#: media/templates/admin/admin_stash_confirm_multiple.html:188
+#: media/templates/admin/admin_stash_form.html:318
+#: media/templates/admin/admin_stash_progress.html:214
+#: media/templates/media/stash_progress.html:292
+msgid "Title"
+msgstr ""
+
+#: media/templates/admin/admin_stash_confirm_multiple.html:189
+msgid "Duration"
+msgstr ""
+
+#: media/templates/admin/admin_stash_confirm_multiple.html:215
+msgid "Cancel"
+msgstr ""
+
+#: media/templates/admin/admin_stash_confirm_multiple.html:216
+#, python-format
+msgid "Download All %(counter)s Items"
+msgstr ""
+
+#: media/templates/admin/admin_stash_form.html:241
+msgid "Add URL to StashCast"
+msgstr ""
+
+#: media/templates/admin/admin_stash_form.html:242
+msgid "Download media from any URL supported by yt-dlp or direct media links."
+msgstr ""
+
+#: media/templates/admin/admin_stash_form.html:245
+msgid "Example URLs to try:"
+msgstr ""
+
+#: media/templates/admin/admin_stash_form.html:249
+msgid "Apple Podcast:"
+msgstr ""
+
+#: media/templates/admin/admin_stash_form.html:251
+msgid "Test Server (embedded media):"
+msgstr ""
+
+#: media/templates/admin/admin_stash_form.html:253
+msgid "Test Server (direct media):"
+msgstr ""
+
+#: media/templates/admin/admin_stash_form.html:255
+msgid "Direct media:"
+msgstr ""
+
+#: media/templates/admin/admin_stash_form.html:255
+msgid "Any URL ending in .mp3, .mp4, .m4a, etc."
+msgstr ""
+
+#: media/templates/admin/admin_stash_form.html:263
+msgid "URL"
+msgstr ""
+
+#: media/templates/admin/admin_stash_form.html:270
+msgid "Enter any URL supported by yt-dlp or a direct media file URL"
+msgstr ""
+
+#: media/templates/admin/admin_stash_form.html:274
+#: media/templates/admin/admin_stash_progress.html:219
+#: media/templates/media/stash_progress.html:297
+msgid "Media Type"
+msgstr ""
+
+#: media/templates/admin/admin_stash_form.html:276
+msgid "Auto-detect"
+msgstr ""
+
+#: media/templates/admin/admin_stash_form.html:277
+msgid "Audio only"
+msgstr ""
+
+#: media/templates/admin/admin_stash_form.html:280
+msgid "Auto-detect will determine if the content is audio or video"
+msgstr ""
+
+#: media/templates/admin/admin_stash_form.html:288
+msgid "Advanced Options"
+msgstr ""
+
+#: media/templates/admin/admin_stash_form.html:289
+msgid "Single URL"
+msgstr ""
+
+#: media/templates/admin/admin_stash_form.html:292
+msgid "Bulk Download (Multiple URLs)"
+msgstr ""
+
+#: media/templates/admin/admin_stash_form.html:301
+msgid ""
+"Enter one URL per line. When bulk URLs are provided, the single URL field "
+"above is ignored. Each URL will be queued as a separate download."
+msgstr ""
+
+#: media/templates/admin/admin_stash_form.html:307
+msgid "Add to StashCast"
+msgstr ""
+
+#: media/templates/admin/admin_stash_form.html:314
+msgid "Recent Items"
+msgstr ""
+
+#: media/templates/admin/admin_stash_form.html:319
+msgid "Type"
+msgstr ""
+
+#: media/templates/admin/admin_stash_form.html:320
+#: media/templates/admin/admin_stash_progress.html:200
+#: media/templates/media/stash_progress.html:278
+msgid "Status"
+msgstr ""
+
+#: media/templates/admin/admin_stash_form.html:321
+msgid "Created"
+msgstr ""
+
+#: media/templates/admin/admin_stash_form.html:322
+msgid "Actions"
+msgstr ""
+
+#: media/templates/admin/admin_stash_form.html:335
+msgid "ago"
+msgstr ""
+
+#: media/templates/admin/admin_stash_form.html:337
+msgid "View"
+msgstr ""
+
+#: media/templates/admin/admin_stash_form.html:339
+msgid "Preview"
+msgstr ""
+
+#: media/templates/admin/admin_stash_progress.html:5
+msgid "Processing Media - StashCast"
+msgstr ""
+
+#: media/templates/admin/admin_stash_progress.html:197
+#: media/templates/media/stash_progress.html:269
+msgid "Processing your media..."
+msgstr ""
+
+#: media/templates/admin/admin_stash_progress.html:203
+#: media/templates/media/stash_progress.html:281
+msgid "Initializing"
+msgstr ""
+
+#: media/templates/admin/admin_stash_progress.html:215
+#: media/templates/media/stash_progress.html:293
+msgid "Loading..."
+msgstr ""
+
+#: media/templates/admin/admin_stash_progress.html:224
+#: media/templates/media/stash_progress.html:302
+msgid "Item ID"
+msgstr ""
+
+#: media/templates/admin/admin_stash_progress.html:230
+#: media/templates/media/stash_progress.html:308
+msgid "Your media is ready!"
+msgstr ""
+
+#: media/templates/admin/admin_stash_progress.html:233
+#: media/templates/media/stash_progress.html:312
+msgid "View Media"
+msgstr ""
+
+#: media/templates/admin/admin_stash_progress.html:234
+msgid "Add Another URL"
+msgstr ""
+
+#: media/templates/admin/bookmarklet.html:5
+msgid "Bookmarklet Tool"
+msgstr ""
+
+#: media/templates/admin/bookmarklet.html:151
+msgid "StashCast Bookmarklet Tool"
+msgstr ""
+
+#: media/templates/admin/bookmarklet.html:154
+msgid "What is a bookmarklet?"
+msgstr ""
+
+#: media/templates/admin/bookmarklet.html:155
+msgid ""
+"A bookmarklet is a bookmark that runs JavaScript to perform actions on the "
+"current page. Drag the bookmarklet link below to your bookmarks bar, then "
+"click it on any page with media you want to download to StashCast."
+msgstr ""
+
+#: media/templates/admin/bookmarklet.html:162
+#: media/templates/admin/feed_links.html:192
+msgid "Feed Protection Enabled"
+msgstr ""
+
+#: media/templates/admin/bookmarklet.html:163
+msgid ""
+"Your RSS feeds require a user token. Feed URLs in this instance "
+"automatically include the token for privacy."
+msgstr ""
+
+#: media/templates/admin/bookmarklet.html:170
+msgid "Public Feeds Notice"
+msgstr ""
+
+#: media/templates/admin/bookmarklet.html:171
+msgid ""
+"RSS feeds are currently publicly accessible. To require user tokens for "
+"feeds, set REQUIRE_USER_TOKEN_FOR_FEEDS=true in your environment "
+"configuration."
+msgstr ""
+
+#: media/templates/admin/bookmarklet.html:176
+msgid "1. Configure Bookmarklet"
+msgstr ""
+
+#: media/templates/admin/bookmarklet.html:180
+msgid "Base URL:"
+msgstr ""
+
+#: media/templates/admin/bookmarklet.html:182
+msgid "The base URL of your StashCast instance"
+msgstr ""
+
+#: media/templates/admin/bookmarklet.html:186
+msgid "Default Media Type:"
+msgstr ""
+
+#: media/templates/admin/bookmarklet.html:192
+msgid "What type of media to download by default"
+msgstr ""
+
+#: media/templates/admin/bookmarklet.html:196
+msgid "Auto-close Progress Tab (seconds):"
+msgstr ""
+
+#: media/templates/admin/bookmarklet.html:197
+msgid "Optional"
+msgstr ""
+
+#: media/templates/admin/bookmarklet.html:198
+msgid ""
+"Close the progress tab after the job completes; leave blank to keep it open"
+msgstr ""
+
+#: media/templates/admin/bookmarklet.html:204
+msgid "Allow Multiple Items"
+msgstr ""
+
+#: media/templates/admin/bookmarklet.html:206
+msgid ""
+"If enabled, automatically download all items from playlists or pages with "
+"multiple videos. If disabled, you'll get an error prompting you to confirm "
+"in admin."
+msgstr ""
+
+#: media/templates/admin/bookmarklet.html:210
+msgid "2. Your Bookmarklet"
+msgstr ""
+
+#: media/templates/admin/bookmarklet.html:213
+msgid "Installation:"
+msgstr ""
+
+#: media/templates/admin/bookmarklet.html:213
+msgid ""
+"Drag the button below to your bookmarks bar. If your bookmarks bar is "
+"hidden, enable it in your browser settings first."
+msgstr ""
+
+#: media/templates/admin/bookmarklet.html:217
+msgid "Stash to StashCast"
+msgstr ""
+
+#: media/templates/admin/bookmarklet.html:220
+msgid "3. JavaScript Code"
+msgstr ""
+
+#: media/templates/admin/bookmarklet.html:222
+msgid ""
+"You can also copy the JavaScript code below and create a bookmark manually:"
+msgstr ""
+
+#: media/templates/admin/bookmarklet.html:227
+msgid "Copy Code"
+msgstr ""
+
+#: media/templates/admin/bookmarklet.html:230
+msgid "4. Test It"
+msgstr ""
+
+#: media/templates/admin/bookmarklet.html:234
+msgid "Test URL:"
+msgstr ""
+
+#: media/templates/admin/bookmarklet.html:237
+msgid "Test Bookmarklet"
+msgstr ""
+
+#: media/templates/admin/feed_links.html:4
+#: media/templates/admin/nav_sidebar.html:25
+msgid "Feed Links"
+msgstr ""
+
+#: media/templates/admin/feed_links.html:178
+msgid "RSS Feed Links"
+msgstr ""
+
+#: media/templates/admin/feed_links.html:181
+msgid "Subscribe to your feeds"
+msgstr ""
+
+#: media/templates/admin/feed_links.html:182
+msgid ""
+"Copy these URLs to subscribe in your favorite podcast app (Overcast, Pocket "
+"Casts, Apple Podcasts, etc.)."
+msgstr ""
+
+#: media/templates/admin/feed_links.html:184
+msgid "The URLs include your private token for secure access."
+msgstr ""
+
+#: media/templates/admin/feed_links.html:193
+msgid ""
+"Your RSS feeds require a user token. Keep these URLs private - they grant "
+"access to your feeds."
+msgstr ""
+
+#: media/templates/admin/feed_links.html:200
+msgid "Public Feeds"
+msgstr ""
+
+#: media/templates/admin/feed_links.html:201
+msgid ""
+"RSS feeds are currently publicly accessible. To require user tokens for "
+"feeds, set"
+msgstr ""
+
+#: media/templates/admin/feed_links.html:201
+msgid "in your environment configuration."
+msgstr ""
+
+#: media/templates/admin/feed_links.html:206
+msgid "Available Feeds"
+msgstr ""
+
+#: media/templates/admin/feed_links.html:209
+#: media/templates/media/home.html:230
+msgid "Audio feed"
+msgstr ""
+
+#: media/templates/admin/feed_links.html:211
+msgid "Audio Feed"
+msgstr ""
+
+#: media/templates/admin/feed_links.html:212
+msgid "Audio-only content for listening on the go"
+msgstr ""
+
+#: media/templates/admin/feed_links.html:214
+#: media/templates/admin/feed_links.html:235
+#: media/templates/admin/feed_links.html:256
+msgid "Subscribe URL:"
+msgstr ""
+
+#: media/templates/admin/feed_links.html:217
+#: media/templates/admin/feed_links.html:238
+#: media/templates/admin/feed_links.html:259
+msgid "Copy"
+msgstr ""
+
+#: media/templates/admin/feed_links.html:221
+#: media/templates/admin/feed_links.html:242
+#: media/templates/admin/feed_links.html:263
+#: media/templates/admin/nav_sidebar.html:18
+msgid "Grid View"
+msgstr ""
+
+#: media/templates/admin/feed_links.html:222
+#: media/templates/admin/feed_links.html:243
+#: media/templates/admin/feed_links.html:264
+#: media/templates/admin/nav_sidebar.html:21
+msgid "List View"
+msgstr ""
+
+#: media/templates/admin/feed_links.html:223
+#: media/templates/admin/feed_links.html:244
+#: media/templates/admin/feed_links.html:265
+msgid "View XML"
+msgstr ""
+
+#: media/templates/admin/feed_links.html:224
+#: media/templates/admin/feed_links.html:245
+#: media/templates/admin/feed_links.html:266
+#: media/templates/media/home.html:234 media/templates/media/home.html:242
+#: media/templates/media/home.html:250
+msgid "Manage"
+msgstr ""
+
+#: media/templates/admin/feed_links.html:230
+#: media/templates/media/home.html:238
+msgid "Video feed"
+msgstr ""
+
+#: media/templates/admin/feed_links.html:232
+msgid "Video Feed"
+msgstr ""
+
+#: media/templates/admin/feed_links.html:233
+msgid "Video content for watching later"
+msgstr ""
+
+#: media/templates/admin/feed_links.html:251
+#: media/templates/media/home.html:246
+msgid "Combined feed"
+msgstr ""
+
+#: media/templates/admin/feed_links.html:253
+msgid "Combined Feed"
+msgstr ""
+
+#: media/templates/admin/feed_links.html:254
+msgid "All content in one feed"
+msgstr ""
+
+#: media/templates/admin/grid_view.html:183
+msgid "Media Grid"
+msgstr ""
+
+#: media/templates/admin/grid_view.html:187
+#: media/templates/admin/item_detail.html:135
+#: media/templates/admin/list_view.html:228
+msgid "Type:"
+msgstr ""
+
+#: media/templates/admin/grid_view.html:189
+#: media/templates/admin/list_view.html:230
+msgid "All"
+msgstr ""
+
+#: media/templates/admin/grid_view.html:195
+#: media/templates/admin/list_view.html:236
+msgid "Total Storage:"
+msgstr ""
+
+#: media/templates/admin/grid_view.html:200
+#: media/templates/admin/list_view.html:241
+msgid "Grid"
+msgstr ""
+
+#: media/templates/admin/grid_view.html:201
+#: media/templates/admin/list_view.html:242
+msgid "List"
+msgstr ""
+
+#: media/templates/admin/grid_view.html:245
+#: media/templates/admin/list_view.html:301
+msgid "No items found"
+msgstr ""
+
+#: media/templates/admin/grid_view.html:246
+#: media/templates/admin/list_view.html:302
+msgid "Try adjusting your filters or add some media items."
+msgstr ""
+
+#: media/templates/admin/item_detail.html:127
+msgid "By:"
+msgstr ""
+
+#: media/templates/admin/item_detail.html:130
+msgid "Published:"
+msgstr ""
+
+#: media/templates/admin/item_detail.html:133
+msgid "Duration:"
+msgstr ""
+
+#: media/templates/admin/item_detail.html:140
+msgid "Error:"
+msgstr ""
+
+#: media/templates/admin/item_detail.html:150
+msgid "Summary"
+msgstr ""
+
+#: media/templates/admin/item_detail.html:157
+msgid "Description"
+msgstr ""
+
+#: media/templates/admin/item_detail.html:167
+msgid "Your browser does not support audio element."
+msgstr ""
+
+#: media/templates/admin/item_detail.html:175
+msgid "Your browser does not support video element."
+msgstr ""
+
+#: media/templates/admin/item_detail.html:181
+msgid "Downloads"
+msgstr ""
+
+#: media/templates/admin/item_detail.html:182
+msgid "Download"
+msgstr ""
+
+#: media/templates/admin/item_detail.html:184
+msgid "Download Subtitles"
+msgstr ""
+
+#: media/templates/admin/item_detail.html:191
+msgid "View Original Source"
+msgstr ""
+
+#: media/templates/admin/list_view.html:224
+msgid "Media List"
+msgstr ""
+
+#: media/templates/admin/list_view.html:278
+msgid "Size:"
+msgstr ""
+
+#: media/templates/admin/list_view.html:284
+msgid "Author:"
+msgstr ""
+
+#: media/templates/admin/list_view.html:290
+msgid "Added:"
+msgstr ""
+
+#: media/templates/admin/nav_sidebar.html:2
+msgid "Toggle navigation"
+msgstr ""
+
+#: media/templates/admin/nav_sidebar.html:3
+msgid "Sidebar"
+msgstr ""
+
+#: media/templates/admin/nav_sidebar.html:9
+msgid "StashCast Tools"
+msgstr ""
+
+#: media/templates/admin/nav_sidebar.html:9
+msgid "Tools"
+msgstr ""
+
+#: media/templates/admin/nav_sidebar.html:15
+msgid "Bookmarklet"
+msgstr ""
+
+#: media/templates/admin/nav_sidebar.html:29
+msgid "Site Home"
+msgstr ""
+
+#: media/templates/media/home.html:211
+msgid "StashCast illustration"
+msgstr ""
+
+#: media/templates/media/home.html:216
+msgid "StashCast Console"
+msgstr ""
+
+#: media/templates/media/home.html:218
+msgid "Capture, stash, and stream your media."
+msgstr ""
+
+#: media/templates/media/home.html:220
+msgid ""
+"Drop in any URL supported by yt-dlp and StashCast will download, process, "
+"and publish it to your feeds. Jump straight to the add form to start a new "
+"download."
+msgstr ""
+
+#: media/templates/media/home.html:223
+msgid "Add"
+msgstr ""
+
+#: media/templates/media/home.html:224
+msgid "Requires an admin login."
+msgstr ""
+
+#: media/templates/media/home.html:232 media/templates/media/home.html:240
+#: media/templates/media/home.html:248
+msgid "Grid view"
+msgstr ""
+
+#: media/templates/media/home.html:233 media/templates/media/home.html:241
+#: media/templates/media/home.html:249
+msgid "List view"
+msgstr ""
+
+#: media/templates/media/home.html:256
+msgid "Subscribe to feeds"
+msgstr ""
+
+#: media/templates/media/home.html:257
+msgid "Get RSS feed URLs for your podcast app"
+msgstr ""
+
+#: media/templates/media/home.html:260
+msgid "Admin dashboard"
+msgstr ""
+
+#: media/templates/media/home.html:261
+msgid "Manage media items and jobs"
+msgstr ""
+
+#: media/templates/media/stash_progress.html:7
+msgid "StashCast - Processing Media"
+msgstr ""
+
+#: media/templates/media/stash_progress.html:272
+msgid "items queued"
+msgstr ""

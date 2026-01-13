@@ -1,6 +1,7 @@
 {% extends "admin/base_site.html" %}
 {% load media_filters %}
 {% load static %}
+{% load i18n %}
 
 {% block title %}{{ item.title|default:"Untitled" }} - StashCast{% endblock %}
 
@@ -108,35 +109,35 @@
 {% block content %}
 <div class="item-detail-container">
     {% if item.status == 'READY' %}
-        <span class="status-badge status-ready">Ready</span>
+        <span class="status-badge status-ready">{% trans "Ready" %}</span>
     {% elif item.status == 'ERROR' %}
-        <span class="status-badge status-error">Error</span>
+        <span class="status-badge status-error">{% trans "Error" %}</span>
     {% elif item.status == 'PROCESSING' %}
-        <span class="status-badge status-processing">Processing</span>
+        <span class="status-badge status-processing">{% trans "Processing" %}</span>
     {% elif item.status == 'DOWNLOADING' %}
-        <span class="status-badge status-downloading">Downloading</span>
+        <span class="status-badge status-downloading">{% trans "Downloading" %}</span>
     {% else %}
-        <span class="status-badge status-prefetching">Prefetching</span>
+        <span class="status-badge status-prefetching">{% trans "Prefetching" %}</span>
     {% endif %}
 
     <h1>{{ item.title|default:"Untitled" }}</h1>
 
     <div class="metadata">
         {% if item.author %}
-            <div><strong>By:</strong> {{ item.author }}</div>
+            <div><strong>{% trans "By:" %}</strong> {{ item.author }}</div>
         {% endif %}
         {% if item.publish_date %}
-            <div><strong>Published:</strong> {{ item.publish_date|date:"F j, Y" }}</div>
+            <div><strong>{% trans "Published:" %}</strong> {{ item.publish_date|date:"F j, Y" }}</div>
         {% endif %}
         {% if item.duration_seconds %}
-            <div><strong>Duration:</strong> {{ item.duration_seconds|duration }}</div>
+            <div><strong>{% trans "Duration:" %}</strong> {{ item.duration_seconds|duration }}</div>
         {% endif %}
-        <div><strong>Type:</strong> {{ item.media_type|title }}</div>
+        <div><strong>{% trans "Type:" %}</strong> {{ item.media_type|title }}</div>
     </div>
 
     {% if item.has_error %}
         <div class="error-message">
-            <strong>Error:</strong> {{ item.error_message }}
+            <strong>{% trans "Error:" %}</strong> {{ item.error_message }}
         </div>
     {% endif %}
 
@@ -146,14 +147,14 @@
 
     {% if item.summary %}
         <div class="summary">
-            <h3>Summary</h3>
+            <h3>{% trans "Summary" %}</h3>
             <p>{{ item.summary }}</p>
         </div>
     {% endif %}
 
     {% if item.description %}
         <div class="description">
-            <h3>Description</h3>
+            <h3>{% trans "Description" %}</h3>
             {{ item.description }}
         </div>
     {% endif %}
@@ -163,7 +164,7 @@
             {% if item.media_type == 'audio' %}
                 <audio controls>
                     <source src="{{ media_url }}" type="{{ item.mime_type }}">
-                    Your browser does not support audio element.
+                    {% trans "Your browser does not support audio element." %}
                 </audio>
             {% else %}
                 <video controls>
@@ -171,23 +172,23 @@
                     {% if subtitle_url %}
                         <track kind="subtitles" src="{{ subtitle_url }}" srclang="en" label="English">
                     {% endif %}
-                    Your browser does not support video element.
+                    {% trans "Your browser does not support video element." %}
                 </video>
             {% endif %}
         </div>
 
         <div class="links">
-            <h3>Downloads</h3>
-            <a href="{{ media_url }}" download>Download {{ item.media_type|title }}</a>
+            <h3>{% trans "Downloads" %}</h3>
+            <a href="{{ media_url }}" download>{% trans "Download" %} {{ item.media_type|title }}</a>
             {% if subtitle_url %}
-                <a href="{{ subtitle_url }}" download>Download Subtitles</a>
+                <a href="{{ subtitle_url }}" download>{% trans "Download Subtitles" %}</a>
             {% endif %}
         </div>
     {% endif %}
 
     {% if item.webpage_url %}
         <div class="links">
-            <a href="{{ item.webpage_url }}" target="_blank">View Original Source</a>
+            <a href="{{ item.webpage_url }}" target="_blank">{% trans "View Original Source" %}</a>
         </div>
     {% endif %}
 </div>

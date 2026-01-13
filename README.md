@@ -23,6 +23,7 @@ I created this since friends and family often send me links to listen to a singl
 ## Features
 
 - Download media from any URL supported by yt-dlp, direct media URLs, HTML with embedded media, playlists, multiple embeds
+- **Multi-language support** - UI and video subtitles in your preferred language (see [i18n docs](docs/INTERNATIONALIZATION.md))
 - Async background processing via task queue
 - Automatic media type detection (audio/video)
 - Podcast feed generation (RSS/Atom) for audio and video
@@ -98,6 +99,8 @@ cp .env.example .env
 # At minimum, set:
 # - STASHCAST_DATA_DIR (base path; media is stored in STASHCAST_DATA_DIR/media)
 # - STASHCAST_USER_TOKEN
+# - LANGUAGE_CODE (optional, default: 'en-us'. Sets UI language and video subtitle language)
+#   Supported: 'en' (English), 'es' (Spanish), 'pt' (Portuguese)
 ```
 
 ### 3. Download the dependencies and setup the db
