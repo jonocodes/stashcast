@@ -115,7 +115,7 @@ class StashUrlOperationTest(TestCase):
         def test_logger(message):
             logged_messages.append(message)
 
-        item = stash_url(
+        stash_url(
             'http://example.com/test.mp3', requested_type='audio', wait=False, logger=test_logger
         )
 

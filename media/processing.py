@@ -26,14 +26,16 @@ from media.service.download import download_direct as service_download_direct
 from media.service.download import download_file as service_download_file
 from media.service.download import download_ytdlp as service_download_ytdlp
 
-# Note: add_metadata_without_transcode, process_subtitle, and process_thumbnail
-# from media.service.process are no longer needed since yt-dlp handles these with
-# --embed-metadata, --convert-thumbnails png, and --convert-subs vtt flags
+# Note: add_metadata_without_transcode and process_subtitle from media.service.process
+# are no longer needed since yt-dlp handles these with --embed-metadata and --convert-subs vtt.
+# However, process_thumbnail IS needed because --convert-thumbnails was removed due to
+# a yt-dlp race condition (FileNotFoundError when FFmpeg tries to convert before file is ready).
 from media.service.media_info import (
     extract_ffprobe_metadata,
     get_output_extension,
     resolve_title_from_metadata,
 )
+from media.service.process import process_thumbnail
 from media.service.resolve import (
     MultipleItemsDetected,
     PlaylistNotSupported,
@@ -352,27 +354,49 @@ def process_files(item, tmp_dir, log_path):
 
             write_log(
                 log_path,
-                'Metadata already embedded by yt-dlp (--embed-metadata, --embed-thumbnail)',
+                'Metadata already embedded by yt-dlp (--embed-metadata)',
             )
 
-    # Look for thumbnail files - yt-dlp converts them to PNG automatically
-    # Check for both thumbnail_temp* (from download.py renaming) and direct thumbnail.png
+    # Look for thumbnail files and convert to PNG
+    # yt-dlp downloads thumbnails in various formats (webp, jpg, png)
+    # We convert to PNG for consistent handling across all clients
     thumb_file = None
-    for pattern in ['thumbnail_temp*.png', 'thumbnail.png', 'thumbnail_temp*']:
-        matches = list(tmp_dir.glob(pattern))
+    for pattern in [
+        'thumbnail_temp*',
+        'download.webp',
+        'download.jpg',
+        'download.png',
+        '*.webp',
+        '*.jpg',
+        '*.jpeg',
+        '*.png',
+    ]:
+        matches = [
+            f for f in tmp_dir.glob(pattern) if f.is_file() and 'content' not in f.name.lower()
+        ]
         if matches:
             thumb_file = matches[0]
             break
 
     if thumb_file and thumb_file.exists():
-        # If it's not already named thumbnail.png, rename it
-        if thumb_file.name != 'thumbnail.png':
-            final_thumb = tmp_dir / 'thumbnail.png'
-            shutil.move(str(thumb_file), str(final_thumb))
-            write_log(log_path, f'Thumbnail found and renamed: {thumb_file.name} -> thumbnail.png')
-        else:
+        final_thumb = tmp_dir / 'thumbnail.png'
+        if thumb_file.suffix.lower() == '.png' and thumb_file.name == 'thumbnail.png':
             write_log(log_path, 'Thumbnail found: thumbnail.png')
-        item.thumbnail_path = 'thumbnail.png'
+        else:
+            # Convert to PNG using PIL (handles webp, jpg, etc.)
+            write_log(log_path, f'Converting thumbnail: {thumb_file.name} -> thumbnail.png')
+            converted = process_thumbnail(
+                thumb_file, final_thumb, logger=lambda m: write_log(log_path, m)
+            )
+            if converted:
+                # Remove original if conversion succeeded and it's a different file
+                if thumb_file != final_thumb and thumb_file.exists():
+                    thumb_file.unlink()
+            else:
+                write_log(log_path, 'Thumbnail conversion failed, skipping thumbnail')
+                final_thumb = None
+        if final_thumb and final_thumb.exists():
+            item.thumbnail_path = 'thumbnail.png'
 
     # Look for subtitle files - yt-dlp converts them to VTT automatically
     # Check for both subtitles_temp* (from download.py renaming) and direct subtitles.vtt
