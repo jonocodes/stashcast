@@ -189,6 +189,86 @@ class DownloadProcessingTest(TestCase):
             self.assertEqual(item.title, 'Real Title')
             self.assertEqual(item.slug, 'real-title')
 
+    @patch('media.processing.process_thumbnail')
+    def test_process_files_converts_webp_thumbnail_to_png(self, mock_process_thumbnail):
+        """Test that process_files converts webp thumbnails to PNG.
+
+        This tests the fix for the yt-dlp race condition where --convert-thumbnails
+        would fail with FileNotFoundError. Now we convert thumbnails manually after
+        download completes using PIL.
+        """
+        from pathlib import Path
+
+        from media.processing import process_files
+
+        with tempfile.TemporaryDirectory() as tmp_dir_str:
+            tmp_dir = Path(tmp_dir_str)
+
+            # Create content file
+            content_path = tmp_dir / 'content.mp3'
+            content_path.write_bytes(b'audio data')
+
+            # Create a webp thumbnail (simulating what yt-dlp downloads)
+            thumb_path = tmp_dir / 'download.webp'
+            thumb_path.write_bytes(b'webp thumbnail data')
+
+            # Mock process_thumbnail to simulate successful conversion
+            output_png = tmp_dir / 'thumbnail.png'
+            mock_process_thumbnail.return_value = output_png
+
+            # Create the output file (simulating what process_thumbnail does)
+            output_png.write_bytes(b'png thumbnail data')
+
+            item = MediaItem.objects.create(
+                source_url='https://example.com/audio.mp3',
+                requested_type=MediaItem.REQUESTED_TYPE_AUDIO,
+                media_type=MediaItem.MEDIA_TYPE_AUDIO,
+                title='Test Audio',
+                slug='test-audio',
+                content_path='content.mp3',
+            )
+
+            process_files(item, tmp_dir, None)
+
+            # Verify process_thumbnail was called with the webp file
+            mock_process_thumbnail.assert_called_once()
+            call_args = mock_process_thumbnail.call_args
+            self.assertEqual(call_args[0][0], thumb_path)  # Input path
+            self.assertEqual(call_args[0][1], tmp_dir / 'thumbnail.png')  # Output path
+
+            # Verify item has thumbnail_path set
+            item.refresh_from_db()
+            self.assertEqual(item.thumbnail_path, 'thumbnail.png')
+
+    def test_process_files_handles_missing_thumbnail(self):
+        """Test that process_files handles case where no thumbnail exists."""
+        from pathlib import Path
+
+        from media.processing import process_files
+
+        with tempfile.TemporaryDirectory() as tmp_dir_str:
+            tmp_dir = Path(tmp_dir_str)
+
+            # Create content file only, no thumbnail
+            content_path = tmp_dir / 'content.mp3'
+            content_path.write_bytes(b'audio data')
+
+            item = MediaItem.objects.create(
+                source_url='https://example.com/audio.mp3',
+                requested_type=MediaItem.REQUESTED_TYPE_AUDIO,
+                media_type=MediaItem.MEDIA_TYPE_AUDIO,
+                title='Test Audio',
+                slug='test-audio',
+                content_path='content.mp3',
+            )
+
+            # Should not raise an error
+            process_files(item, tmp_dir, None)
+
+            # Verify item has no thumbnail_path (empty string or None)
+            item.refresh_from_db()
+            self.assertFalse(item.thumbnail_path)
+
     def test_extract_metadata_updates_title_and_slug(self):
         """Test that extract_metadata_with_ffprobe updates both title and slug.
 

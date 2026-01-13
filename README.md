@@ -67,9 +67,10 @@ Start the service.
 docker compose up
 ```
 
-Then create an admin user so you can add media
+Set up the db and create a super user
 
 ```bash
+docker compose run web just setup
 docker compose run web python manage.py createsuperuser
 ```
 

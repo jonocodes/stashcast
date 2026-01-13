@@ -8,10 +8,22 @@ from django.core.management.base import BaseCommand, CommandError
 class Command(BaseCommand):
     help = 'Create or update a demo admin user from env vars (DEMO_PASSWORD required).'
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            'username',
+            nargs='?',
+            help='Username for the demo user (overrides DEMO_USERNAME env var)',
+        )
+        parser.add_argument(
+            'password',
+            nargs='?',
+            help='Password for the demo user (overrides DEMO_PASSWORD env var)',
+        )
+
     def handle(self, *args, **options):
-        username = os.getenv('DEMO_USERNAME', 'demo')
+        username = options['username'] or os.getenv('DEMO_USERNAME', 'demo')
         email = os.getenv('DEMO_EMAIL', '')
-        password = os.getenv('DEMO_PASSWORD')
+        password = options['password'] or os.getenv('DEMO_PASSWORD')
         group_name = os.getenv('DEMO_GROUP', 'DemoReadOnly')
 
         if not password:

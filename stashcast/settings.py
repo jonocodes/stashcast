@@ -14,20 +14,32 @@ import os
 import sys
 from pathlib import Path
 
+import environ
+
+env = environ.Env(
+    # set casting, default value
+    DEBUG=(bool, False)
+)
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
+# Take environment variables from .env file
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-y)n^3l6r8d$@3l^3y11@!m(j=^2n=#=k_4(hmu&rc*si#ce5kd'
+SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env.bool('DEBUG', default=True)
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'testserver', '*']  # For development only
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS')
+
+CSRF_TRUSTED_DOMAINS = env.list('CSRF_TRUSTED_DOMAINS')
 
 
 # Application definition
@@ -130,7 +142,7 @@ LOCALE_PATHS = [
     BASE_DIR / 'locale',
 ]
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = os.environ.get('TIME_ZONE', 'UTC')
 
 USE_I18N = True
 
@@ -150,8 +162,8 @@ if (
 ):
     raise ValueError(
         f"Unsupported LANGUAGE_CODE: '{LANGUAGE_CODE}'. "
-        f"Supported languages: {', '.join(SUPPORTED_LANGUAGE_CODES)}. "
-        f"Set LANGUAGE_CODE environment variable to one of the supported languages."
+        f'Supported languages: {", ".join(SUPPORTED_LANGUAGE_CODES)}. '
+        f'Set LANGUAGE_CODE environment variable to one of the supported languages.'
     )
 
 
@@ -170,7 +182,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # STASHCAST Configuration
 
-STASHCAST_USER_TOKEN = os.environ.get('STASHCAST_USER_TOKEN', 'dev-user-token-change-in-production')
+STASHCAST_USER_TOKEN = os.environ.get(
+    'STASHCAST_USER_TOKEN',
+)
 
 # Require user token for RSS feeds (set to 'true' to enable)
 REQUIRE_USER_TOKEN_FOR_FEEDS = (
@@ -182,25 +196,29 @@ STASHCAST_MEDIA_BASE_URL = os.environ.get('STASHCAST_MEDIA_BASE_URL', None)
 
 # Default yt-dlp args optimized for mobile playback
 # Audio: AAC codec in M4A container is widely supported
-# Metadata and thumbnails are embedded directly into the media file
-# Thumbnails are converted to PNG, subtitles to VTT format
+# Metadata is embedded directly into the media file
+# Subtitles are converted to VTT format by yt-dlp
+# Note: --embed-thumbnail removed because it deletes the thumbnail file after embedding.
+# We need the thumbnail file for grid view and RSS feed artwork.
+# Note: --convert-thumbnails removed due to yt-dlp race condition causing
+# FileNotFoundError when FFmpeg tries to convert before file is ready.
+# Thumbnails are converted to PNG in process_files() after download completes.
 STASHCAST_DEFAULT_YTDLP_ARGS_AUDIO = os.environ.get(
     'STASHCAST_DEFAULT_YTDLP_ARGS_AUDIO',
-    '--audio-format m4a --audio-quality 128K '
-    '--embed-metadata --embed-thumbnail '
-    '--convert-thumbnails png --convert-subs vtt',
+    '--audio-format m4a --audio-quality 128K --embed-metadata --convert-subs vtt',
 )
 
 # Video: H.264/AAC in MP4 container for maximum mobile compatibility
 # Limit to 720p to balance quality and file size
 # Format filter: prefer best video ≤720p + best audio, fallback to combined format ≤720p
-# Metadata and thumbnails are embedded, subtitles converted to VTT and embedded
+# Metadata is embedded, subtitles converted to VTT and embedded
+# Note: --embed-thumbnail and --convert-thumbnails removed (see audio args comment above)
 STASHCAST_DEFAULT_YTDLP_ARGS_VIDEO = os.environ.get(
     'STASHCAST_DEFAULT_YTDLP_ARGS_VIDEO',
     '--format "bv*[height<=720][vcodec^=avc]+ba/b[height<=720]" '
     '--merge-output-format mp4 '
-    '--embed-metadata --embed-thumbnail '
-    '--convert-thumbnails png --convert-subs vtt --embed-subs',
+    '--embed-metadata '
+    '--convert-subs vtt --embed-subs',
 )
 
 # FFmpeg args for transcoding (if needed)

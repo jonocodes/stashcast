@@ -2,7 +2,7 @@ set shell := ["bash", "-c"]
 
 # set dotenv-load
 
-setenv := '. ".envrc"'
+# setenv := '. ".envrc"'
 
 # show list of commands
 help:

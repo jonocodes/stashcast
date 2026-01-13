@@ -8,7 +8,6 @@ management commands.
 
 from pathlib import Path
 
-from django.conf import settings
 
 from media.models import MediaItem
 
@@ -89,9 +88,7 @@ def stash_url(url, requested_type='auto', wait=False, logger=None):
     return item
 
 
-def transcode_file(
-    input_path, output_dir=None, requested_type='auto', metadata=None, logger=None
-):
+def transcode_file(input_path, output_dir=None, requested_type='auto', metadata=None, logger=None):
     """
     Transcode a file without storing in database.
 

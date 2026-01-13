@@ -31,7 +31,7 @@ class AdminGridViewTest(TestCase):
 
     def test_grid_view_shows_ready_items(self):
         """Test that grid view shows READY items"""
-        item = MediaItem.objects.create(
+        MediaItem.objects.create(
             source_url='http://example.com/test.mp3',
             requested_type=MediaItem.REQUESTED_TYPE_AUDIO,
             slug='test-audio',
@@ -131,7 +131,7 @@ class AdminListViewTest(TestCase):
 
     def test_list_view_shows_ready_items(self):
         """Test that list view shows READY items"""
-        item = MediaItem.objects.create(
+        MediaItem.objects.create(
             source_url='http://example.com/test.mp3',
             requested_type=MediaItem.REQUESTED_TYPE_AUDIO,
             slug='test-audio',
@@ -146,7 +146,7 @@ class AdminListViewTest(TestCase):
 
     def test_list_view_shows_metadata(self):
         """Test that list view shows item metadata"""
-        item = MediaItem.objects.create(
+        MediaItem.objects.create(
             source_url='http://example.com/test.mp3',
             requested_type=MediaItem.REQUESTED_TYPE_AUDIO,
             slug='test-audio',
