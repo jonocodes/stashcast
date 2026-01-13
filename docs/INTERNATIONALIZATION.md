@@ -18,6 +18,7 @@ LANGUAGE_CODE=es
 **Currently supported with full translations:**
 - `en` / `en-us` - English (default)
 - `es` - Español (Spanish)
+- `pt` - Português (Portuguese)
 
 **Adding more languages:**
 Additional languages can be added by creating translation files (`.po`) and compiling them. See the "Creating Translations" section below for instructions on how to contribute translations for other languages.

@@ -122,6 +122,7 @@ LANGUAGE_CODE = os.environ.get('LANGUAGE_CODE', 'en-us')
 LANGUAGES = [
     ('en', 'English'),
     ('es', 'Español'),
+    ('pt', 'Português'),
 ]
 
 # Path to translation files
