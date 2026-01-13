@@ -103,7 +103,7 @@ msgstr "Múltiplos itens detectados"
 msgid ""
 "This URL contains multiple videos/audio files. Please confirm you want to "
 "download all %(counter)s items."
-msgstr ""
+msgstr "Esta URL contém múltiplos arquivos de vídeo/áudio. Por favor confirme que deseja baixar todos os %(counter)s itens."
 
 #: media/templates/admin/admin_stash_confirm_multiple.html:181
 msgid "Media type:"
@@ -203,7 +203,7 @@ msgstr "Download em massa (Múltiplas URLs)"
 msgid ""
 "Enter one URL per line. When bulk URLs are provided, the single URL field "
 "above is ignored. Each URL will be queued as a separate download."
-msgstr ""
+msgstr "Insira uma URL por linha. Quando URLs em massa são fornecidas, o campo de URL única acima é ignorado. Cada URL será enfileirada como um download separado."
 
 #: media/templates/admin/admin_stash_form.html:307
 msgid "Add to StashCast"
@@ -298,7 +298,7 @@ msgid ""
 "A bookmarklet is a bookmark that runs JavaScript to perform actions on the "
 "current page. Drag the bookmarklet link below to your bookmarks bar, then "
 "click it on any page with media you want to download to StashCast."
-msgstr ""
+msgstr "Um favorito é um marcador que executa JavaScript para realizar ações na página atual. Arraste o link do favorito para sua barra de favoritos e clique nele em qualquer página com mídia que deseja baixar para o StashCast."
 
 #: media/templates/admin/bookmarklet.html:162
 #: media/templates/admin/feed_links.html:192
@@ -309,7 +309,7 @@ msgstr "Proteção de feeds ativada"
 msgid ""
 "Your RSS feeds require a user token. Feed URLs in this instance "
 "automatically include the token for privacy."
-msgstr ""
+msgstr "Seus feeds RSS requerem um token de usuário. As URLs dos feeds nesta instância incluem automaticamente o token por privacidade."
 
 #: media/templates/admin/bookmarklet.html:170
 msgid "Public Feeds Notice"
@@ -320,7 +320,7 @@ msgid ""
 "RSS feeds are currently publicly accessible. To require user tokens for "
 "feeds, set REQUIRE_USER_TOKEN_FOR_FEEDS=true in your environment "
 "configuration."
-msgstr ""
+msgstr "Os feeds RSS estão atualmente acessíveis publicamente. Para exigir tokens de usuário para feeds, defina REQUIRE_USER_TOKEN_FOR_FEEDS=true na configuração do ambiente."
 
 #: media/templates/admin/bookmarklet.html:176
 msgid "1. Configure Bookmarklet"
@@ -353,7 +353,7 @@ msgstr "Opcional"
 #: media/templates/admin/bookmarklet.html:198
 msgid ""
 "Close the progress tab after the job completes; leave blank to keep it open"
-msgstr ""
+msgstr "Feche a aba de progresso após a conclusão do trabalho; deixe em branco para mantê-la aberta"
 
 #: media/templates/admin/bookmarklet.html:204
 msgid "Allow Multiple Items"
@@ -364,7 +364,7 @@ msgid ""
 "If enabled, automatically download all items from playlists or pages with "
 "multiple videos. If disabled, you'll get an error prompting you to confirm "
 "in admin."
-msgstr ""
+msgstr "Se ativado, baixa automaticamente todos os itens de listas de reprodução ou páginas com vários vídeos. Se desativado, você receberá um erro solicitando confirmação no admin."
 
 #: media/templates/admin/bookmarklet.html:210
 msgid "2. Your Bookmarklet"
@@ -378,7 +378,7 @@ msgstr "Instalação:"
 msgid ""
 "Drag the button below to your bookmarks bar. If your bookmarks bar is "
 "hidden, enable it in your browser settings first."
-msgstr ""
+msgstr "Arraste o botão abaixo para sua barra de favoritos. Se sua barra de favoritos estiver oculta, ative-a primeiro nas configurações do navegador."
 
 #: media/templates/admin/bookmarklet.html:217
 msgid "Stash to StashCast"
@@ -391,7 +391,7 @@ msgstr "3. Código JavaScript"
 #: media/templates/admin/bookmarklet.html:222
 msgid ""
 "You can also copy the JavaScript code below and create a bookmark manually:"
-msgstr ""
+msgstr "Você também pode copiar o código JavaScript abaixo e criar um favorito manualmente:"
 
 #: media/templates/admin/bookmarklet.html:227
 msgid "Copy Code"
@@ -426,7 +426,7 @@ msgstr "Inscreva-se nos seus feeds"
 msgid ""
 "Copy these URLs to subscribe in your favorite podcast app (Overcast, Pocket "
 "Casts, Apple Podcasts, etc.)."
-msgstr ""
+msgstr "Copie essas URLs para se inscrever no seu aplicativo de podcast favorito (Overcast, Pocket Casts, Apple Podcasts, etc.)."
 
 #: media/templates/admin/feed_links.html:184
 msgid "The URLs include your private token for secure access."
@@ -436,7 +436,7 @@ msgstr "As URLs incluem seu token privado para acesso seguro."
 msgid ""
 "Your RSS feeds require a user token. Keep these URLs private - they grant "
 "access to your feeds."
-msgstr ""
+msgstr "Seus feeds RSS requerem um token de usuário. Mantenha essas URLs privadas - elas concedem acesso aos seus feeds."
 
 #: media/templates/admin/feed_links.html:200
 msgid "Public Feeds"
@@ -446,7 +446,7 @@ msgstr "Feeds públicos"
 msgid ""
 "RSS feeds are currently publicly accessible. To require user tokens for "
 "feeds, set"
-msgstr ""
+msgstr "Os feeds RSS estão atualmente acessíveis publicamente. Para exigir tokens de usuário para feeds, defina"
 
 #: media/templates/admin/feed_links.html:201
 msgid "in your environment configuration."
@@ -680,7 +680,7 @@ msgid ""
 "Drop in any URL supported by yt-dlp and StashCast will download, process, "
 "and publish it to your feeds. Jump straight to the add form to start a new "
 "download."
-msgstr ""
+msgstr "Insira qualquer URL suportada pelo yt-dlp e o StashCast irá baixar, processar e publicar nos seus feeds. Vá direto ao formulário de adição para iniciar um novo download."
 
 #: media/templates/media/home.html:223
 msgid "Add"
