@@ -9,6 +9,7 @@ from typing import Optional, List
 from urllib.parse import urlparse
 from pathlib import Path
 import yt_dlp
+from django.conf import settings
 
 from media.service.media_info import get_streams_from_extension
 from media.service.constants import MEDIA_EXTENSIONS
@@ -147,6 +148,10 @@ def _prefetch_ytdlp(url, logger=None):
     # Enable file:// URLs if needed
     if url.startswith('file://'):
         ydl_opts['enable_file_urls'] = True
+
+    # Add cookies file if configured (needed for cloud VMs where YouTube blocks requests)
+    if settings.STASHCAST_YTDLP_COOKIES_FILE:
+        ydl_opts['cookiefile'] = settings.STASHCAST_YTDLP_COOKIES_FILE
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=False)

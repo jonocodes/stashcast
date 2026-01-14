@@ -151,6 +151,10 @@ def download_ytdlp(url, resolved_type, temp_dir, ytdlp_extra_args='', logger=Non
     if url.startswith('file://'):
         ydl_opts['enable_file_urls'] = True
 
+    # Add cookies file if configured (needed for cloud VMs where YouTube blocks requests)
+    if settings.STASHCAST_YTDLP_COOKIES_FILE:
+        ydl_opts['cookiefile'] = settings.STASHCAST_YTDLP_COOKIES_FILE
+
     # Parse and apply extra args from settings
     ydl_opts = parse_ytdlp_extra_args(ytdlp_extra_args, ydl_opts)
 
@@ -261,6 +265,10 @@ def prefetch_ytdlp_batch(
         'extract_flat': False,  # We need full info for metadata
         'ignoreerrors': True,
     }
+
+    # Add cookies file if configured (needed for cloud VMs where YouTube blocks requests)
+    if settings.STASHCAST_YTDLP_COOKIES_FILE:
+        ydl_opts['cookiefile'] = settings.STASHCAST_YTDLP_COOKIES_FILE
 
     log(f'Batch prefetching {len(urls)} URLs with yt-dlp')
 
@@ -419,6 +427,10 @@ def download_ytdlp_batch(
         'ignoreerrors': True,
         'noplaylist': True,
     }
+
+    # Add cookies file if configured (needed for cloud VMs where YouTube blocks requests)
+    if settings.STASHCAST_YTDLP_COOKIES_FILE:
+        ydl_opts['cookiefile'] = settings.STASHCAST_YTDLP_COOKIES_FILE
 
     # Parse and apply extra args from settings
     ydl_opts = parse_ytdlp_extra_args(ytdlp_extra_args, ydl_opts)
