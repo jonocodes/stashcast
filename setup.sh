@@ -20,4 +20,6 @@ python -c "import nltk; nltk.download('punkt_tab'); nltk.download('stopwords')"
 
 ./manage.py migrate
 
+# ./manage.py collectstatic --noinput
+
 ./manage.py list_superusers
