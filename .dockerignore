@@ -10,6 +10,7 @@ ENV/
 .venv
 output/
 .coverage
+.mypy_cache
 
 # Django
 *.log
@@ -24,8 +25,10 @@ data/
 data_docker/
 
 # Environment
-.env
-.env.local
+# .env
+# .env.local
+.git
+
 # IDE
 .vscode/
 .idea/

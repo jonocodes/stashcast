@@ -60,7 +60,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
+    # "whitenoise.middleware.WhiteNoiseMiddleware",
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -183,9 +183,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # STASHCAST Configuration
 
-STASHCAST_USER_TOKEN = os.environ.get(
-    'STASHCAST_USER_TOKEN',
-)
+STASHCAST_USER_TOKEN = env('STASHCAST_USER_TOKEN')
 
 # Require user token for RSS feeds (set to 'true' to enable)
 REQUIRE_USER_TOKEN_FOR_FEEDS = (

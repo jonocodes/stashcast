@@ -33,6 +33,12 @@ COPY . /app/
 # Expose the Django port
 EXPOSE 8000
 
+# temp env vars so collectstatic works
+# ENV SECRET_KEY="dummy"
+# ENV ALLOWED_HOSTS="dummy"
+# ENV STASHCAST_USER_TOKEN="dummy"
+RUN SECRET_KEY="dummy" ALLOWED_HOSTS="dummy" STASHCAST_USER_TOKEN="dummy" python manage.py collectstatic --noinput
+
 # Make setup executable (contains migrations/NLTK data)
 RUN chmod +x setup.sh
 

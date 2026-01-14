@@ -36,7 +36,7 @@ dev:
 
 # run the dev services in docker
 dev-docker *args:
-    docker compose up {{ args }}
+    docker compose up --build {{ args }}
 
 # kill the local dev process by port in case it's running detached
 kill:

@@ -1,12 +1,26 @@
 services:
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "8000:80"
+    volumes:
+      - static:/srv/static:ro
+      - ./data_docker/media:/srv/media:ro
+    configs:
+      - source: caddyfile
+        target: /etc/caddy/Caddyfile
+    depends_on:
+      - web
+
   web:
     build: .
     container_name: stashcast_web
-    ports:
-      - "8000:8000"
+    # ports:
+    #   - "8000:8000"
     environment:
       STASHCAST_DATA_DIR: /app/data_docker
     volumes:
+      - static:/app/staticfiles
       - .:/app
       - ./data_docker:/app/data_docker
 
@@ -21,3 +35,24 @@ services:
     volumes:
       - .:/app
       - ./data_docker:/app/data_docker
+
+volumes:
+  static:
+
+configs:
+  caddyfile:
+    content: |
+      localhost:80 {
+        # encode gzip
+        handle /static/* {
+          uri strip_prefix /static
+          root * /srv/static
+          file_server
+        }
+        handle /media/files/* {
+          uri strip_prefix /media/files
+          root * /srv/media
+          file_server
+        }
+        reverse_proxy web:8000
+      }
