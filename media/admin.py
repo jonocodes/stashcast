@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.core.exceptions import PermissionDenied
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.html import format_html, mark_safe
 
 from media.models import MediaItem
@@ -65,6 +66,8 @@ class DemoReadOnlyAdminMixin:
             actions.pop('delete_selected', None)
             actions.pop('refetch_items', None)
             actions.pop('regenerate_summaries', None)
+            actions.pop('archive_items', None)
+            actions.pop('unarchive_items', None)
         return actions
 
 
@@ -102,6 +105,7 @@ class MediaItemAdmin(admin.ModelAdmin, DemoReadOnlyAdminMixin):
         'created_at',
         'updated_at',
         'downloaded_at',
+        'archived_at',
         'preview_display',
         'log_display',
     ]
@@ -148,10 +152,10 @@ class MediaItemAdmin(admin.ModelAdmin, DemoReadOnlyAdminMixin):
         ),
         ('Summary', {'fields': ['summary']}),
         ('Logs & Preview', {'fields': ['log_display', 'preview_display']}),
-        ('Timestamps', {'fields': ['created_at', 'updated_at', 'downloaded_at']}),
+        ('Timestamps', {'fields': ['created_at', 'updated_at', 'downloaded_at', 'archived_at']}),
     ]
 
-    actions = ['refetch_items', 'regenerate_summaries']
+    actions = ['refetch_items', 'regenerate_summaries', 'archive_items', 'unarchive_items']
 
     def file_size_display(self, obj):
         if obj.file_size:
@@ -237,3 +241,23 @@ class MediaItemAdmin(admin.ModelAdmin, DemoReadOnlyAdminMixin):
         self.message_user(request, f'Enqueued summary generation for {count} items.')
 
     regenerate_summaries.short_description = 'Regenerate summaries'
+
+    def archive_items(self, request, queryset):
+        if is_demo_readonly(request.user):
+            raise PermissionDenied('Demo users are not allowed to archive items.')
+        count = queryset.filter(status=MediaItem.STATUS_READY).update(
+            status=MediaItem.STATUS_ARCHIVED, archived_at=timezone.now()
+        )
+        self.message_user(request, f'Archived {count} items.')
+
+    archive_items.short_description = 'Archive selected items'
+
+    def unarchive_items(self, request, queryset):
+        if is_demo_readonly(request.user):
+            raise PermissionDenied('Demo users are not allowed to unarchive items.')
+        count = queryset.filter(status=MediaItem.STATUS_ARCHIVED).update(
+            status=MediaItem.STATUS_READY, archived_at=None
+        )
+        self.message_user(request, f'Unarchived {count} items.')
+
+    unarchive_items.short_description = 'Unarchive selected items'
