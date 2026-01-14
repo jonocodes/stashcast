@@ -42,7 +42,7 @@ volumes:
 configs:
   caddyfile:
     content: |
-      localhost:80 {
+      :80 {
         # encode gzip
         handle /static/* {
           uri strip_prefix /static
