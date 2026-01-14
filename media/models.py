@@ -21,6 +21,7 @@ class MediaItem(models.Model):
     STATUS_PROCESSING = 'PROCESSING'
     STATUS_READY = 'READY'
     STATUS_ERROR = 'ERROR'
+    STATUS_ARCHIVED = 'ARCHIVED'
 
     STATUS_CHOICES = [
         (STATUS_PREFETCHING, _('Prefetching')),
@@ -28,6 +29,7 @@ class MediaItem(models.Model):
         (STATUS_PROCESSING, _('Processing')),
         (STATUS_READY, _('Ready')),
         (STATUS_ERROR, _('Error')),
+        (STATUS_ARCHIVED, _('Archived')),
     ]
 
     # Media type choices
@@ -94,6 +96,7 @@ class MediaItem(models.Model):
 
     # Timestamps
     downloaded_at = models.DateTimeField(null=True, blank=True)
+    archived_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

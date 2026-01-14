@@ -275,3 +275,18 @@ class CombinedFeed(BaseFeed):
 
     def items(self):
         return self.get_queryset().order_by('-publish_date', '-downloaded_at')[:100]
+
+
+class ArchiveFeed(BaseFeed):
+    """Podcast feed for archived media items (audio and video)"""
+
+    title = 'StashCast Archive'
+    link = '/feeds/archive.xml'
+    description = 'Archived audio and video content'
+    logo_filename = 'feed-logo-combined.png'
+
+    def get_queryset(self):
+        return MediaItem.objects.filter(status=MediaItem.STATUS_ARCHIVED)
+
+    def items(self):
+        return self.get_queryset().order_by('-archived_at', '-publish_date')[:100]

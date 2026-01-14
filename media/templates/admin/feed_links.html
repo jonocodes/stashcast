@@ -267,6 +267,25 @@
             </div>
         </div>
     </div>
+
+    <div class="feed-card">
+        <img src="{% static 'media/feed-logo-combined.png' %}" alt="{% trans 'Archive feed' %}">
+        <div class="feed-card-content">
+            <h3>{% trans "Archive Feed" %}</h3>
+            <p style="margin: 0 0 10px 0; color: var(--sc-muted); font-size: 14px;">{% trans "Archived content for reference" %}</p>
+            <div class="feed-url-group">
+                <label>{% trans "Subscribe URL:" %}</label>
+                <div class="feed-url-input">
+                    <input type="text" readonly value="{{ base_url }}/feeds/archive.xml{% if require_user_token_for_feeds %}?token={{ user_token }}{% endif %}" id="archive-url">
+                    <button class="copy-btn" data-target="archive-url">{% trans "Copy" %}</button>
+                </div>
+            </div>
+            <div class="feed-actions">
+                <a href="/feeds/archive.xml?{% if require_user_token_for_feeds %}token={{ user_token }}&{% endif %}view=1" target="_blank">{% trans "View XML" %}</a>
+                <a href="/admin/media/mediaitem/?status=ARCHIVED">{% trans "Manage" %}</a>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
