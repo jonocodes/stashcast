@@ -250,6 +250,13 @@
                     <a class="pill" href="/admin/media/mediaitem/">{% trans "Manage" %}</a>
                 </div>
             </div>
+            <div class="feed-card">
+                <img src="{% static 'media/feed-logo-combined.png' %}" alt="{% trans 'Archive feed' %}">
+                <div class="feed-links">
+                    <a class="pill" href="/feeds/archive.xml?view=1">{% trans "View feed" %}</a>
+                    <a class="pill" href="/admin/media/mediaitem/?status=ARCHIVED">{% trans "Manage" %}</a>
+                </div>
+            </div>
         </div>
         <div class="links">
             <a class="link-card" href="{% url 'feed_links' %}">
