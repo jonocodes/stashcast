@@ -149,10 +149,6 @@ def _prefetch_ytdlp(url, logger=None):
     if url.startswith('file://'):
         ydl_opts['enable_file_urls'] = True
 
-    # Add cookies file if configured (needed for cloud VMs where YouTube blocks requests)
-    if settings.STASHCAST_YTDLP_COOKIES_FILE:
-        ydl_opts['cookiefile'] = settings.STASHCAST_YTDLP_COOKIES_FILE
-
     # Add proxy if configured (needed for cloud VMs where YouTube blocks requests)
     if settings.STASHCAST_YTDLP_PROXY:
         ydl_opts['proxy'] = settings.STASHCAST_YTDLP_PROXY

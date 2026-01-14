@@ -14,7 +14,6 @@ This happens because YouTube flags datacenter IP ranges as potential bots. This 
 |--------|------|------|
 | **Residential Proxy** | No login required, reliable | Monthly cost ($5-20+) |
 | **Tailscale Exit Node** | Free, uses your home IP | Requires home machine running 24/7 |
-| **Cookies File** | Free, simple setup | Requires YouTube login, cookies expire |
 | **Rate Limiting** | Free, no setup | May not work for heavily flagged IPs |
 
 ## Option 1: Residential Proxy (Recommended)
@@ -98,41 +97,7 @@ If you don't want all traffic through your home:
    STASHCAST_YTDLP_PROXY=socks5://100.x.x.x:1080  # Your home machine's Tailscale IP
    ```
 
-## Option 3: Cookies File
-
-Export cookies from a browser where you're logged into YouTube.
-
-### Setup
-
-1. **Install a cookies export extension:**
-   - Chrome: [Get cookies.txt LOCALLY](https://chrome.google.com/webstore/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc)
-   - Firefox: [cookies.txt](https://addons.mozilla.org/en-US/firefox/addon/cookies-txt/)
-
-2. **Export cookies:**
-   - Go to [youtube.com](https://youtube.com) and ensure you're logged in
-   - Click the extension icon
-   - Export/download the cookies.txt file
-
-3. **Upload to your VM:**
-   ```bash
-   scp cookies.txt user@your-vm:/path/to/cookies.txt
-   ```
-
-4. **Configure Stashcast:**
-   ```bash
-   STASHCAST_YTDLP_COOKIES_FILE=/path/to/cookies.txt
-   ```
-
-5. Restart Stashcast
-
-### Important Notes
-
-- Cookies expire periodically (weeks to months)
-- You'll need to re-export when they expire
-- The cookies are tied to your Google account
-- Consider using a dedicated/throwaway Google account
-
-## Option 4: Rate Limiting
+## Option 3: Rate Limiting
 
 Add delays between requests to reduce bot detection triggers.
 
@@ -153,7 +118,7 @@ This adds 5-30 second random delays between requests.
 - Often not sufficient for heavily flagged cloud provider ranges
 - Can be combined with other methods
 
-## Option 5: Different Player Client
+## Option 4: Different Player Client
 
 YouTube has different API endpoints. Some may be less strict.
 
@@ -193,9 +158,6 @@ yt-dlp "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
 
 # Test with proxy
 yt-dlp --proxy "socks5://user:pass@host:port" "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-
-# Test with cookies
-yt-dlp --cookies /path/to/cookies.txt "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
 ```
 
 ### Check your IP reputation
@@ -220,6 +182,5 @@ curl --proxy socks5://user:pass@host:port ifconfig.me
 
 ## Additional Resources
 
-- [yt-dlp FAQ on cookies](https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp)
 - [yt-dlp extractors documentation](https://github.com/yt-dlp/yt-dlp/wiki/Extractors)
 - [Tailscale exit nodes documentation](https://tailscale.com/kb/1103/exit-nodes/)

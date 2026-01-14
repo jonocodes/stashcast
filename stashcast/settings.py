@@ -234,12 +234,6 @@ STASHCAST_SLUG_MAX_WORDS = int(os.environ.get('STASHCAST_SLUG_MAX_WORDS', '6'))
 STASHCAST_SLUG_MAX_CHARS = int(os.environ.get('STASHCAST_SLUG_MAX_CHARS', '40'))
 STASHCAST_SUMMARY_SENTENCES = int(os.environ.get('STASHCAST_SUMMARY_SENTENCES', '8'))
 
-# Optional: Path to cookies file for yt-dlp authentication
-# Required when running on cloud VMs where YouTube blocks requests
-# Export cookies from a browser where you're logged into YouTube
-# See: https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp
-STASHCAST_YTDLP_COOKIES_FILE = os.environ.get('STASHCAST_YTDLP_COOKIES_FILE', None)
-
 # Optional: Proxy URL for yt-dlp requests
 # Use residential proxy to avoid YouTube blocking cloud VM IPs
 # Formats: http://host:port, socks5://host:port, socks5://user:pass@host:port
