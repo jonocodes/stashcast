@@ -155,6 +155,10 @@ def download_ytdlp(url, resolved_type, temp_dir, ytdlp_extra_args='', logger=Non
     if settings.STASHCAST_YTDLP_COOKIES_FILE:
         ydl_opts['cookiefile'] = settings.STASHCAST_YTDLP_COOKIES_FILE
 
+    # Add proxy if configured (needed for cloud VMs where YouTube blocks requests)
+    if settings.STASHCAST_YTDLP_PROXY:
+        ydl_opts['proxy'] = settings.STASHCAST_YTDLP_PROXY
+
     # Parse and apply extra args from settings
     ydl_opts = parse_ytdlp_extra_args(ytdlp_extra_args, ydl_opts)
 
@@ -269,6 +273,10 @@ def prefetch_ytdlp_batch(
     # Add cookies file if configured (needed for cloud VMs where YouTube blocks requests)
     if settings.STASHCAST_YTDLP_COOKIES_FILE:
         ydl_opts['cookiefile'] = settings.STASHCAST_YTDLP_COOKIES_FILE
+
+    # Add proxy if configured (needed for cloud VMs where YouTube blocks requests)
+    if settings.STASHCAST_YTDLP_PROXY:
+        ydl_opts['proxy'] = settings.STASHCAST_YTDLP_PROXY
 
     log(f'Batch prefetching {len(urls)} URLs with yt-dlp')
 
@@ -431,6 +439,10 @@ def download_ytdlp_batch(
     # Add cookies file if configured (needed for cloud VMs where YouTube blocks requests)
     if settings.STASHCAST_YTDLP_COOKIES_FILE:
         ydl_opts['cookiefile'] = settings.STASHCAST_YTDLP_COOKIES_FILE
+
+    # Add proxy if configured (needed for cloud VMs where YouTube blocks requests)
+    if settings.STASHCAST_YTDLP_PROXY:
+        ydl_opts['proxy'] = settings.STASHCAST_YTDLP_PROXY
 
     # Parse and apply extra args from settings
     ydl_opts = parse_ytdlp_extra_args(ytdlp_extra_args, ydl_opts)

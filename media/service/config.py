@@ -169,6 +169,24 @@ def parse_ytdlp_extra_args(args_string, base_opts):
                 {'key': 'FFmpegEmbedSubtitle'}
             ]
             i += 1
+        elif arg == '--proxy':
+            if i + 1 < len(args_list):
+                base_opts['proxy'] = args_list[i + 1]
+                i += 2
+            else:
+                i += 1
+        elif arg == '--sleep-interval':
+            if i + 1 < len(args_list):
+                base_opts['sleep_interval'] = int(args_list[i + 1])
+                i += 2
+            else:
+                i += 1
+        elif arg == '--max-sleep-interval':
+            if i + 1 < len(args_list):
+                base_opts['max_sleep_interval'] = int(args_list[i + 1])
+                i += 2
+            else:
+                i += 1
         else:
             # Skip unknown args
             i += 1

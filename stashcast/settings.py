@@ -240,6 +240,12 @@ STASHCAST_SUMMARY_SENTENCES = int(os.environ.get('STASHCAST_SUMMARY_SENTENCES', 
 # See: https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp
 STASHCAST_YTDLP_COOKIES_FILE = os.environ.get('STASHCAST_YTDLP_COOKIES_FILE', None)
 
+# Optional: Proxy URL for yt-dlp requests
+# Use residential proxy to avoid YouTube blocking cloud VM IPs
+# Formats: http://host:port, socks5://host:port, socks5://user:pass@host:port
+# See docs/YOUTUBE_AUTH.md for setup instructions
+STASHCAST_YTDLP_PROXY = os.environ.get('STASHCAST_YTDLP_PROXY', None)
+
 # Ensure media directories exist
 os.makedirs(STASHCAST_MEDIA_DIR, exist_ok=True)
 
