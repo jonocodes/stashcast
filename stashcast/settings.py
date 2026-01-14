@@ -235,6 +235,7 @@ STASHCAST_DEFAULT_FFMPEG_ARGS_VIDEO = os.environ.get(
 STASHCAST_SLUG_MAX_WORDS = int(os.environ.get('STASHCAST_SLUG_MAX_WORDS', '6'))
 STASHCAST_SLUG_MAX_CHARS = int(os.environ.get('STASHCAST_SLUG_MAX_CHARS', '40'))
 STASHCAST_SUMMARY_SENTENCES = int(os.environ.get('STASHCAST_SUMMARY_SENTENCES', '8'))
+STASHCAST_FEED_SIZE_LIMIT = int(os.environ.get('STASHCAST_FEED_SIZE_LIMIT', '200'))
 
 # Ensure media directories exist
 os.makedirs(STASHCAST_MEDIA_DIR, exist_ok=True)

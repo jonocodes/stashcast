@@ -98,7 +98,7 @@ class MediaItem(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['-publish_date', '-downloaded_at']
+        ordering = ['-created_at']
         indexes = [
             models.Index(fields=['source_url']),
             models.Index(fields=['slug']),

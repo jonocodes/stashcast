@@ -240,7 +240,7 @@ class AudioFeed(BaseFeed):
     logo_filename = 'feed-logo-audio.png'
 
     def items(self):
-        return self.get_queryset().order_by('-publish_date', '-downloaded_at')[:100]
+        return self.get_queryset().order_by('-created_at')[:settings.STASHCAST_FEED_SIZE_LIMIT]
 
     def get_queryset(self):
         return MediaItem.objects.filter(
@@ -257,7 +257,7 @@ class VideoFeed(BaseFeed):
     logo_filename = 'feed-logo-video.png'
 
     def items(self):
-        return self.get_queryset().order_by('-publish_date', '-downloaded_at')[:100]
+        return self.get_queryset().order_by('-created_at')[:settings.STASHCAST_FEED_SIZE_LIMIT]
 
     def get_queryset(self):
         return MediaItem.objects.filter(
@@ -274,4 +274,4 @@ class CombinedFeed(BaseFeed):
     logo_filename = 'feed-logo-combined.png'
 
     def items(self):
-        return self.get_queryset().order_by('-publish_date', '-downloaded_at')[:100]
+        return self.get_queryset().order_by('-created_at')[:settings.STASHCAST_FEED_SIZE_LIMIT]
