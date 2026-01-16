@@ -5,7 +5,7 @@
                 "hooks": [
                     {
                         "type": "command",
-                        "command": "./bootstrap-web.sh && ./setup.sh --with-packages"
+                        "command": "./bootstrap-web.sh"
                     }
                 ]
             }
