@@ -3,9 +3,12 @@
 
 set -e
 
+# Use Python 3.13 as required by pyproject.toml
+PYTHON=${PYTHON:-python3.13}
+
 # Only install packages if --with-packages flag is provided
 if [[ "$1" == "--with-packages" ]]; then
-    pip install -r requirements.txt
+    $PYTHON -m pip install -r requirements.txt
 else
     echo "Skipping package installation (use --with-packages to install dependencies)"
 fi
@@ -16,15 +19,15 @@ export NLTK_DATA=${NLTK_DATA:=$STASHCAST_DATA_DIR}
 echo "Using STASHCAST_DATA_DIR: $STASHCAST_DATA_DIR"
 echo "Using NLTK_DATA: $NLTK_DATA"
 
-python -c "import nltk; nltk.download('punkt_tab'); nltk.download('stopwords')"
+$PYTHON -c "import nltk; nltk.download('punkt_tab'); nltk.download('stopwords')"
 
 # temp dummy values for initial setup so migrations can run
 export SECRET_KEY="dummy"
 export ALLOWED_HOSTS="dummy"
 export STASHCAST_USER_TOKEN="dummy"
 
-./manage.py migrate
+$PYTHON manage.py migrate
 
-# ./manage.py collectstatic --noinput
+# $PYTHON manage.py collectstatic --noinput
 
-./manage.py list_superusers
+$PYTHON manage.py list_superusers
