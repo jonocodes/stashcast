@@ -28,11 +28,11 @@ clean-data:
 
 # run the django server
 dev-web:
-    honcho start web
+    uv run honcho start web
 
 # run the server, the worker, and demo data server
 dev:
-    exec honcho start
+    exec uv run honcho start
 
 # run the dev services in docker
 dev-docker *args:
@@ -44,24 +44,24 @@ kill:
 
 # run linting and auto-fixing
 lint:
-    ruff format
-    ruff check --fix --unsafe-fixes
+    uv run ruff format
+    uv run ruff check --fix --unsafe-fixes
 
 # create a superuser with username 'admin' and password 'admin' for testing/dev
 create-admin-dummy:
-    DJANGO_SUPERUSER_PASSWORD=admin ./manage.py createsuperuser --username admin --email "" --noinput
+    DJANGO_SUPERUSER_PASSWORD=admin uv run python manage.py createsuperuser --username admin --email "" --noinput
 
 # run tests
 test *args:
-    pytest {{ args }}
+    uv run pytest {{ args }}
 
 # alias for django manage command
 manage *args:
-    ./manage.py {{ args }}
+    uv run python manage.py {{ args }}
 
 # alias to manage
 m *args:
-    ./manage.py {{ args }}
+    uv run python manage.py {{ args }}
 
 # alias to run commands in docker
 docker-run *args:
