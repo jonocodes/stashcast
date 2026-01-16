@@ -7,7 +7,7 @@
                     {
                         "type": "command",
                         "command": "just lint 2>/dev/null || true"
-                    },
+                    }
                 ]
             }
         ],

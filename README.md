@@ -16,6 +16,14 @@
 
 StashCast is an application for downloading online media (audio/video) for offline consumption and exposing it via podcast feeds, so you can watch it later. It runs as a single user Django web app.
 
+## Demo
+
+Demo instance running here:
+https://demo.stashcast.dgt.is/
+
+The user is 'demo' and the password is 'demo' spelled backwards. The demo user can not add/remove/update content.
+
+
 ## Motivation
 
 I created this since friends and family often send me links to listen to a single episode of a podcast via Apple Podcasts, or a single lecture on youtube. I don't want to subscribe to the show to listen to a single eposide, but I do want to listen to it - later.
@@ -42,9 +50,9 @@ I created this since friends and family often send me links to listen to a singl
 - A playback tool. The grid and list view are good ways to view your content, but StashCast's best experience would be to use a Podcast app for playback.
 
 
-## Web view screenshot
+## Grid view screenshot
 
-![screenshot](./docs/screenshot-web.png)
+![screenshot](./docs/screenshot-grid-view.png)
 
 ## Requirements
 

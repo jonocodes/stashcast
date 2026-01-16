@@ -18,6 +18,11 @@ echo "Using NLTK_DATA: $NLTK_DATA"
 
 python -c "import nltk; nltk.download('punkt_tab'); nltk.download('stopwords')"
 
+# temp dummy values for initial setup so migrations can run
+export SECRET_KEY="dummy"
+export ALLOWED_HOSTS="dummy"
+export STASHCAST_USER_TOKEN="dummy"
+
 ./manage.py migrate
 
 # ./manage.py collectstatic --noinput

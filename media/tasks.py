@@ -486,7 +486,7 @@ def process_media_batch(guids: List[str]):
                 urls=video_urls,
                 resolved_type=resolved_type,
                 temp_dir=batch_tmp_dir / 'downloads',
-                ytdlp_extra_args=settings.STASHCAST_YTDLP_ARGS,
+                ytdlp_extra_args=settings.STASHCAST_DEFAULT_YTDLP_ARGS,
                 logger=lambda m: write_log(batch_log_path, m),
             )
 
