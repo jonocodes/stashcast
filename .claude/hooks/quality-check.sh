@@ -8,9 +8,10 @@ echo "Running quality checks..."
 ./setup.sh --with-packages || { echo "Setup failed" >&2; exit 2; }
 
 # Run linter
-just lint || { echo "Justfile linting failed" >&2; exit 2; }
+uv run ruff format || { echo "Ruff format failed" >&2; exit 2; }
+uv run ruff check --fix --unsafe-fixes || { echo "Ruff check failed" >&2; exit 2; }
 
 # Run tests
-just test || { echo "Tests failed" >&2; exit 2; }
+uv run pytest || { echo "Tests failed" >&2; exit 2; }
 
 echo "✓ All quality checks passed"
