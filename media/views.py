@@ -776,3 +776,54 @@ def stash_status_stream(request, guid):
     response['Cache-Control'] = 'no-cache'
     response['X-Accel-Buffering'] = 'no'
     return response
+
+
+@staff_member_required
+@require_http_methods(['POST'])
+def item_archive_view(request, guid):
+    """Archive a media item."""
+    from django.contrib import messages
+    from django.core.exceptions import PermissionDenied
+    from django.utils import timezone
+
+    from media.admin import is_demo_readonly
+
+    if is_demo_readonly(request.user):
+        raise PermissionDenied('Demo users are not allowed to archive items.')
+
+    item = get_object_or_404(MediaItem, guid=guid)
+
+    if item.status == MediaItem.STATUS_READY:
+        item.status = MediaItem.STATUS_ARCHIVED
+        item.archived_at = timezone.now()
+        item.save()
+        messages.success(request, f'Archived: {item.title or item.guid}')
+    else:
+        messages.error(request, 'Only ready items can be archived.')
+
+    return redirect('item_detail', guid=guid)
+
+
+@staff_member_required
+@require_http_methods(['POST'])
+def item_unarchive_view(request, guid):
+    """Unarchive a media item."""
+    from django.contrib import messages
+    from django.core.exceptions import PermissionDenied
+
+    from media.admin import is_demo_readonly
+
+    if is_demo_readonly(request.user):
+        raise PermissionDenied('Demo users are not allowed to unarchive items.')
+
+    item = get_object_or_404(MediaItem, guid=guid)
+
+    if item.status == MediaItem.STATUS_ARCHIVED:
+        item.status = MediaItem.STATUS_READY
+        item.archived_at = None
+        item.save()
+        messages.success(request, f'Unarchived: {item.title or item.guid}')
+    else:
+        messages.error(request, 'Only archived items can be unarchived.')
+
+    return redirect('item_detail', guid=guid)

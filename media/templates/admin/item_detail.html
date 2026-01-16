@@ -103,6 +103,57 @@
         border-radius: 4px;
         margin: 20px 0;
     }
+    .action-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 20px;
+        padding: 15px;
+        background: var(--darkened-bg, rgba(0,0,0,0.02));
+        border-radius: 4px;
+        align-items: center;
+    }
+    .action-bar a, .action-bar button {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        border-radius: 4px;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        border: none;
+        transition: background 0.2s, opacity 0.2s;
+    }
+    .action-bar .btn-primary {
+        background: var(--primary, #417690);
+        color: white;
+    }
+    .action-bar .btn-primary:hover {
+        opacity: 0.9;
+    }
+    .action-bar .btn-secondary {
+        background: var(--border-color, #ddd);
+        color: var(--body-fg);
+    }
+    .action-bar .btn-secondary:hover {
+        background: var(--body-quiet-color, #999);
+        color: white;
+    }
+    .action-bar .btn-danger {
+        background: #dc3545;
+        color: white;
+    }
+    .action-bar .btn-danger:hover {
+        background: #c82333;
+    }
+    .action-bar .separator {
+        width: 1px;
+        height: 24px;
+        background: var(--border-color, #ddd);
+        margin: 0 5px;
+    }
 </style>
 {% endblock %}
 
@@ -121,6 +172,35 @@
     {% endif %}
 
     <h1>{{ item.title|default:"Untitled" }}</h1>
+
+    <div class="action-bar">
+        <a href="{% url 'admin:media_mediaitem_change' item.guid %}" class="btn-primary">{% trans "Edit" %}</a>
+        {% if item.status == 'READY' %}
+            <form method="post" action="{% url 'item_archive' item.guid %}" style="margin: 0;">
+                {% csrf_token %}
+                <button type="submit" class="btn-secondary">{% trans "Archive" %}</button>
+            </form>
+        {% elif item.status == 'ARCHIVED' %}
+            <form method="post" action="{% url 'item_unarchive' item.guid %}" style="margin: 0;">
+                {% csrf_token %}
+                <button type="submit" class="btn-secondary">{% trans "Unarchive" %}</button>
+            </form>
+        {% endif %}
+        <a href="{% url 'admin:media_mediaitem_delete' item.guid %}" class="btn-danger">{% trans "Delete" %}</a>
+
+        {% if item.is_ready and media_url %}
+            <span class="separator"></span>
+            <a href="{{ media_url }}" download class="btn-secondary">{% trans "Download" %} {{ item.media_type|title }}</a>
+            {% if subtitle_url %}
+                <a href="{{ subtitle_url }}" download class="btn-secondary">{% trans "Download Subtitles" %}</a>
+            {% endif %}
+        {% endif %}
+
+        {% if item.webpage_url %}
+            <span class="separator"></span>
+            <a href="{{ item.webpage_url }}" target="_blank" class="btn-secondary">{% trans "Original Source" %}</a>
+        {% endif %}
+    </div>
 
     <div class="metadata">
         {% if item.author %}
@@ -175,20 +255,6 @@
                     {% trans "Your browser does not support video element." %}
                 </video>
             {% endif %}
-        </div>
-
-        <div class="links">
-            <h3>{% trans "Downloads" %}</h3>
-            <a href="{{ media_url }}" download>{% trans "Download" %} {{ item.media_type|title }}</a>
-            {% if subtitle_url %}
-                <a href="{{ subtitle_url }}" download>{% trans "Download Subtitles" %}</a>
-            {% endif %}
-        </div>
-    {% endif %}
-
-    {% if item.webpage_url %}
-        <div class="links">
-            <a href="{{ item.webpage_url }}" target="_blank">{% trans "View Original Source" %}</a>
         </div>
     {% endif %}
 </div>
