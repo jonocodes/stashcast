@@ -39,6 +39,7 @@
         text-transform: uppercase;
         letter-spacing: 0.5px;
         margin-right: 8px;
+        margin-bottom: 20px;
     }
     .status-ready { background: #d4edda; color: #155724; }
     .status-archived { background: #e2e3e5; color: #383d41; }
@@ -141,22 +142,24 @@
 
 {% block content %}
 <div class="item-detail-container">
+
+    {% if item.status == 'READY' %}
+        <!-- <span class="status-badge status-ready">{% trans "Ready" %}</span> -->
+    {% elif item.status == 'ARCHIVED' %}
+        <span class="status-badge status-archived">{% trans "Archived" %}</span>
+    {% elif item.status == 'ERROR' %}
+        <span class="status-badge status-error">{% trans "Error" %}</span>
+    {% elif item.status == 'PROCESSING' %}
+        <span class="status-badge status-processing">{% trans "Processing" %}</span>
+    {% elif item.status == 'DOWNLOADING' %}
+        <span class="status-badge status-downloading">{% trans "Downloading" %}</span>
+    {% else %}
+        <span class="status-badge status-prefetching">{% trans "Prefetching" %}</span>
+    {% endif %}
+
     <h1>{{ item.title|default:"Untitled" }}</h1>
 
     <div class="action-bar">
-        {% if item.status == 'READY' %}
-            <span class="status-badge status-ready">{% trans "Ready" %}</span>
-        {% elif item.status == 'ARCHIVED' %}
-            <span class="status-badge status-archived">{% trans "Archived" %}</span>
-        {% elif item.status == 'ERROR' %}
-            <span class="status-badge status-error">{% trans "Error" %}</span>
-        {% elif item.status == 'PROCESSING' %}
-            <span class="status-badge status-processing">{% trans "Processing" %}</span>
-        {% elif item.status == 'DOWNLOADING' %}
-            <span class="status-badge status-downloading">{% trans "Downloading" %}</span>
-        {% else %}
-            <span class="status-badge status-prefetching">{% trans "Prefetching" %}</span>
-        {% endif %}
 
         <span class="separator"></span>
 

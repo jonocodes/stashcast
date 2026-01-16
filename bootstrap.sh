@@ -51,9 +51,12 @@ elif command -v flox &> /dev/null || [[ -d ".flox" ]]; then
         flox activate -- ./setup.sh
         flox activate -- pip install -r requirements-dev.txt
         echo " == Please activate flox to continue == "
+        return 0
     fi
 
 else
     echo "Environment type unknown"
     exit 1
 fi
+
+DEMO_USERNAME=demo DEMO_PASSWORD=omed ./manage.py create_demo_user
