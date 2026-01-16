@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# First time setup script, but can be run every start to ensure dependencies are met
+
+# Application setup script. Get dependencies and set up database. You should probably run bootstrap.sh first.
 
 set -e
 

@@ -72,7 +72,7 @@ class DemoReadOnlyAdminMixin:
 
 
 @admin.register(MediaItem)
-class MediaItemAdmin(admin.ModelAdmin, DemoReadOnlyAdminMixin):
+class MediaItemAdmin(DemoReadOnlyAdminMixin, admin.ModelAdmin):
     list_display = [
         'title',
         'action_links',

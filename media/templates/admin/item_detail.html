@@ -15,22 +15,76 @@
         border: 1px solid var(--border-color, #ddd);
         border-radius: 8px;
     }
+    h1 {
+        margin: 0 0 15px 0;
+        color: var(--body-fg);
+    }
+    .action-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 20px;
+        padding: 12px 16px;
+        background: var(--darkened-bg, #f8f9fa);
+        border-radius: 6px;
+        align-items: center;
+    }
     .status-badge {
-        display: inline-block;
-        padding: 4px 12px;
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 12px;
         border-radius: 4px;
-        font-size: 14px;
-        font-weight: 500;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-right: 8px;
         margin-bottom: 20px;
     }
-    .status-ready { background: color-mix(in srgb, #28a745 25%, transparent); color: #28a745; }
-    .status-error { background: color-mix(in srgb, #dc3545 25%, transparent); color: #dc3545; }
-    .status-processing { background: color-mix(in srgb, #ffc107 25%, transparent); color: #b38600; }
-    .status-downloading { background: color-mix(in srgb, #17a2b8 25%, transparent); color: #17a2b8; }
-    .status-prefetching { background: color-mix(in srgb, #6c757d 25%, transparent); color: var(--body-quiet-color, #6c757d); }
-    h1 {
-        margin: 0 0 10px 0;
-        color: var(--body-fg);
+    .status-ready { background: #d4edda; color: #155724; }
+    .status-archived { background: #e2e3e5; color: #383d41; }
+    .status-error { background: #f8d7da; color: #721c24; }
+    .status-processing { background: #fff3cd; color: #856404; }
+    .status-downloading { background: #d1ecf1; color: #0c5460; }
+    .status-prefetching { background: #e2e3e5; color: #383d41; }
+    .action-bar .separator {
+        width: 1px;
+        height: 20px;
+        background: var(--border-color, #dee2e6);
+        margin: 0 4px;
+    }
+    .action-bar .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 6px 12px;
+        border-radius: 4px;
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        border: 1px solid transparent;
+        transition: all 0.15s ease;
+        background: var(--body-bg, white);
+        color: var(--body-fg, #212529);
+        border-color: var(--border-color, #dee2e6);
+    }
+    .action-bar .btn:hover {
+        background: var(--darkened-bg, #e9ecef);
+        text-decoration: none;
+    }
+    .action-bar .btn-danger {
+        color: #dc3545;
+        border-color: #dc3545;
+        background: transparent;
+    }
+    .action-bar .btn-danger:hover {
+        background: #dc3545;
+        color: white;
+    }
+    .action-bar form {
+        margin: 0;
+        display: inline-flex;
     }
     .metadata {
         color: var(--body-quiet-color, #666);
@@ -75,30 +129,10 @@
         width: 100%;
         border-radius: 4px;
     }
-    .links {
-        margin: 20px 0;
-        padding: 20px;
-        background: var(--darkened-bg, rgba(0,0,0,0.02));
-        border-radius: 4px;
-    }
-    .links h3 {
-        margin: 0 0 15px 0;
-        color: var(--body-fg);
-    }
-    .links a {
-        display: inline-block;
-        margin-right: 15px;
-        color: var(--primary, #417690);
-        text-decoration: none;
-        font-weight: 500;
-    }
-    .links a:hover {
-        text-decoration: underline;
-    }
     .error-message {
-        background: color-mix(in srgb, #dc3545 15%, transparent);
-        border: 1px solid color-mix(in srgb, #dc3545 40%, transparent);
-        color: #dc3545;
+        background: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
         padding: 15px;
         border-radius: 4px;
         margin: 20px 0;
@@ -108,8 +142,11 @@
 
 {% block content %}
 <div class="item-detail-container">
+
     {% if item.status == 'READY' %}
-        <span class="status-badge status-ready">{% trans "Ready" %}</span>
+        <!-- <span class="status-badge status-ready">{% trans "Ready" %}</span> -->
+    {% elif item.status == 'ARCHIVED' %}
+        <span class="status-badge status-archived">{% trans "Archived" %}</span>
     {% elif item.status == 'ERROR' %}
         <span class="status-badge status-error">{% trans "Error" %}</span>
     {% elif item.status == 'PROCESSING' %}
@@ -121,6 +158,38 @@
     {% endif %}
 
     <h1>{{ item.title|default:"Untitled" }}</h1>
+
+    <div class="action-bar">
+
+        <span class="separator"></span>
+
+        <a href="{% url 'admin:media_mediaitem_change' item.guid %}" class="btn">{% trans "Edit" %}</a>
+        {% if item.status == 'READY' %}
+            <form method="post" action="{% url 'item_archive' item.guid %}">
+                {% csrf_token %}
+                <button type="submit" class="btn">{% trans "Archive" %}</button>
+            </form>
+        {% elif item.status == 'ARCHIVED' %}
+            <form method="post" action="{% url 'item_unarchive' item.guid %}">
+                {% csrf_token %}
+                <button type="submit" class="btn">{% trans "Unarchive" %}</button>
+            </form>
+        {% endif %}
+        <a href="{% url 'admin:media_mediaitem_delete' item.guid %}" class="btn btn-danger">{% trans "Delete" %}</a>
+
+        {% if item.is_ready and media_url %}
+            <span class="separator"></span>
+            <a href="{{ media_url }}" download class="btn">{% trans "Download" %} {{ item.media_type|title }}</a>
+            {% if subtitle_url %}
+                <a href="{{ subtitle_url }}" download class="btn">{% trans "Download Subtitles" %}</a>
+            {% endif %}
+        {% endif %}
+
+        {% if item.webpage_url %}
+            <span class="separator"></span>
+            <a href="{{ item.webpage_url }}" target="_blank" class="btn">{% trans "Source" %}</a>
+        {% endif %}
+    </div>
 
     <div class="metadata">
         {% if item.author %}
@@ -175,20 +244,6 @@
                     {% trans "Your browser does not support video element." %}
                 </video>
             {% endif %}
-        </div>
-
-        <div class="links">
-            <h3>{% trans "Downloads" %}</h3>
-            <a href="{{ media_url }}" download>{% trans "Download" %} {{ item.media_type|title }}</a>
-            {% if subtitle_url %}
-                <a href="{{ subtitle_url }}" download>{% trans "Download Subtitles" %}</a>
-            {% endif %}
-        </div>
-    {% endif %}
-
-    {% if item.webpage_url %}
-        <div class="links">
-            <a href="{{ item.webpage_url }}" target="_blank">{% trans "View Original Source" %}</a>
         </div>
     {% endif %}
 </div>

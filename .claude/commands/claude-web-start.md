@@ -8,7 +8,7 @@ These instructions are specifically for bootstrapping the bare vm/container that
 Setup the ubuntu environment
 
 ```bash
-./bootstrap-web.sh
+./bootstrap.sh
 ```
 
 Setup the db and make an admin user for development
