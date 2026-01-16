@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
-# First time setup script, but can be run every start to ensure dependencies are met
+
+# Application setup script. Get dependencies and set up database. You should probably run bootstrap.sh first.
 
 set -e
 
 # Only install packages if --with-packages flag is provided
 if [[ "$1" == "--with-packages" ]]; then
-    uv pip install -r requirements.txt
+    pip install -r requirements.txt
 else
     echo "Skipping package installation (use --with-packages to install dependencies)"
 fi
@@ -16,15 +17,15 @@ export NLTK_DATA=${NLTK_DATA:=$STASHCAST_DATA_DIR}
 echo "Using STASHCAST_DATA_DIR: $STASHCAST_DATA_DIR"
 echo "Using NLTK_DATA: $NLTK_DATA"
 
-uv run python -c "import nltk; nltk.download('punkt_tab'); nltk.download('stopwords')"
+python -c "import nltk; nltk.download('punkt_tab'); nltk.download('stopwords')"
 
 # temp dummy values for initial setup so migrations can run
 export SECRET_KEY="dummy"
 export ALLOWED_HOSTS="dummy"
 export STASHCAST_USER_TOKEN="dummy"
 
-uv run python manage.py migrate
+./manage.py migrate
 
-# uv run python manage.py collectstatic --noinput
+# ./manage.py collectstatic --noinput
 
-uv run python manage.py list_superusers
+./manage.py list_superusers

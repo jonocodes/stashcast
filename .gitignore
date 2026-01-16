@@ -10,8 +10,6 @@ ENV/
 .venv
 output/
 .coverage
-*.egg-info/
-uv.lock
 
 # Django
 *.log
