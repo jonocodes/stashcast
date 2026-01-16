@@ -1,12 +1,22 @@
 {
     "hooks": {
+        "SessionStart": [
+            {
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "./bootstrap-web.sh && ./setup.sh --with-packages"
+                    }
+                ]
+            }
+        ],
         "PostToolUse": [
             {
                 "matcher": "Edit|Write|MultiEdit",
                 "hooks": [
                     {
                         "type": "command",
-                        "command": "just lint 2>/dev/null || true"
+                        "command": "ruff format 2>/dev/null; ruff check --fix --unsafe-fixes 2>/dev/null || true"
                     }
                 ]
             }
