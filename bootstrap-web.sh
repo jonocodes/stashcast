@@ -1,22 +1,28 @@
 #!/usr/bin/env bash
 
-# This script is for bootstrapping the bare vm/container that Claude Code Web runs in - which looks like Ubuntu 22.04 LTS
+# This script bootstraps the Claude Code Web environment (Ubuntu 22.04 LTS container)
+# It auto-detects if running in Claude Code Web and exits gracefully if not
 
 set -e
 
+# Detect Claude Code Web environment
+if [[ "$CLAUDE_CODE_REMOTE" != "true" ]]; then
+    echo "Not running in Claude Code Web environment, skipping bootstrap"
+    exit 0
+fi
+
+echo "Claude Code Web detected, bootstrapping environment..."
+
 export DEBIAN_FRONTEND=noninteractive
 
+# Install system dependencies
 apt update -y
+apt install -y software-properties-common ffmpeg yt-dlp curl ruff
 
-apt install -y software-properties-common ffmpeg yt-dlp curl
+# Install just command runner
+if ! command -v just &> /dev/null; then
+    curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
+fi
 
-add-apt-repository ppa:deadsnakes/ppa -y
-
-apt install python3.12 python3.12-venv python3-pip3 -y
-
-curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
-
-python3.12 -m venv .venv
-
-source .venv/bin/activate
+echo "Bootstrap complete"
 
