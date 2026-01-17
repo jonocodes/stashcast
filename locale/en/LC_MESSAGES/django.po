@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-12 21:06+0000\n"
+"POT-Creation-Date: 2026-01-16 16:37-0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,28 +18,32 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: media/models.py:26 media/templates/admin/item_detail.html:120
+#: media/models.py:27 media/templates/admin/item_detail.html:157
 msgid "Prefetching"
 msgstr ""
 
-#: media/models.py:27 media/templates/admin/item_detail.html:118
+#: media/models.py:28 media/templates/admin/item_detail.html:155
 msgid "Downloading"
 msgstr ""
 
-#: media/models.py:28 media/templates/admin/admin_stash_progress.html:188
-#: media/templates/admin/item_detail.html:116
+#: media/models.py:29 media/templates/admin/admin_stash_progress.html:188
+#: media/templates/admin/item_detail.html:153
 msgid "Processing"
 msgstr ""
 
-#: media/models.py:29 media/templates/admin/item_detail.html:112
+#: media/models.py:30 media/templates/admin/item_detail.html:147
 msgid "Ready"
 msgstr ""
 
-#: media/models.py:30 media/templates/admin/item_detail.html:114
+#: media/models.py:31 media/templates/admin/item_detail.html:151
 msgid "Error"
 msgstr ""
 
-#: media/models.py:38 media/models.py:49
+#: media/models.py:32 media/templates/admin/item_detail.html:149
+msgid "Archived"
+msgstr ""
+
+#: media/models.py:40 media/models.py:51
 #: media/templates/admin/bookmarklet.html:189
 #: media/templates/admin/grid_view.html:190
 #: media/templates/admin/grid_view.html:224
@@ -48,7 +52,7 @@ msgstr ""
 msgid "Audio"
 msgstr ""
 
-#: media/models.py:39 media/models.py:50
+#: media/models.py:41 media/models.py:52
 #: media/templates/admin/admin_stash_form.html:278
 #: media/templates/admin/bookmarklet.html:190
 #: media/templates/admin/grid_view.html:191
@@ -58,7 +62,7 @@ msgstr ""
 msgid "Video"
 msgstr ""
 
-#: media/models.py:48 media/templates/admin/bookmarklet.html:188
+#: media/models.py:50 media/templates/admin/bookmarklet.html:188
 msgid "Auto"
 msgstr ""
 
@@ -457,7 +461,7 @@ msgid "Available Feeds"
 msgstr ""
 
 #: media/templates/admin/feed_links.html:209
-#: media/templates/media/home.html:230
+#: media/templates/media/home.html:206
 msgid "Audio feed"
 msgstr ""
 
@@ -472,12 +476,14 @@ msgstr ""
 #: media/templates/admin/feed_links.html:214
 #: media/templates/admin/feed_links.html:235
 #: media/templates/admin/feed_links.html:256
+#: media/templates/admin/feed_links.html:277
 msgid "Subscribe URL:"
 msgstr ""
 
 #: media/templates/admin/feed_links.html:217
 #: media/templates/admin/feed_links.html:238
 #: media/templates/admin/feed_links.html:259
+#: media/templates/admin/feed_links.html:280
 msgid "Copy"
 msgstr ""
 
@@ -498,19 +504,19 @@ msgstr ""
 #: media/templates/admin/feed_links.html:223
 #: media/templates/admin/feed_links.html:244
 #: media/templates/admin/feed_links.html:265
+#: media/templates/admin/feed_links.html:284
 msgid "View XML"
 msgstr ""
 
 #: media/templates/admin/feed_links.html:224
 #: media/templates/admin/feed_links.html:245
 #: media/templates/admin/feed_links.html:266
-#: media/templates/media/home.html:234 media/templates/media/home.html:242
-#: media/templates/media/home.html:250
+#: media/templates/admin/feed_links.html:285
 msgid "Manage"
 msgstr ""
 
 #: media/templates/admin/feed_links.html:230
-#: media/templates/media/home.html:238
+#: media/templates/media/home.html:209
 msgid "Video feed"
 msgstr ""
 
@@ -523,7 +529,7 @@ msgid "Video content for watching later"
 msgstr ""
 
 #: media/templates/admin/feed_links.html:251
-#: media/templates/media/home.html:246
+#: media/templates/media/home.html:212
 msgid "Combined feed"
 msgstr ""
 
@@ -535,12 +541,25 @@ msgstr ""
 msgid "All content in one feed"
 msgstr ""
 
+#: media/templates/admin/feed_links.html:272
+#: media/templates/media/home.html:215
+msgid "Archive feed"
+msgstr ""
+
+#: media/templates/admin/feed_links.html:274
+msgid "Archive Feed"
+msgstr ""
+
+#: media/templates/admin/feed_links.html:275
+msgid "Archived content for reference"
+msgstr ""
+
 #: media/templates/admin/grid_view.html:183
 msgid "Media Grid"
 msgstr ""
 
 #: media/templates/admin/grid_view.html:187
-#: media/templates/admin/item_detail.html:135
+#: media/templates/admin/item_detail.html:204
 #: media/templates/admin/list_view.html:228
 msgid "Type:"
 msgstr ""
@@ -575,40 +594,20 @@ msgstr ""
 msgid "Try adjusting your filters or add some media items."
 msgstr ""
 
-#: media/templates/admin/item_detail.html:127
-msgid "By:"
+#: media/templates/admin/item_detail.html:166
+msgid "Edit"
 msgstr ""
 
-#: media/templates/admin/item_detail.html:130
-msgid "Published:"
-msgstr ""
-
-#: media/templates/admin/item_detail.html:133
-msgid "Duration:"
-msgstr ""
-
-#: media/templates/admin/item_detail.html:140
-msgid "Error:"
-msgstr ""
-
-#: media/templates/admin/item_detail.html:150
-msgid "Summary"
-msgstr ""
-
-#: media/templates/admin/item_detail.html:157
-msgid "Description"
-msgstr ""
-
-#: media/templates/admin/item_detail.html:167
-msgid "Your browser does not support audio element."
+#: media/templates/admin/item_detail.html:170
+msgid "Archive"
 msgstr ""
 
 #: media/templates/admin/item_detail.html:175
-msgid "Your browser does not support video element."
+msgid "Unarchive"
 msgstr ""
 
-#: media/templates/admin/item_detail.html:181
-msgid "Downloads"
+#: media/templates/admin/item_detail.html:178
+msgid "Delete"
 msgstr ""
 
 #: media/templates/admin/item_detail.html:182
@@ -619,8 +618,40 @@ msgstr ""
 msgid "Download Subtitles"
 msgstr ""
 
-#: media/templates/admin/item_detail.html:191
-msgid "View Original Source"
+#: media/templates/admin/item_detail.html:190
+msgid "Source"
+msgstr ""
+
+#: media/templates/admin/item_detail.html:196
+msgid "By:"
+msgstr ""
+
+#: media/templates/admin/item_detail.html:199
+msgid "Published:"
+msgstr ""
+
+#: media/templates/admin/item_detail.html:202
+msgid "Duration:"
+msgstr ""
+
+#: media/templates/admin/item_detail.html:209
+msgid "Error:"
+msgstr ""
+
+#: media/templates/admin/item_detail.html:219
+msgid "Summary"
+msgstr ""
+
+#: media/templates/admin/item_detail.html:226
+msgid "Description"
+msgstr ""
+
+#: media/templates/admin/item_detail.html:236
+msgid "Your browser does not support audio element."
+msgstr ""
+
+#: media/templates/admin/item_detail.html:244
+msgid "Your browser does not support video element."
 msgstr ""
 
 #: media/templates/admin/list_view.html:224
@@ -663,56 +694,46 @@ msgstr ""
 msgid "Site Home"
 msgstr ""
 
-#: media/templates/media/home.html:211
+#: media/templates/media/home.html:187
 msgid "StashCast illustration"
 msgstr ""
 
-#: media/templates/media/home.html:216
+#: media/templates/media/home.html:192
 msgid "StashCast Console"
 msgstr ""
 
-#: media/templates/media/home.html:218
+#: media/templates/media/home.html:194
 msgid "Capture, stash, and stream your media."
 msgstr ""
 
-#: media/templates/media/home.html:220
+#: media/templates/media/home.html:196
 msgid ""
-"Add any URL supported by yt-dlp and StashCast will download, process, "
-"and publish it to your feeds. Jump straight to the add form to start a new "
+"Add any URL supported by yt-dlp and StashCast will download, process, and "
+"publish it to your feeds. Jump straight to the add form to start a new "
 "download."
 msgstr ""
 
-#: media/templates/media/home.html:223
+#: media/templates/media/home.html:199
 msgid "Add"
 msgstr ""
 
-#: media/templates/media/home.html:224
+#: media/templates/media/home.html:200
 msgid "Requires an admin login."
 msgstr ""
 
-#: media/templates/media/home.html:232 media/templates/media/home.html:240
-#: media/templates/media/home.html:248
-msgid "Grid view"
-msgstr ""
-
-#: media/templates/media/home.html:233 media/templates/media/home.html:241
-#: media/templates/media/home.html:249
-msgid "List view"
-msgstr ""
-
-#: media/templates/media/home.html:256
+#: media/templates/media/home.html:220
 msgid "Subscribe to feeds"
 msgstr ""
 
-#: media/templates/media/home.html:257
+#: media/templates/media/home.html:221
 msgid "Get RSS feed URLs for your podcast app"
 msgstr ""
 
-#: media/templates/media/home.html:260
+#: media/templates/media/home.html:224
 msgid "Admin dashboard"
 msgstr ""
 
-#: media/templates/media/home.html:261
+#: media/templates/media/home.html:225
 msgid "Manage media items and jobs"
 msgstr ""
 

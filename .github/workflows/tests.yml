@@ -32,6 +32,20 @@ jobs:
       - name: Prepare data directory
         run: mkdir -p "$STASHCAST_DATA_DIR"
 
+      - name: Install gettext for translations
+        run: sudo apt-get install -y gettext
+
+      - name: Check translations are up to date
+        run: |
+          python manage.py makemessages -a --no-obsolete
+          if ! git diff --exit-code locale/; then
+            echo "::error::Translation files are out of date. Run 'python manage.py makemessages -a --no-obsolete' and commit the changes."
+            exit 1
+          fi
+
+      - name: Compile translations
+        run: python manage.py compilemessages --ignore=.flox
+
       - name: Run tests with coverage
         run: coverage run -m pytest
 

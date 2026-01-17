@@ -26,6 +26,12 @@ clean-data:
     rm -rf data_docker
     just setup
 
+# lint, test, chcek translations
+pre-commit:
+    just lint
+    just test
+    ./scripts/check_translations.py
+
 # run the django server
 dev-web:
     honcho start web

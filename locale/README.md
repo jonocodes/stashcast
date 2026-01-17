@@ -29,8 +29,6 @@ Examples:
 ```bash
 python manage.py makemessages -l es  # Spanish
 python manage.py makemessages -l fr  # French
-python manage.py makemessages -l de  # German
-python manage.py makemessages -l ja  # Japanese
 ```
 
 ## Updating Translations
