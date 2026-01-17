@@ -677,7 +677,7 @@ msgstr ""
 
 #: media/templates/media/home.html:220
 msgid ""
-"Drop in any URL supported by yt-dlp and StashCast will download, process, "
+"Add any URL supported by yt-dlp and StashCast will download, process, "
 "and publish it to your feeds. Jump straight to the add form to start a new "
 "download."
 msgstr ""

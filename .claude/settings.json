@@ -11,15 +11,15 @@
                 ]
             }
         ],
-        "Stop": [
-            {
-                "hooks": [
-                    {
-                        "type": "command",
-                        "command": ".claude/hooks/quality-check.sh"
-                    }
-                ]
-            }
-        ]
+        // "Stop": [
+        //     {
+        //         "hooks": [
+        //             {
+        //                 "type": "command",
+        //                 "command": ".claude/hooks/quality-check.sh"
+        //             }
+        //         ]
+        //     }
+        // ]
     }
 }

@@ -677,7 +677,7 @@ msgstr "Capture, guarde e transmita sua mídia."
 
 #: media/templates/media/home.html:220
 msgid ""
-"Drop in any URL supported by yt-dlp and StashCast will download, process, "
+"Add any URL supported by yt-dlp and StashCast will download, process, "
 "and publish it to your feeds. Jump straight to the add form to start a new "
 "download."
 msgstr "Insira qualquer URL suportada pelo yt-dlp e o StashCast irá baixar, processar e publicar nos seus feeds. Vá direto ao formulário de adição para iniciar um novo download."

@@ -133,7 +133,7 @@
             color: var(--muted);
             font-size: 13px;
         }
-        .hero-image {
+        /* .hero-image {
             width: 100%;
             height: 100%;
             padding: 10px;
@@ -144,7 +144,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-        }
+        } */
         .hero-image img {
             width: 100%;
             height: auto;
@@ -154,22 +154,22 @@
         .feeds {
             margin-top: 22px;
             display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
             gap: 14px;
         }
         .feed-card {
-            display: grid;
-            grid-template-columns: 140px 1fr;
-            gap: 16px;
-            padding: 16px;
+            display: block;
+            /* padding: 16px; */
             border-radius: 14px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            /* border: 1px solid rgba(255, 255, 255, 0.08); */
             background: rgba(255, 255, 255, 0.02);
-            align-items: center;
+            text-decoration: none;
+            transition: border-color 120ms ease, background 120ms ease, transform 120ms ease;
         }
-        @media (max-width: 640px) {
-            .feed-card {
-                grid-template-columns: 1fr;
-            }
+        .feed-card:hover {
+            border-color: rgba(79, 179, 255, 0.4);
+            background: rgba(79, 179, 255, 0.05);
+            transform: translateY(-2px);
         }
         .feed-card img {
             width: 100%;
@@ -177,30 +177,6 @@
             border-radius: 10px;
             background: #0c1b33;
             padding: 8px;
-        }
-        .feed-links {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-        .pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 12px;
-            border-radius: 10px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            color: var(--text);
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 13px;
-            transition: border-color 120ms ease, background 120ms ease, transform 120ms ease;
-        }
-        .pill:hover {
-            border-color: rgba(79, 179, 255, 0.4);
-            background: rgba(79, 179, 255, 0.06);
-            transform: translateY(-1px);
         }
     </style>
 </head>
@@ -211,13 +187,13 @@
                 <img src="{% static 'media/header-transparent.png' %}" alt="{% trans 'StashCast illustration' %}">
             </div>
             <div>
-                <div class="eyebrow">
+                <!-- <div class="eyebrow">
                     <span class="logo-dot" aria-hidden="true"></span>
                     <span>{% trans "StashCast Console" %}</span>
-                </div>
+                </div> -->
                 <h1>{% trans "Capture, stash, and stream your media." %}</h1>
                 <p class="lede">
-                    {% trans "Drop in any URL supported by yt-dlp and StashCast will download, process, and publish it to your feeds. Jump straight to the add form to start a new download." %}
+                    {% trans "Add any URL supported by yt-dlp and StashCast will download, process, and publish it to your feeds. Jump straight to the add form to start a new download." %}
                 </p>
                 <div class="cta-row">
                     <a class="cta" href="{% url 'admin_stash_form' %}">{% trans "Add" %}</a>
@@ -226,37 +202,18 @@
             </div>
         </div>
         <div class="feeds">
-            <div class="feed-card">
-                <img src="{% static 'media/feed-logo-audio.png' %}" alt="{% trans 'Audio feed' %}">
-                <div class="feed-links">
-                    <a class="pill" href="/admin/tools/grid/?type=audio">{% trans "Grid view" %}</a>
-                    <a class="pill" href="/admin/tools/list/?type=audio">{% trans "List view" %}</a>
-                    <a class="pill" href="/admin/media/mediaitem/?media_type=audio">{% trans "Manage" %}</a>
-                </div>
-            </div>
-            <div class="feed-card">
-                <img src="{% static 'media/feed-logo-video.png' %}" alt="{% trans 'Video feed' %}">
-                <div class="feed-links">
-                    <a class="pill" href="/admin/tools/grid/?type=video">{% trans "Grid view" %}</a>
-                    <a class="pill" href="/admin/tools/list/?type=video">{% trans "List view" %}</a>
-                    <a class="pill" href="/admin/media/mediaitem/?media_type=video">{% trans "Manage" %}</a>
-                </div>
-            </div>
-            <div class="feed-card">
-                <img src="{% static 'media/feed-logo-combined.png' %}" alt="{% trans 'Combined feed' %}">
-                <div class="feed-links">
-                    <a class="pill" href="/admin/tools/grid/?type=all">{% trans "Grid view" %}</a>
-                    <a class="pill" href="/admin/tools/list/?type=all">{% trans "List view" %}</a>
-                    <a class="pill" href="/admin/media/mediaitem/">{% trans "Manage" %}</a>
-                </div>
-            </div>
-            <div class="feed-card">
-                <img src="{% static 'media/feed-logo-combined.png' %}" alt="{% trans 'Archive feed' %}">
-                <div class="feed-links">
-                    <a class="pill" href="/feeds/archive.xml?view=1">{% trans "View feed" %}</a>
-                    <a class="pill" href="/admin/media/mediaitem/?status=ARCHIVED">{% trans "Manage" %}</a>
-                </div>
-            </div>
+            <a class="feed-card" href="/admin/tools/grid/?type=audio">
+                <img src="{% static 'media/feed-audio.png' %}" alt="{% trans 'Audio feed' %}">
+            </a>
+            <a class="feed-card" href="/admin/tools/grid/?type=video">
+                <img src="{% static 'media/feed-video.png' %}" alt="{% trans 'Video feed' %}">
+            </a>
+            <a class="feed-card" href="/admin/tools/grid/?type=all">
+                <img src="{% static 'media/feed-combined.png' %}" alt="{% trans 'Combined feed' %}">
+            </a>
+            <!-- <a class="feed-card" href="/admin/media/mediaitem/?status=ARCHIVED">
+                <img src="{% static 'media/feed-archive.png' %}" alt="{% trans 'Archive feed' %}">
+            </a> -->
         </div>
         <div class="links">
             <a class="link-card" href="{% url 'feed_links' %}">

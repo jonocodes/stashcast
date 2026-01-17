@@ -237,7 +237,7 @@ class AudioFeed(BaseFeed):
     title = 'StashCast Audio'
     link = '/feeds/audio.xml'
     description = 'Downloaded audio content'
-    logo_filename = 'feed-logo-audio.png'
+    logo_filename = 'feed-audio.png'
 
     def items(self):
         return self.get_queryset().order_by('-publish_date', '-downloaded_at')[:100]
@@ -254,7 +254,7 @@ class VideoFeed(BaseFeed):
     title = 'StashCast Video'
     link = '/feeds/video.xml'
     description = 'Downloaded video content'
-    logo_filename = 'feed-logo-video.png'
+    logo_filename = 'feed-video.png'
 
     def items(self):
         return self.get_queryset().order_by('-publish_date', '-downloaded_at')[:100]
@@ -271,7 +271,7 @@ class CombinedFeed(BaseFeed):
     title = 'StashCast'
     link = '/feeds/combined.xml'
     description = 'Downloaded audio and video content'
-    logo_filename = 'feed-logo-combined.png'
+    logo_filename = 'feed-combined.png'
 
     def items(self):
         return self.get_queryset().order_by('-publish_date', '-downloaded_at')[:100]
@@ -283,7 +283,7 @@ class ArchiveFeed(BaseFeed):
     title = 'StashCast Archive'
     link = '/feeds/archive.xml'
     description = 'Archived audio and video content'
-    logo_filename = 'feed-logo-combined.png'
+    logo_filename = 'feed-archive.png'
 
     def get_queryset(self):
         return MediaItem.objects.filter(status=MediaItem.STATUS_ARCHIVED)
