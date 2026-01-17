@@ -1590,3 +1590,33 @@ class DownloadStrategyTest(TestCase):
         with tempfile.NamedTemporaryFile(suffix='.html') as tmp:
             strategy = choose_download_strategy(tmp.name)
             self.assertEqual(strategy, 'ytdlp')
+
+
+class BatchProcessingSettingsTest(TestCase):
+    """Tests to verify batch processing code references valid settings"""
+
+    def test_batch_task_imports_successfully(self):
+        """Test that process_media_batch can be imported without errors"""
+        # This catches undefined settings at import time
+        from media.tasks import process_media_batch
+
+        self.assertIsNotNone(process_media_batch)
+
+    def test_ytdlp_args_helper_exists(self):
+        """Test that get_ytdlp_args_for_type returns valid values"""
+        from media.service.config import get_ytdlp_args_for_type
+
+        audio_args = get_ytdlp_args_for_type('audio')
+        video_args = get_ytdlp_args_for_type('video')
+
+        # Should return strings (possibly empty)
+        self.assertIsInstance(audio_args, str)
+        self.assertIsInstance(video_args, str)
+
+    def test_all_batch_settings_exist(self):
+        """Test that all settings used by batch processing exist"""
+        # These settings are used by process_media_batch
+        self.assertTrue(hasattr(settings, 'STASHCAST_MEDIA_DIR'))
+        self.assertTrue(hasattr(settings, 'STASHCAST_DEFAULT_YTDLP_ARGS_AUDIO'))
+        self.assertTrue(hasattr(settings, 'STASHCAST_DEFAULT_YTDLP_ARGS_VIDEO'))
+        self.assertTrue(hasattr(settings, 'STASHCAST_SUMMARY_SENTENCES'))
