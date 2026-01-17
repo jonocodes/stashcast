@@ -1,7 +1,11 @@
 """
-Django management command for transcoding media.
+Django management command for fetching media.
 
-This is a thin CLI wrapper around the transcode_service.
+Downloads media from a URL or local file, optionally transcoding to
+podcast-compatible formats (MP3/M4A for audio, MP4 for video).
+
+This is a standalone CLI tool - it does NOT add items to the database.
+Use 'stash' command instead if you want to add media to your feed.
 """
 
 import json
@@ -19,7 +23,7 @@ from media.service.strategy import choose_download_strategy
 
 
 class Command(BaseCommand):
-    help = 'Download and transcode media from URL or file path'
+    help = 'Fetch media from URL and convert to podcast-compatible format (not added to feed)'
 
     def add_arguments(self, parser):
         parser.add_argument('input', type=str, help='URL or file path to media')

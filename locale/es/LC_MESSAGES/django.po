@@ -785,15 +785,3 @@ msgstr "StashCast - Procesando medios"
 #: media/templates/media/stash_progress.html:272
 msgid "items queued"
 msgstr "elementos en cola"
-
-#~ msgid "Downloads"
-#~ msgstr "Descargas"
-
-#~ msgid "View Original Source"
-#~ msgstr "Ver fuente original"
-
-#~ msgid "Grid view"
-#~ msgstr "Vista de cuadrícula"
-
-#~ msgid "List view"
-#~ msgstr "Vista de lista"

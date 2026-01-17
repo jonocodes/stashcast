@@ -92,7 +92,7 @@ def transcode_file(input_path, output_dir=None, requested_type='auto', metadata=
     """
     Transcode a file without storing in database.
 
-    This is used by the standalone transcode command for batch processing.
+    This is used by the standalone fetch command for batch processing.
 
     Args:
         input_path: Path to input media file

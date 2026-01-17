@@ -17,7 +17,7 @@ This separation allows:
 ```mermaid
 graph TB
     subgraph "User Interfaces"
-        CLI_T[CLI: manage.py transcode]
+        CLI_T[CLI: manage.py fetch]
         CLI_S[CLI: manage.py stash]
         WEB[Web: /stash/ endpoint]
     end
@@ -111,7 +111,7 @@ stashcast/
 │   ├── admin.py               # Django admin interface
 │   ├── management/commands/   # CLI commands
 │   │   ├── stash.py          # Foreground stash command
-│   │   ├── transcode.py      # Standalone transcode command
+│   │   ├── fetch.py          # Standalone fetch command
 │   │   └── summarize.py      # Subtitle summarization
 │   ├── tests.py               # App integration tests (44 tests)
 │   └── test_service/          # Service layer tests (121 tests)
@@ -146,7 +146,7 @@ Determines whether to:
 - Download via HTTP (`direct`)
 - Use yt-dlp for extraction (`ytdlp`)
 
-**Used by**: CLI transcode command, web app tasks
+**Used by**: CLI fetch command, web app tasks
 
 ### `media/service/resolve.py`
 
@@ -160,7 +160,7 @@ def resolve_media_type(requested_type, prefetch_result) -> str:
     """Determine 'audio' or 'video' from metadata"""
 ```
 
-**Used by**: CLI transcode command, web app prefetch tasks
+**Used by**: CLI fetch command, web app prefetch tasks
 
 ### `media/service/media_info.py`
 
@@ -196,7 +196,7 @@ def download_ytdlp(url, resolved_type, temp_dir, ytdlp_extra_args='', logger=Non
 
 All return `DownloadedFileInfo` dataclass with paths to content, thumbnail, and subtitles.
 
-**Used by**: CLI transcode command
+**Used by**: CLI fetch command
 
 ### `media/service/process.py`
 
@@ -227,7 +227,7 @@ def process_subtitle(subtitle_path, output_path, logger=None) -> Path:
 - Falls back to simple file copy if ffmpeg fails
 - Used by both CLI and web app for consistent processing
 
-**Used by**: CLI transcode command, web app processing tasks
+**Used by**: CLI fetch command, web app processing tasks
 
 ### `media/service/config.py`
 
@@ -254,7 +254,7 @@ def get_target_video_format() -> str:
 
 ### `media/service/transcode_service.py`
 
-Main orchestration for the CLI transcode command:
+Main orchestration for the CLI fetch command:
 
 ```python
 def transcode_url(url, outdir, requested_type='auto',
@@ -271,7 +271,7 @@ Coordinates all service modules to:
 6. Process thumbnails/subtitles
 7. Embed metadata
 
-**Used by**: CLI transcode command
+**Used by**: CLI fetch command
 
 ## Processing Layer
 
@@ -384,7 +384,7 @@ Django admin interface with custom actions for re-fetching and regenerating summ
 ```mermaid
 sequenceDiagram
     actor User
-    participant CLI as manage.py transcode
+    participant CLI as manage.py fetch
     participant TS as transcode_service
     participant Strat as strategy.py
     participant Resolve as resolve.py
@@ -392,7 +392,7 @@ sequenceDiagram
     participant Process as process.py
     participant Disk as File System
 
-    User->>CLI: ./manage.py transcode <url>
+    User->>CLI: ./manage.py fetch <url>
     CLI->>TS: transcode_url(url, outdir, type)
     TS->>Strat: choose_download_strategy(url)
     Strat-->>TS: 'direct' | 'ytdlp' | 'file'
@@ -621,7 +621,7 @@ Files are organized by slug under the unified media directory:
 
 ### CLI Output
 
-The transcode command outputs files directly:
+The fetch command outputs files directly:
 
 ```
 /output-dir/

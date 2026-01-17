@@ -370,3 +370,67 @@ class SummaryE2ETest(TestCase):
         # Note: May be empty if subtitle file doesn't have enough text
         # Just verify the field exists and processing completed
         self.assertIsNotNone(item.summary)
+
+
+@override_settings(STASHCAST_SUMMARY_SENTENCES=0)
+class TranscodingE2ETest(TestCase):
+    """E2E tests for audio transcoding (OGG -> M4A)"""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        demo_dir = Path(settings.BASE_DIR) / 'demo_data' / 'transcode-test'
+        test_file = demo_dir / 'audio.ogg'
+        if not test_file.exists():
+            raise unittest.SkipTest('Demo OGG file not found for transcoding E2E test.')
+
+        cls.server = MediaTestServer(demo_dir)
+        cls.server.start()
+        cls.base_url = f'http://127.0.0.1:{cls.server.port}'
+        cls.test_file = test_file
+
+    @classmethod
+    def tearDownClass(cls):
+        if getattr(cls, 'server', None):
+            cls.server.stop()
+        super().tearDownClass()
+
+    def test_ogg_transcoded_to_m4a(self):
+        """Test that OGG audio is transcoded to M4A for podcast compatibility"""
+        url = f'{self.base_url}/{self.test_file.name}'
+        response = self.client.get(
+            '/stash/',
+            {
+                'token': settings.STASHCAST_USER_TOKEN,
+                'url': url,
+                'type': 'audio',
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        guid = response.json().get('guid')
+        self.assertTrue(guid)
+
+        # Wait for processing (transcoding may take longer)
+        deadline = time.time() + 30
+        item = None
+        while time.time() < deadline:
+            item = MediaItem.objects.filter(guid=guid).first()
+            if item and item.status == MediaItem.STATUS_READY:
+                break
+            time.sleep(0.3)
+
+        self.assertIsNotNone(item, 'Media item not found after stashing')
+        self.assertEqual(item.status, MediaItem.STATUS_READY, f'Status: {item.status}')
+        self.assertEqual(item.media_type, MediaItem.MEDIA_TYPE_AUDIO)
+
+        # Verify transcoding happened - output should be .m4a, not .ogg
+        self.assertTrue(
+            item.content_path.endswith('.m4a'), f'Expected .m4a but got: {item.content_path}'
+        )
+
+        # Verify in audio feed
+        feed_resp = self.client.get('/feeds/audio.xml')
+        self.assertEqual(feed_resp.status_code, 200)
+        feed_xml = feed_resp.content.decode()
+        self.assertIn(item.slug, feed_xml)
+        self.assertIn('.m4a', feed_xml)

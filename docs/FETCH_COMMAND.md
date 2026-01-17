@@ -1,11 +1,11 @@
-# Transcode Management Command
+# Fetch Management Command
 
-The `transcode` management command provides a CLI interface for downloading and transcoding media files without touching the database. This is useful for testing downloads, verifying transcoding settings, and manual media processing.
+The `fetch` management command provides a CLI interface for downloading and transcoding media files without touching the database. This is useful for testing downloads, verifying transcoding settings, and manual media processing.
 
 ## Usage
 
 ```bash
-./manage.py transcode <input> [options]
+./manage.py fetch <input> [options]
 ```
 
 ## Arguments
@@ -29,7 +29,7 @@ The `transcode` management command provides a CLI interface for downloading and 
 ### Dry run to preview what will happen
 
 ```bash
-./manage.py transcode "https://example.com/video.mp4" --dry-run
+./manage.py fetch "https://example.com/video.mp4" --dry-run
 ```
 
 Output:
@@ -47,7 +47,7 @@ Dry run complete
 ### Download MP3 file (no transcoding needed)
 
 ```bash
-./manage.py transcode \
+./manage.py fetch \
   "https://archive.org/download/testmp3testfile/mpthreetest.mp3" \
   --outdir /tmp/test \
   --verbose
@@ -70,7 +70,7 @@ No transcoding needed, file format is already compatible
 ### Download and keep original file
 
 ```bash
-./manage.py transcode \
+./manage.py fetch \
   "https://example.com/audio.ogg" \
   --outdir /tmp/test \
   --keep-original \
@@ -84,7 +84,7 @@ This will create:
 ### Get JSON output
 
 ```bash
-./manage.py transcode \
+./manage.py fetch \
   "https://example.com/video.mp4" \
   --outdir /tmp/test \
   --json
@@ -109,7 +109,7 @@ Output:
 ### Download only (skip processing)
 
 ```bash
-./manage.py transcode \
+./manage.py fetch \
   "https://example.com/video.mp4" \
   --download-only \
   --outdir /tmp/test
@@ -131,7 +131,7 @@ The command writes files to the specified output directory:
 
 ## Architecture
 
-The transcode command is built on a reusable service layer that can be used by both the CLI and the web app:
+The fetch command is built on a reusable service layer that can be used by both the CLI and the web app:
 
 ### Service Modules
 
@@ -163,7 +163,7 @@ The transcode command is built on a reusable service layer that can be used by b
 
 ### CLI Wrapper
 
-- **media/management/commands/transcode.py** - Thin wrapper
+- **media/management/commands/fetch.py** - Thin wrapper
   - Parses command-line arguments
   - Calls `transcode_url_to_dir()`
   - Formats output (human-readable or JSON)

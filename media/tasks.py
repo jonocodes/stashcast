@@ -18,6 +18,7 @@ from media.processing import (
     write_log,
 )
 from media.progress_tracker import update_progress
+from media.service.config import get_ytdlp_args_for_type
 from media.service.download import prefetch_ytdlp_batch, download_ytdlp_batch
 from media.service.strategy import choose_download_strategy
 from media.utils import generate_slug, ensure_unique_slug
@@ -486,7 +487,7 @@ def process_media_batch(guids: List[str]):
                 urls=video_urls,
                 resolved_type=resolved_type,
                 temp_dir=batch_tmp_dir / 'downloads',
-                ytdlp_extra_args=settings.STASHCAST_DEFAULT_YTDLP_ARGS,
+                ytdlp_extra_args=get_ytdlp_args_for_type(resolved_type),
                 logger=lambda m: write_log(batch_log_path, m),
             )
 

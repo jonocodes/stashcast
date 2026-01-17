@@ -1,28 +1,28 @@
 # STASHCAST Examples
 
-## Transcode Command
+## Fetch Command
 
-The `transcode` management command downloads and transcodes media from URLs or local file paths. Output files are named using a slug generated from the media title.
+The `fetch` management command downloads and transcodes media from URLs or local file paths. Output files are named using a slug generated from the media title.
 
 ### Basic Usage
 
 Transcode from a URL:
 ```bash
-./manage.py transcode https://example.com/video.mp4 --outdir ./output
+./manage.py fetch https://example.com/video.mp4 --outdir ./output
 ```
 
 Transcode from a local file path:
 ```bash
 # Video file
-./manage.py transcode demo_data/carpool/vid.mp4 --outdir ./output
+./manage.py fetch demo_data/carpool/vid.mp4 --outdir ./output
 
 # Audio file
-./manage.py transcode /path/to/audio.mp3 --outdir ./output
+./manage.py fetch /path/to/audio.mp3 --outdir ./output
 ```
 
 ### Output Files
 
-The transcode command creates files with slug-based names:
+The fetch command creates files with slug-based names:
 
 ```bash
 # Input: "My Amazing Video.mp4"
@@ -36,31 +36,31 @@ The transcode command creates files with slug-based names:
 
 #### Download only (skip transcoding)
 ```bash
-./manage.py transcode https://example.com/audio.mp3 --download-only
+./manage.py fetch https://example.com/audio.mp3 --download-only
 ```
 
 #### Specify media type
 ```bash
 # Force audio extraction from a video
-./manage.py transcode https://example.com/video.mp4 --type audio
+./manage.py fetch https://example.com/video.mp4 --type audio
 
 # Force video (default is auto-detect)
-./manage.py transcode https://example.com/media --type video
+./manage.py fetch https://example.com/media --type video
 ```
 
 #### Custom output directory
 ```bash
-./manage.py transcode https://example.com/video.mp4 --outdir /tmp/videos
+./manage.py fetch https://example.com/video.mp4 --outdir /tmp/videos
 ```
 
 #### Verbose output
 ```bash
-./manage.py transcode https://example.com/video.mp4 --verbose
+./manage.py fetch https://example.com/video.mp4 --verbose
 ```
 
 #### JSON output
 ```bash
-./manage.py transcode https://example.com/video.mp4 --json
+./manage.py fetch https://example.com/video.mp4 --json
 ```
 
 ### Example Output

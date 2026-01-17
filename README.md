@@ -62,8 +62,9 @@ I created this since friends and family often send me links to listen to a singl
 
 ### For development
 
-- just (for running commands)
-- ruff (for linting)
+- just
+- ruff
+- gettext
 - docker
 
 
@@ -259,34 +260,35 @@ Download media and add it to your podcast feed (same as web interface but runs i
 
 This command performs the same pipeline as the web app's `/stash/` endpoint but runs synchronously in the foreground. Supports direct media URLs, yt-dlp compatible URLs, and HTML pages with embedded media. Files are saved to the configured media directories and added to your podcast feeds.
 
-### Transcode Command
+### Fetch Command
 
-Download and transcode media from URLs or local files to a custom output directory:
+Fetch media from URLs or local files to a custom output directory:
 
 ```bash
-# Transcode from a direct URL
-./manage.py transcode https://example.com/video.mp4 --outdir ./output
 
-# Transcode from HTML page with embedded media
-./manage.py transcode http://localhost:8001/pecha-kucha-vid/view.html --outdir ./output
+# Fetch from a direct URL
+./manage.py fetch https://example.com/video.mp4 --outdir ./output
 
-# Transcode from a local file
-./manage.py transcode /path/to/video.mp4 --outdir ./output
+# Fetch from HTML page with embedded media
+./manage.py fetch http://localhost:8001/pecha-kucha-vid/view.html --outdir ./output
+
+# Fetch from a local file
+./manage.py fetch /path/to/video.mp4 --outdir ./output
 
 # The output file will be named using a slug generated from the title
 # For example, "My Video.mp4" becomes "my-video.mp4"
 
 # Specify media type (default: auto)
-./manage.py transcode https://example.com/media --type audio
+./manage.py fetch https://example.com/media --type audio
 
 # Verbose output
-./manage.py transcode https://example.com/video.mp4 --verbose
+./manage.py fetch https://example.com/video.mp4 --verbose
 
 # JSON output
-./manage.py transcode https://example.com/video.mp4 --json
+./manage.py fetch https://example.com/video.mp4 --json
 ```
 
-This command is for standalone transcoding without adding to podcast feeds. Supports the same URL types as the stash command (direct media, yt-dlp URLs, and HTML pages with embedded media).
+This command is for standalone fetching without adding to podcast feeds. Supports the same URL types as the stash command (direct media, yt-dlp URLs, and HTML pages with embedded media).
 
 ### Summarize Command
 
