@@ -265,25 +265,25 @@ Download and transcode media from URLs or local files to a custom output directo
 
 ```bash
 # Transcode from a direct URL
-./manage.py transcode https://example.com/video.mp4 --outdir ./output
+./manage.py fetch https://example.com/video.mp4 --outdir ./output
 
 # Transcode from HTML page with embedded media
-./manage.py transcode http://localhost:8001/pecha-kucha-vid/view.html --outdir ./output
+./manage.py fetch http://localhost:8001/pecha-kucha-vid/view.html --outdir ./output
 
 # Transcode from a local file
-./manage.py transcode /path/to/video.mp4 --outdir ./output
+./manage.py fetch /path/to/video.mp4 --outdir ./output
 
 # The output file will be named using a slug generated from the title
 # For example, "My Video.mp4" becomes "my-video.mp4"
 
 # Specify media type (default: auto)
-./manage.py transcode https://example.com/media --type audio
+./manage.py fetch https://example.com/media --type audio
 
 # Verbose output
-./manage.py transcode https://example.com/video.mp4 --verbose
+./manage.py fetch https://example.com/video.mp4 --verbose
 
 # JSON output
-./manage.py transcode https://example.com/video.mp4 --json
+./manage.py fetch https://example.com/video.mp4 --json
 ```
 
 This command is for standalone transcoding without adding to podcast feeds. Supports the same URL types as the stash command (direct media, yt-dlp URLs, and HTML pages with embedded media).
