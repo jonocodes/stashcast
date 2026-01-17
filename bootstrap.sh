@@ -22,10 +22,7 @@ if grep -q "Ubuntu 22" /etc/os-release || [[ "$CLAUDE_CODE_REMOTE" == "true" ]];
     # flox init --auto-setup
     # flox install ffmpeg just python313Packages.pip python3 ruff yt-dlp
 
-    apt install -y software-properties-common ffmpeg yt-dlp curl
-
-    # Install Python 3.12 (required for Django 6.0+)
-    apt install -y python3.12 python3.12-venv python3.12-dev
+    apt install -y software-properties-common ffmpeg yt-dlp curl gettext python3.12 python3.12-venv python3.12-dev
 
     # Install just command runner
     if ! command -v just &> /dev/null; then
@@ -57,7 +54,7 @@ elif command -v flox &> /dev/null || [[ -d ".flox" ]]; then
 
     echo "Flox detected"
 
-    flox install ffmpeg just python313Packages.pip python3 ruff yt-dlp
+    flox install ffmpeg just python313Packages.pip python3 ruff yt-dlp gettext
 
     # check if flox is activated
     if [[ -v FLOX_ENV_PROJECT ]]; then

@@ -424,8 +424,9 @@ class TranscodingE2ETest(TestCase):
         self.assertEqual(item.media_type, MediaItem.MEDIA_TYPE_AUDIO)
 
         # Verify transcoding happened - output should be .m4a, not .ogg
-        self.assertTrue(item.content_path.endswith('.m4a'),
-                        f'Expected .m4a but got: {item.content_path}')
+        self.assertTrue(
+            item.content_path.endswith('.m4a'), f'Expected .m4a but got: {item.content_path}'
+        )
 
         # Verify in audio feed
         feed_resp = self.client.get('/feeds/audio.xml')

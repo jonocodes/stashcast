@@ -10,16 +10,6 @@
                     }
                 ]
             }
-        ],
-        // "Stop": [
-        //     {
-        //         "hooks": [
-        //             {
-        //                 "type": "command",
-        //                 "command": ".claude/hooks/quality-check.sh"
-        //             }
-        //         ]
-        //     }
-        // ]
+        ]
     }
 }

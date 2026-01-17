@@ -23,7 +23,7 @@ from media.service.strategy import choose_download_strategy
 
 
 class Command(BaseCommand):
-    help = 'Fetch media from URL and convert to podcast-compatible format (standalone, not added to feed)'
+    help = 'Fetch media from URL and convert to podcast-compatible format (not added to feed)'
 
     def add_arguments(self, parser):
         parser.add_argument('input', type=str, help='URL or file path to media')

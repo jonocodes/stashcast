@@ -1,8 +1,8 @@
 # STASHCAST Examples
 
-## Transcode Command
+## Fetch Command
 
-The `transcode` management command downloads and transcodes media from URLs or local file paths. Output files are named using a slug generated from the media title.
+The `fetch` management command downloads and transcodes media from URLs or local file paths. Output files are named using a slug generated from the media title.
 
 ### Basic Usage
 

@@ -111,7 +111,7 @@ stashcast/
 │   ├── admin.py               # Django admin interface
 │   ├── management/commands/   # CLI commands
 │   │   ├── stash.py          # Foreground stash command
-│   │   ├── fetch.py      # Standalone fetch command
+│   │   ├── fetch.py          # Standalone fetch command
 │   │   └── summarize.py      # Subtitle summarization
 │   ├── tests.py               # App integration tests (44 tests)
 │   └── test_service/          # Service layer tests (121 tests)
