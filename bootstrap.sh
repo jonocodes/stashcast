@@ -22,16 +22,34 @@ if grep -q "Ubuntu 22" /etc/os-release || [[ "$CLAUDE_CODE_REMOTE" == "true" ]];
     # flox init --auto-setup
     # flox install ffmpeg just python313Packages.pip python3 ruff yt-dlp
 
-    apt install -y software-properties-common ffmpeg yt-dlp curl ruff
+    apt install -y software-properties-common ffmpeg yt-dlp curl
+
+    # Install Python 3.12 (required for Django 6.0+)
+    apt install -y python3.12 python3.12-venv python3.12-dev
 
     # Install just command runner
     if ! command -v just &> /dev/null; then
         curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
     fi
 
-    # just setup-with-packages
-    ./setup.sh
+    # Create virtual environment with Python 3.12
+    VENV_DIR="${PWD}/.venv"
+    if [[ ! -d "$VENV_DIR" ]]; then
+        echo "Creating Python 3.12 virtual environment..."
+        python3.12 -m venv "$VENV_DIR"
+    fi
+
+    # Activate venv and upgrade pip
+    source "$VENV_DIR/bin/activate"
+    pip install --upgrade pip
+
+    # Install Python packages first (before setup.sh needs them)
+    pip install -r requirements.txt
     pip install -r requirements-dev.txt
+    pip install ruff
+
+    # Now run setup (NLTK download, migrations, etc.)
+    ./setup.sh
 
     echo "Claude Code Web bootstrap complete"
 
