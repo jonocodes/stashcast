@@ -67,6 +67,47 @@ def stash_view(request):
 
     # Check for multiple items before processing
     strategy = choose_download_strategy(url)
+
+    # Handle Spotify URLs - these require interactive YouTube selection
+    if strategy == 'spotify':
+        from media.service.spotify import resolve_spotify_url
+
+        try:
+            resolution = resolve_spotify_url(url, max_results=5)
+
+            # Return YouTube search results for the client to choose from
+            error_msg = (
+                'Spotify content is DRM-protected and cannot be downloaded directly. '
+                'Use the admin interface to select a YouTube source, or use one of the '
+                'suggested YouTube URLs below.'
+            )
+
+            return JsonResponse(
+                {
+                    'error': error_msg,
+                    'is_spotify': True,
+                    'spotify_title': resolution.spotify_metadata.title,
+                    'spotify_author': resolution.spotify_metadata.author,
+                    'search_query': resolution.search_query,
+                    'youtube_suggestions': [
+                        {
+                            'url': r.url,
+                            'title': r.title,
+                            'channel': r.channel,
+                            'duration_seconds': r.duration_seconds,
+                        }
+                        for r in resolution.youtube_results
+                    ],
+                    'admin_url': request.build_absolute_uri('/admin/tools/add-url/'),
+                },
+                status=400,
+            )
+        except Exception as e:
+            return JsonResponse(
+                {'error': f'Failed to process Spotify URL: {str(e)}'},
+                status=500,
+            )
+
     if strategy == 'ytdlp':
         try:
             prefetch_result = prefetch(url, strategy, logger=None)
@@ -425,6 +466,37 @@ def admin_stash_form_view(request):
         if url:
             # Check for multiple items first
             strategy = choose_download_strategy(url)
+
+            # Handle Spotify URLs - redirect to YouTube search confirmation
+            if strategy == 'spotify':
+                from media.service.spotify import resolve_spotify_url
+
+                try:
+                    resolution = resolve_spotify_url(url, max_results=5)
+
+                    # Store in session for confirmation page
+                    request.session['spotify_url'] = url
+                    request.session['spotify_media_type'] = media_type
+                    request.session['spotify_title'] = resolution.spotify_metadata.title
+                    request.session['spotify_author'] = resolution.spotify_metadata.author
+                    request.session['spotify_thumbnail'] = resolution.spotify_metadata.thumbnail_url
+                    request.session['spotify_search_query'] = resolution.search_query
+                    request.session['spotify_youtube_results'] = [
+                        {
+                            'url': r.url,
+                            'title': r.title,
+                            'channel': r.channel,
+                            'duration_seconds': r.duration_seconds,
+                            'thumbnail_url': r.thumbnail_url,
+                            'view_count': r.view_count,
+                        }
+                        for r in resolution.youtube_results
+                    ]
+                    return redirect('admin_spotify_confirm')
+                except Exception as e:
+                    messages.error(request, f'Error fetching Spotify metadata: {str(e)}')
+                    return redirect(request.path)
+
             if strategy == 'ytdlp':
                 try:
                     prefetch_result = prefetch(url, strategy, logger=None)
@@ -578,6 +650,117 @@ def admin_stash_confirm_multiple_view(request):
     }
 
     return render(request, 'admin/admin_stash_confirm_multiple.html', context)
+
+
+@staff_member_required
+def admin_spotify_confirm_view(request):
+    """
+    Confirmation page for Spotify URLs.
+
+    Shows YouTube search results and lets user select which one to download.
+    """
+    from django.contrib import messages
+
+    from media.admin import is_demo_readonly
+
+    # Get data from session
+    spotify_url = request.session.get('spotify_url')
+    media_type = request.session.get('spotify_media_type', 'audio')
+    spotify_title = request.session.get('spotify_title', '')
+    spotify_author = request.session.get('spotify_author')
+    spotify_thumbnail = request.session.get('spotify_thumbnail')
+    search_query = request.session.get('spotify_search_query', '')
+    youtube_results = request.session.get('spotify_youtube_results', [])
+
+    if not spotify_url:
+        messages.error(request, 'No Spotify URL found. Please try again.')
+        return redirect('admin_stash_form')
+
+    if request.method == 'POST':
+        # Block demo users from submitting
+        if is_demo_readonly(request.user):
+            messages.error(request, 'Demo users are not allowed to add URLs.')
+            return redirect('admin_stash_form')
+
+        # Get selected YouTube URL
+        youtube_url = request.POST.get('youtube_url', '').strip()
+        custom_url = request.POST.get('custom_url', '').strip()
+
+        # Prefer custom URL if provided
+        if custom_url:
+            youtube_url = custom_url
+
+        if not youtube_url:
+            messages.error(request, 'Please select a YouTube result or enter a custom URL.')
+            return redirect('admin_spotify_confirm')
+
+        # Clear session data
+        for key in [
+            'spotify_url',
+            'spotify_media_type',
+            'spotify_title',
+            'spotify_author',
+            'spotify_thumbnail',
+            'spotify_search_query',
+            'spotify_youtube_results',
+        ]:
+            if key in request.session:
+                del request.session[key]
+
+        # Create MediaItem with the YouTube URL
+        # Check if item already exists
+        existing_item = None
+        if media_type == 'auto':
+            existing_item = MediaItem.objects.filter(
+                source_url=youtube_url, requested_type='auto'
+            ).first()
+        else:
+            existing_item = MediaItem.objects.filter(
+                source_url=youtube_url, media_type=media_type
+            ).first()
+
+        if existing_item:
+            item = existing_item
+            item.requested_type = media_type
+            item.status = MediaItem.STATUS_PREFETCHING
+            item.error_message = ''
+            item.save()
+            messages.info(request, f'Re-fetching existing item: {item.guid}')
+        else:
+            item = MediaItem.objects.create(
+                source_url=youtube_url,
+                requested_type=media_type,
+                slug='pending',
+            )
+            messages.success(
+                request,
+                f'Downloading from YouTube (original: Spotify): {spotify_title or "Unknown"}',
+            )
+
+        # Store the original Spotify URL in the description for reference
+        if spotify_url and not item.description:
+            item.description = f'Originally from Spotify: {spotify_url}'
+            item.save()
+
+        # Enqueue processing
+        process_media(item.guid)
+
+        # Redirect to progress page
+        return redirect('admin_stash_progress', guid=item.guid)
+
+    context = {
+        **admin.site.each_context(request),
+        'spotify_url': spotify_url,
+        'spotify_title': spotify_title,
+        'spotify_author': spotify_author,
+        'spotify_thumbnail': spotify_thumbnail,
+        'search_query': search_query,
+        'youtube_results': youtube_results,
+        'media_type': media_type,
+        'title': 'Select YouTube Source',
+    }
+
+    return render(request, 'admin/admin_spotify_confirm.html', context)
 
 
 @staff_member_required

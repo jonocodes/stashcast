@@ -1,0 +1,400 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "Spotify" %} - {% trans "Select YouTube Source" %}{% endblock %}
+
+{% block extrastyle %}
+<style>
+    :root {
+        --sc-panel-bg: var(--body-bg, #ffffff);
+        --sc-panel-fg: var(--body-fg, #222222);
+        --sc-muted: var(--body-quiet-color, #6b7280);
+        --sc-border: var(--hairline-color, #d4d4d4);
+        --sc-border-strong: var(--darkened-bg, rgba(255,255,255,0.08));
+        --sc-primary: var(--primary, #417690);
+        --sc-primary-fg: var(--primary-fg, #ffffff);
+        --sc-surface: var(--darkened-bg, rgba(0,0,0,0.02));
+        --sc-warning: #f59e0b;
+        --sc-warning-bg: rgba(245, 158, 11, 0.1);
+        --sc-spotify: #1DB954;
+        --sc-spotify-bg: rgba(29, 185, 84, 0.1);
+    }
+    .confirm-container {
+        max-width: 900px;
+        margin: 20px auto;
+        padding: 20px;
+    }
+    .confirm-panel {
+        background: var(--sc-panel-bg);
+        color: var(--sc-panel-fg);
+        border-radius: 8px;
+        padding: 30px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border: 1px solid var(--sc-border);
+    }
+    .confirm-panel h1 {
+        margin-top: 0;
+    }
+    .spotify-box {
+        background: var(--sc-spotify-bg);
+        border-left: 4px solid var(--sc-spotify);
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 4px;
+    }
+    .spotify-box h3 {
+        margin: 0 0 10px 0;
+        color: var(--sc-spotify);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .spotify-box p {
+        margin: 0;
+    }
+    .spotify-icon {
+        width: 24px;
+        height: 24px;
+    }
+    .source-info {
+        background: var(--sc-surface);
+        padding: 15px;
+        border-radius: 4px;
+        margin: 20px 0;
+        border: 1px solid var(--sc-border);
+        display: flex;
+        gap: 15px;
+        align-items: flex-start;
+    }
+    .source-thumbnail {
+        width: 120px;
+        height: 120px;
+        object-fit: cover;
+        border-radius: 4px;
+        flex-shrink: 0;
+    }
+    .source-details {
+        flex: 1;
+    }
+    .source-details strong {
+        display: block;
+        margin-bottom: 5px;
+        font-size: 18px;
+    }
+    .source-details .author {
+        color: var(--sc-muted);
+        margin-bottom: 10px;
+    }
+    .source-details code {
+        word-break: break-all;
+        font-size: 12px;
+        color: var(--sc-muted);
+    }
+    .search-query {
+        margin: 15px 0;
+        padding: 10px 15px;
+        background: var(--sc-surface);
+        border-radius: 4px;
+        font-size: 13px;
+    }
+    .search-query strong {
+        color: var(--sc-muted);
+    }
+    .results-list {
+        margin: 20px 0;
+    }
+    .result-item {
+        display: flex;
+        gap: 15px;
+        padding: 15px;
+        border: 2px solid var(--sc-border);
+        border-radius: 8px;
+        margin-bottom: 10px;
+        cursor: pointer;
+        transition: border-color 0.2s, background-color 0.2s;
+    }
+    .result-item:hover {
+        border-color: var(--sc-primary);
+        background: var(--sc-surface);
+    }
+    .result-item.selected {
+        border-color: var(--sc-primary);
+        background: rgba(65, 118, 144, 0.1);
+    }
+    .result-item input[type="radio"] {
+        display: none;
+    }
+    .result-thumbnail {
+        width: 160px;
+        height: 90px;
+        object-fit: cover;
+        border-radius: 4px;
+        flex-shrink: 0;
+        background: var(--sc-surface);
+    }
+    .result-details {
+        flex: 1;
+        min-width: 0;
+    }
+    .result-title {
+        font-weight: bold;
+        margin-bottom: 5px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+    .result-channel {
+        color: var(--sc-muted);
+        font-size: 13px;
+        margin-bottom: 5px;
+    }
+    .result-meta {
+        color: var(--sc-muted);
+        font-size: 12px;
+        display: flex;
+        gap: 15px;
+    }
+    .result-number {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        background: var(--sc-surface);
+        border-radius: 50%;
+        font-weight: bold;
+        color: var(--sc-muted);
+        flex-shrink: 0;
+    }
+    .result-item.selected .result-number {
+        background: var(--sc-primary);
+        color: var(--sc-primary-fg);
+    }
+    .no-results {
+        padding: 40px;
+        text-align: center;
+        color: var(--sc-muted);
+        background: var(--sc-surface);
+        border-radius: 8px;
+    }
+    .button-row {
+        display: flex;
+        gap: 15px;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid var(--sc-border);
+    }
+    .btn {
+        padding: 12px 30px;
+        border: none;
+        border-radius: 4px;
+        font-size: 14px;
+        font-weight: bold;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+    }
+    .btn-primary {
+        background: var(--sc-primary);
+        color: var(--sc-primary-fg);
+    }
+    .btn-primary:hover {
+        filter: brightness(1.03);
+    }
+    .btn-primary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    .btn-secondary {
+        background: var(--sc-surface);
+        color: var(--sc-panel-fg);
+        border: 1px solid var(--sc-border);
+    }
+    .btn-secondary:hover {
+        background: var(--sc-border);
+    }
+    .custom-url-section {
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid var(--sc-border);
+    }
+    .custom-url-section summary {
+        cursor: pointer;
+        color: var(--sc-muted);
+        font-size: 14px;
+    }
+    .custom-url-input {
+        margin-top: 10px;
+        display: flex;
+        gap: 10px;
+    }
+    .custom-url-input input {
+        flex: 1;
+        padding: 10px;
+        border: 1px solid var(--sc-border);
+        border-radius: 4px;
+        font-size: 14px;
+    }
+</style>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">{% trans "Home" %}</a>
+    &rsaquo; <a href="{% url 'admin_stash_form' %}">{% trans "Add URL" %}</a>
+    &rsaquo; {% trans "Select YouTube Source" %}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="confirm-container">
+    <div class="confirm-panel">
+        <h1>{% trans "Select YouTube Source" %}</h1>
+
+        <div class="spotify-box">
+            <h3>
+                <svg class="spotify-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
+                </svg>
+                {% trans "Spotify content detected" %}
+            </h3>
+            <p>{% trans "Spotify audio is DRM-protected and cannot be downloaded directly. We've searched YouTube for matching content." %}</p>
+        </div>
+
+        <div class="source-info">
+            {% if spotify_thumbnail %}
+            <img src="{{ spotify_thumbnail }}" alt="" class="source-thumbnail">
+            {% endif %}
+            <div class="source-details">
+                <strong>{{ spotify_title }}</strong>
+                {% if spotify_author %}
+                <div class="author">{{ spotify_author }}</div>
+                {% endif %}
+                <code>{{ spotify_url }}</code>
+            </div>
+        </div>
+
+        <div class="search-query">
+            <strong>{% trans "Search query:" %}</strong> {{ search_query }}
+        </div>
+
+        <form method="post" id="youtube-select-form">
+            {% csrf_token %}
+            <input type="hidden" name="media_type" value="{{ media_type }}">
+
+            <h2>{% trans "YouTube Results" %}</h2>
+
+            {% if youtube_results %}
+            <div class="results-list">
+                {% for result in youtube_results %}
+                <label class="result-item" data-url="{{ result.url }}">
+                    <input type="radio" name="youtube_url" value="{{ result.url }}" {% if forloop.first %}checked{% endif %}>
+                    <span class="result-number">{{ forloop.counter }}</span>
+                    {% if result.thumbnail_url %}
+                    <img src="{{ result.thumbnail_url }}" alt="" class="result-thumbnail">
+                    {% else %}
+                    <div class="result-thumbnail"></div>
+                    {% endif %}
+                    <div class="result-details">
+                        <div class="result-title">{{ result.title }}</div>
+                        {% if result.channel %}
+                        <div class="result-channel">{{ result.channel }}</div>
+                        {% endif %}
+                        <div class="result-meta">
+                            {% if result.duration_seconds %}
+                            <span>{{ result.duration_seconds|divisibleby:60|default:result.duration_seconds }} {% trans "min" %}</span>
+                            {% endif %}
+                            {% if result.view_count %}
+                            <span>{{ result.view_count|floatformat:0 }} {% trans "views" %}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+
+            <details class="custom-url-section">
+                <summary>{% trans "Or enter a custom YouTube URL" %}</summary>
+                <div class="custom-url-input">
+                    <input type="text" name="custom_url" placeholder="https://www.youtube.com/watch?v=..." id="custom-url-input">
+                </div>
+            </details>
+
+            <div class="button-row">
+                <a href="{% url 'admin_stash_form' %}" class="btn btn-secondary">{% trans "Cancel" %}</a>
+                <button type="submit" class="btn btn-primary" id="download-btn">{% trans "Download Selected" %}</button>
+            </div>
+
+            {% else %}
+            <div class="no-results">
+                <p>{% trans "No YouTube results found for this content." %}</p>
+                <p>{% trans "You can try entering a custom YouTube URL below." %}</p>
+            </div>
+
+            <details class="custom-url-section" open>
+                <summary>{% trans "Enter a custom YouTube URL" %}</summary>
+                <div class="custom-url-input">
+                    <input type="text" name="custom_url" placeholder="https://www.youtube.com/watch?v=..." id="custom-url-input" required>
+                </div>
+            </details>
+
+            <div class="button-row">
+                <a href="{% url 'admin_stash_form' %}" class="btn btn-secondary">{% trans "Cancel" %}</a>
+                <button type="submit" class="btn btn-primary" id="download-btn">{% trans "Download" %}</button>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle result item selection
+    const resultItems = document.querySelectorAll('.result-item');
+    resultItems.forEach(item => {
+        item.addEventListener('click', function() {
+            resultItems.forEach(i => i.classList.remove('selected'));
+            this.classList.add('selected');
+            this.querySelector('input[type="radio"]').checked = true;
+            // Clear custom URL when selecting a result
+            const customInput = document.getElementById('custom-url-input');
+            if (customInput) customInput.value = '';
+        });
+    });
+
+    // Mark first item as selected by default
+    if (resultItems.length > 0) {
+        resultItems[0].classList.add('selected');
+    }
+
+    // Handle custom URL input
+    const customInput = document.getElementById('custom-url-input');
+    if (customInput) {
+        customInput.addEventListener('input', function() {
+            if (this.value.trim()) {
+                // Deselect all result items when typing custom URL
+                resultItems.forEach(i => {
+                    i.classList.remove('selected');
+                    i.querySelector('input[type="radio"]').checked = false;
+                });
+            }
+        });
+    }
+
+    // Form validation
+    const form = document.getElementById('youtube-select-form');
+    form.addEventListener('submit', function(e) {
+        const customUrl = document.getElementById('custom-url-input')?.value.trim();
+        const selectedRadio = document.querySelector('input[name="youtube_url"]:checked');
+
+        if (!customUrl && !selectedRadio) {
+            e.preventDefault();
+            alert('Please select a YouTube result or enter a custom URL.');
+        }
+    });
+});
+</script>
+{% endblock %}

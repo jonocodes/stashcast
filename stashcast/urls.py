@@ -23,6 +23,7 @@ from django.views.generic import RedirectView
 
 from media.feeds import ArchiveFeed, AudioFeed, CombinedFeed, VideoFeed
 from media.views import (
+    admin_spotify_confirm_view,
     admin_stash_confirm_multiple_view,
     admin_stash_form_view,
     admin_stash_progress_view,
@@ -61,6 +62,11 @@ urlpatterns = [
         'admin/tools/add-url/confirm-multiple/',
         admin_stash_confirm_multiple_view,
         name='admin_stash_confirm_multiple',
+    ),
+    path(
+        'admin/tools/add-url/spotify/',
+        admin_spotify_confirm_view,
+        name='admin_spotify_confirm',
     ),
     path(
         'admin/tools/add-url/progress/<str:guid>/',
