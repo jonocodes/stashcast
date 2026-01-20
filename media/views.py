@@ -492,6 +492,20 @@ def admin_stash_form_view(request):
                         }
                         for r in resolution.youtube_results
                     ]
+                    # Store all platform results
+                    request.session['spotify_all_results'] = [
+                        {
+                            'url': r.url,
+                            'title': r.title,
+                            'platform': r.platform,
+                            'channel': r.channel,
+                            'duration_seconds': r.duration_seconds,
+                            'thumbnail_url': r.thumbnail_url,
+                            'view_count': r.view_count,
+                            'feed_url': r.feed_url,
+                        }
+                        for r in resolution.all_results
+                    ]
                     return redirect('admin_spotify_confirm')
                 except Exception as e:
                     messages.error(request, f'Error fetching Spotify metadata: {str(e)}')
@@ -671,6 +685,15 @@ def admin_spotify_confirm_view(request):
     spotify_thumbnail = request.session.get('spotify_thumbnail')
     search_query = request.session.get('spotify_search_query', '')
     youtube_results = request.session.get('spotify_youtube_results', [])
+    all_results = request.session.get('spotify_all_results', [])
+
+    # Group results by platform for display
+    results_by_platform = {}
+    for result in all_results:
+        platform = result.get('platform', 'unknown')
+        if platform not in results_by_platform:
+            results_by_platform[platform] = []
+        results_by_platform[platform].append(result)
 
     if not spotify_url:
         messages.error(request, 'No Spotify URL found. Please try again.')
@@ -703,6 +726,7 @@ def admin_spotify_confirm_view(request):
             'spotify_thumbnail',
             'spotify_search_query',
             'spotify_youtube_results',
+            'spotify_all_results',
         ]:
             if key in request.session:
                 del request.session[key]
@@ -756,8 +780,10 @@ def admin_spotify_confirm_view(request):
         'spotify_thumbnail': spotify_thumbnail,
         'search_query': search_query,
         'youtube_results': youtube_results,
+        'all_results': all_results,
+        'results_by_platform': results_by_platform,
         'media_type': media_type,
-        'title': 'Select YouTube Source',
+        'title': 'Select Source',
     }
 
     return render(request, 'admin/admin_spotify_confirm.html', context)

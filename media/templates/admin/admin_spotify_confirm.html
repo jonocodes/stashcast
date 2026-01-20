@@ -2,7 +2,7 @@
 {% load static %}
 {% load i18n %}
 
-{% block title %}{% trans "Spotify" %} - {% trans "Select YouTube Source" %}{% endblock %}
+{% block title %}{% trans "Spotify" %} - {% trans "Select Source" %}{% endblock %}
 
 {% block extrastyle %}
 <style>
@@ -19,6 +19,10 @@
         --sc-warning-bg: rgba(245, 158, 11, 0.1);
         --sc-spotify: #1DB954;
         --sc-spotify-bg: rgba(29, 185, 84, 0.1);
+        --sc-youtube: #FF0000;
+        --sc-soundcloud: #FF5500;
+        --sc-dailymotion: #0066DC;
+        --sc-podcast: #9333ea;
     }
     .confirm-container {
         max-width: 900px;
@@ -101,8 +105,37 @@
     .search-query strong {
         color: var(--sc-muted);
     }
+    .platform-section {
+        margin: 25px 0;
+    }
+    .platform-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid var(--sc-border);
+    }
+    .platform-header h2 {
+        margin: 0;
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .platform-badge {
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+    .platform-youtube { background: var(--sc-youtube); color: white; }
+    .platform-soundcloud { background: var(--sc-soundcloud); color: white; }
+    .platform-dailymotion { background: var(--sc-dailymotion); color: white; }
+    .platform-podcast_index { background: var(--sc-podcast); color: white; }
     .results-list {
-        margin: 20px 0;
+        margin: 10px 0;
     }
     .result-item {
         display: flex;
@@ -156,6 +189,7 @@
         font-size: 12px;
         display: flex;
         gap: 15px;
+        flex-wrap: wrap;
     }
     .result-number {
         display: flex;
@@ -172,6 +206,15 @@
     .result-item.selected .result-number {
         background: var(--sc-primary);
         color: var(--sc-primary-fg);
+    }
+    .feed-url {
+        font-size: 11px;
+        color: var(--sc-muted);
+        word-break: break-all;
+        margin-top: 5px;
+        padding: 5px 8px;
+        background: var(--sc-surface);
+        border-radius: 4px;
     }
     .no-results {
         padding: 40px;
@@ -238,6 +281,10 @@
         border-radius: 4px;
         font-size: 14px;
     }
+    .platform-icon {
+        width: 20px;
+        height: 20px;
+    }
 </style>
 {% endblock %}
 
@@ -245,14 +292,14 @@
 <div class="breadcrumbs">
     <a href="{% url 'admin:index' %}">{% trans "Home" %}</a>
     &rsaquo; <a href="{% url 'admin_stash_form' %}">{% trans "Add URL" %}</a>
-    &rsaquo; {% trans "Select YouTube Source" %}
+    &rsaquo; {% trans "Select Source" %}
 </div>
 {% endblock %}
 
 {% block content %}
 <div class="confirm-container">
     <div class="confirm-panel">
-        <h1>{% trans "Select YouTube Source" %}</h1>
+        <h1>{% trans "Select Source" %}</h1>
 
         <div class="spotify-box">
             <h3>
@@ -261,7 +308,7 @@
                 </svg>
                 {% trans "Spotify content detected" %}
             </h3>
-            <p>{% trans "Spotify audio is DRM-protected and cannot be downloaded directly. We've searched YouTube for matching content." %}</p>
+            <p>{% trans "Spotify audio is DRM-protected. We've searched multiple platforms for matching content." %}</p>
         </div>
 
         <div class="source-info">
@@ -281,45 +328,64 @@
             <strong>{% trans "Search query:" %}</strong> {{ search_query }}
         </div>
 
-        <form method="post" id="youtube-select-form">
+        <form method="post" id="source-select-form">
             {% csrf_token %}
             <input type="hidden" name="media_type" value="{{ media_type }}">
 
-            <h2>{% trans "YouTube Results" %}</h2>
-
-            {% if youtube_results %}
-            <div class="results-list">
-                {% for result in youtube_results %}
-                <label class="result-item" data-url="{{ result.url }}">
-                    <input type="radio" name="youtube_url" value="{{ result.url }}" {% if forloop.first %}checked{% endif %}>
-                    <span class="result-number">{{ forloop.counter }}</span>
-                    {% if result.thumbnail_url %}
-                    <img src="{{ result.thumbnail_url }}" alt="" class="result-thumbnail">
-                    {% else %}
-                    <div class="result-thumbnail"></div>
-                    {% endif %}
-                    <div class="result-details">
-                        <div class="result-title">{{ result.title }}</div>
-                        {% if result.channel %}
-                        <div class="result-channel">{{ result.channel }}</div>
-                        {% endif %}
-                        <div class="result-meta">
-                            {% if result.duration_seconds %}
-                            <span>{{ result.duration_seconds|divisibleby:60|default:result.duration_seconds }} {% trans "min" %}</span>
-                            {% endif %}
-                            {% if result.view_count %}
-                            <span>{{ result.view_count|floatformat:0 }} {% trans "views" %}</span>
-                            {% endif %}
-                        </div>
+            {% if all_results %}
+                {% regroup all_results by platform as results_by_platform %}
+                {% for platform_group in results_by_platform %}
+                <div class="platform-section">
+                    <div class="platform-header">
+                        <h2>
+                            <span class="platform-badge platform-{{ platform_group.grouper }}">
+                                {% if platform_group.grouper == 'youtube' %}YouTube
+                                {% elif platform_group.grouper == 'soundcloud' %}SoundCloud
+                                {% elif platform_group.grouper == 'dailymotion' %}Dailymotion
+                                {% elif platform_group.grouper == 'podcast_index' %}Podcast RSS
+                                {% else %}{{ platform_group.grouper }}
+                                {% endif %}
+                            </span>
+                            <span style="color: var(--sc-muted); font-weight: normal;">({{ platform_group.list|length }} results)</span>
+                        </h2>
                     </div>
-                </label>
+                    <div class="results-list">
+                        {% for result in platform_group.list %}
+                        <label class="result-item" data-url="{{ result.url }}">
+                            <input type="radio" name="youtube_url" value="{{ result.url }}" {% if forloop.parentloop.first and forloop.first %}checked{% endif %}>
+                            <span class="result-number">{{ forloop.counter }}</span>
+                            {% if result.thumbnail_url %}
+                            <img src="{{ result.thumbnail_url }}" alt="" class="result-thumbnail">
+                            {% else %}
+                            <div class="result-thumbnail"></div>
+                            {% endif %}
+                            <div class="result-details">
+                                <div class="result-title">{{ result.title }}</div>
+                                {% if result.channel %}
+                                <div class="result-channel">{{ result.channel }}</div>
+                                {% endif %}
+                                <div class="result-meta">
+                                    {% if result.duration_seconds %}
+                                    <span>{{ result.duration_seconds|divisibleby:60|default:result.duration_seconds }} {% trans "min" %}</span>
+                                    {% endif %}
+                                    {% if result.view_count %}
+                                    <span>{{ result.view_count|floatformat:0 }} {% trans "views" %}</span>
+                                    {% endif %}
+                                </div>
+                                {% if result.feed_url and platform_group.grouper == 'podcast_index' %}
+                                <div class="feed-url">RSS: {{ result.feed_url }}</div>
+                                {% endif %}
+                            </div>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
                 {% endfor %}
-            </div>
 
             <details class="custom-url-section">
-                <summary>{% trans "Or enter a custom YouTube URL" %}</summary>
+                <summary>{% trans "Or enter a custom URL" %}</summary>
                 <div class="custom-url-input">
-                    <input type="text" name="custom_url" placeholder="https://www.youtube.com/watch?v=..." id="custom-url-input">
+                    <input type="text" name="custom_url" placeholder="https://..." id="custom-url-input">
                 </div>
             </details>
 
@@ -330,14 +396,14 @@
 
             {% else %}
             <div class="no-results">
-                <p>{% trans "No YouTube results found for this content." %}</p>
-                <p>{% trans "You can try entering a custom YouTube URL below." %}</p>
+                <p>{% trans "No results found on any platform." %}</p>
+                <p>{% trans "You can try entering a custom URL below." %}</p>
             </div>
 
             <details class="custom-url-section" open>
-                <summary>{% trans "Enter a custom YouTube URL" %}</summary>
+                <summary>{% trans "Enter a custom URL" %}</summary>
                 <div class="custom-url-input">
-                    <input type="text" name="custom_url" placeholder="https://www.youtube.com/watch?v=..." id="custom-url-input" required>
+                    <input type="text" name="custom_url" placeholder="https://..." id="custom-url-input" required>
                 </div>
             </details>
 
@@ -385,14 +451,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Form validation
-    const form = document.getElementById('youtube-select-form');
+    const form = document.getElementById('source-select-form');
     form.addEventListener('submit', function(e) {
         const customUrl = document.getElementById('custom-url-input')?.value.trim();
         const selectedRadio = document.querySelector('input[name="youtube_url"]:checked');
 
         if (!customUrl && !selectedRadio) {
             e.preventDefault();
-            alert('Please select a YouTube result or enter a custom URL.');
+            alert('Please select a result or enter a custom URL.');
         }
     });
 });
