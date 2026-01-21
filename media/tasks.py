@@ -183,11 +183,70 @@ def process_media(guid):
         raise
 
 
+def _extract_text_from_vtt(subtitle_path: str) -> str:
+    """Extract plain text from a VTT subtitle file."""
+    import re
+
+    with open(subtitle_path, 'r', encoding='utf-8') as f:
+        subtitle_text = f.read()
+
+    lines = subtitle_text.split('\n')
+    text_lines = []
+    for line in lines:
+        # Skip VTT headers, timestamps, cue IDs, and blank lines
+        if (
+            not line.startswith('WEBVTT')
+            and not line.startswith('Kind:')
+            and not line.startswith('Language:')
+            and '-->' not in line
+            and not re.match(r'^\d+$', line.strip())
+            and 'align:' not in line
+            and 'position:' not in line
+            and line.strip()
+        ):
+            # Remove timing tags like <00:00:00.400> and <c>
+            clean_line = re.sub(r'<[^>]+>', '', line)
+            if clean_line.strip():
+                text_lines.append(clean_line.strip())
+
+    return ' '.join(text_lines)
+
+
+def _summarize_extractive(full_text: str, num_sentences: int) -> str:
+    """Generate summary using extractive summarization (LexRank)."""
+    from sumy.nlp.tokenizers import Tokenizer
+    from sumy.parsers.plaintext import PlaintextParser
+    from sumy.summarizers.lex_rank import LexRankSummarizer
+
+    parser = PlaintextParser.from_string(full_text, Tokenizer('english'))
+    summarizer = LexRankSummarizer()
+    summary_sentences = summarizer(parser.document, num_sentences)
+    return ' '.join(str(sentence) for sentence in summary_sentences)
+
+
+def _summarize_ollama(full_text: str, num_sentences: int) -> str:
+    """Generate summary using Ollama LLM."""
+    from media.service.ollama import generate_summary_ollama, get_ollama_status
+
+    # Check if Ollama is available before attempting
+    status = get_ollama_status()
+    if not status.ready:
+        raise RuntimeError(f"Ollama not ready: {status.error}")
+
+    summary = generate_summary_ollama(full_text, num_sentences)
+    if not summary:
+        raise RuntimeError("Ollama returned empty summary")
+    return summary
+
+
 @db_task()
 def generate_summary(guid):
     """
-    Generate summary from subtitle file using extractive summarization.
-    Future: Could be extended to use transcription from audio.
+    Generate summary from subtitle file.
+
+    Supports two backends configured via STASHCAST_SUMMARIZER:
+    - 'extractive': Uses sumy LexRank algorithm (default, fast, CPU-only)
+    - 'ollama': Uses local LLM via Ollama (better quality, requires Ollama setup)
     """
     # Skip summary generation if STASHCAST_SUMMARY_SENTENCES is set to 0
     num_sentences = settings.STASHCAST_SUMMARY_SENTENCES
@@ -207,59 +266,35 @@ def generate_summary(guid):
             write_log(log_path, 'No subtitles available for summary generation')
         return
 
+    summarizer_mode = settings.STASHCAST_SUMMARIZER
+
     try:
         if log_path:
             write_log(log_path, '=== GENERATING SUMMARY ===')
+            write_log(log_path, f'Summarizer: {summarizer_mode}')
             write_log(log_path, f'Reading subtitles from: {subtitle_path}')
-        # Read subtitle file and extract text
-        with open(subtitle_path, 'r', encoding='utf-8') as f:
-            subtitle_text = f.read()
 
-        # Remove VTT formatting
-        import re
-
-        lines = subtitle_text.split('\n')
-        text_lines = []
-        for line in lines:
-            # Skip VTT headers, timestamps, cue IDs, and blank lines
-            if (
-                not line.startswith('WEBVTT')
-                and not line.startswith('Kind:')
-                and not line.startswith('Language:')
-                and '-->' not in line
-                and not re.match(r'^\d+$', line.strip())
-                and 'align:' not in line
-                and 'position:' not in line
-                and line.strip()
-            ):
-                # Remove timing tags like <00:00:00.400> and <c>
-                clean_line = re.sub(r'<[^>]+>', '', line)
-                if clean_line.strip():
-                    text_lines.append(clean_line.strip())
-
-        full_text = ' '.join(text_lines)
+        full_text = _extract_text_from_vtt(subtitle_path)
 
         if not full_text:
+            if log_path:
+                write_log(log_path, 'No text content found in subtitles')
             return
 
-        # Use sumy for extractive summarization
-        from sumy.nlp.tokenizers import Tokenizer
-        from sumy.parsers.plaintext import PlaintextParser
-        from sumy.summarizers.lex_rank import LexRankSummarizer
-
-        parser = PlaintextParser.from_string(full_text, Tokenizer('english'))
-        summarizer = LexRankSummarizer()
-
-        # Generate summary with configured number of sentences
-        num_sentences = settings.STASHCAST_SUMMARY_SENTENCES
-        summary_sentences = summarizer(parser.document, num_sentences)
-        summary = ' '.join(str(sentence) for sentence in summary_sentences)
+        # Dispatch to appropriate summarizer
+        if summarizer_mode == 'ollama':
+            if log_path:
+                write_log(log_path, f'Using Ollama model: {settings.STASHCAST_OLLAMA_MODEL}')
+            summary = _summarize_ollama(full_text, num_sentences)
+        else:
+            # Default to extractive
+            summary = _summarize_extractive(full_text, num_sentences)
 
         item.summary = summary
         item.save()
 
         if log_path:
-            write_log(log_path, f'Generated {len(list(summary_sentences))} sentence summary')
+            write_log(log_path, f'Generated summary ({len(summary)} chars)')
 
     except Exception as e:
         # Don't fail the whole item if summary generation fails

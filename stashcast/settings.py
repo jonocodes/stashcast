@@ -234,6 +234,13 @@ STASHCAST_SLUG_MAX_WORDS = int(os.environ.get('STASHCAST_SLUG_MAX_WORDS', '6'))
 STASHCAST_SLUG_MAX_CHARS = int(os.environ.get('STASHCAST_SLUG_MAX_CHARS', '40'))
 STASHCAST_SUMMARY_SENTENCES = int(os.environ.get('STASHCAST_SUMMARY_SENTENCES', '8'))
 
+# Summarization backend: 'extractive' (default, uses sumy) or 'ollama' (uses local LLM)
+STASHCAST_SUMMARIZER = os.environ.get('STASHCAST_SUMMARIZER', 'extractive')
+
+# Ollama configuration (only used when STASHCAST_SUMMARIZER='ollama')
+STASHCAST_OLLAMA_HOST = os.environ.get('STASHCAST_OLLAMA_HOST', 'http://localhost:11434')
+STASHCAST_OLLAMA_MODEL = os.environ.get('STASHCAST_OLLAMA_MODEL', 'qwen2.5:1.5b')
+
 # Optional: Proxy URL for yt-dlp requests
 # Use residential proxy to avoid YouTube blocking cloud VM IPs
 # Formats: http://host:port, socks5://host:port, socks5://user:pass@host:port
