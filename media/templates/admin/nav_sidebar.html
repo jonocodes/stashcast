@@ -35,4 +35,20 @@
   {# Standard Django apps #}
   {% include 'admin/app_list.html' with app_list=available_apps show_changelinks=False %}
 
+  {# Summarization Status #}
+  <div class="app-tools module" style="margin-top: 10px; padding: 8px; font-size: 11px;">
+    <div style="color: #666; margin-bottom: 4px;">Summarization:</div>
+    {% if summarizer_status.status == 'ready' %}
+      <span style="color: #28a745;" title="{{ summarizer_status.message }}">&#9679; {{ summarizer_status.message }}</span>
+    {% elif summarizer_status.status == 'disabled' %}
+      <span style="color: #6c757d;" title="{{ summarizer_status.message }}">&#9675; Disabled</span>
+    {% elif summarizer_status.status == 'model_missing' %}
+      <span style="color: #ffc107;" title="{{ summarizer_status.message }}">&#9679; Model missing</span>
+    {% elif summarizer_status.status == 'unavailable' %}
+      <span style="color: #dc3545;" title="{{ summarizer_status.message }}">&#9679; Service unavailable</span>
+    {% else %}
+      <span style="color: #dc3545;" title="{{ summarizer_status.message }}">&#9679; Error</span>
+    {% endif %}
+  </div>
+
 </nav>
