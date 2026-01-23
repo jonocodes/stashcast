@@ -16,6 +16,7 @@ from media.service.transcode_service import transcode_url_to_dir
 from media.service.resolve import (
     PlaylistNotSupported,
     MultipleItemsDetected,
+    SpotifyUrlDetected,
     prefetch,
     check_multiple_items,
 )
@@ -68,12 +69,8 @@ class Command(BaseCommand):
         # Check for multiple items BEFORE doing anything else
         strategy = choose_download_strategy(input_url)
 
-        # Handle Spotify URLs
-        if strategy == 'spotify':
-            self._handle_spotify_url(
-                input_url, outdir, requested_type, verbose, output_json, dry_run, auto_select
-            )
-            return
+        # Note: Spotify URLs are handled via SpotifyUrlDetected exception
+        # raised by transcode_url_to_dir in _transcode_single_url
 
         if strategy == 'ytdlp':
             try:
@@ -179,11 +176,27 @@ class Command(BaseCommand):
 
             return
 
-        # Single item flow
-        self._transcode_single_url(input_url, outdir, requested_type, verbose, output_json)
+        # Single item flow - SpotifyUrlDetected exception handled inside
+        self._transcode_single_url(
+            input_url,
+            outdir,
+            requested_type,
+            verbose,
+            output_json,
+            auto_select=auto_select,
+            dry_run=dry_run,
+        )
 
     def _transcode_single_url(
-        self, input_url, outdir, requested_type, verbose, output_json, title_override=None
+        self,
+        input_url,
+        outdir,
+        requested_type,
+        verbose,
+        output_json,
+        title_override=None,
+        auto_select=False,
+        dry_run=False,
     ):
         """Transcode a single URL and return result dict for JSON output."""
         try:
@@ -242,6 +255,18 @@ class Command(BaseCommand):
 
             return output
 
+        except SpotifyUrlDetected as e:
+            # Spotify URL detected - handle selection from alternative sources
+            return self._handle_spotify_selection(
+                e.resolution,
+                input_url,
+                outdir,
+                requested_type,
+                verbose,
+                output_json,
+                dry_run,
+                auto_select,
+            )
         except PlaylistNotSupported as e:
             if output_json:
                 error_output = {'success': False, 'error': f'Playlist not supported: {e}'}
@@ -257,26 +282,30 @@ class Command(BaseCommand):
                 self.stderr.write(self.style.ERROR(f'Transcode failed: {e}'))
             return None
 
-    def _handle_spotify_url(
-        self, input_url, outdir, requested_type, verbose, output_json, dry_run, auto_select
+    def _handle_spotify_selection(
+        self,
+        resolution,
+        input_url,
+        outdir,
+        requested_type,
+        verbose,
+        output_json,
+        dry_run,
+        auto_select,
     ):
-        """Handle Spotify URLs by searching alternative platforms."""
-        from media.service.spotify import resolve_spotify_url
+        """Handle Spotify URL by presenting selection from alternative sources.
 
-        if not output_json:
-            self.stdout.write(
-                self.style.WARNING('Spotify URL detected - searching for alternatives...')
-            )
-
-        try:
-            resolution = resolve_spotify_url(input_url, max_results=5, search_all=True)
-        except Exception as e:
-            if output_json:
-                self.stdout.write(json.dumps({'success': False, 'error': str(e)}))
-            else:
-                self.stderr.write(self.style.ERROR(f'Failed to resolve Spotify URL: {e}'))
-            sys.exit(1)
-
+        Args:
+            resolution: SpotifyResolution object with metadata and search results
+                       (passed from SpotifyUrlDetected exception)
+            input_url: Original Spotify URL
+            outdir: Output directory
+            requested_type: 'auto', 'audio', or 'video'
+            verbose: Enable verbose output
+            output_json: Output result as JSON
+            dry_run: Show what would be done without downloading
+            auto_select: Automatically select first result
+        """
         if not output_json:
             self.stdout.write(f'  Title: {resolution.spotify_metadata.title}')
             self.stdout.write(f'  Search query: {resolution.search_query}')

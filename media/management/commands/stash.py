@@ -49,6 +49,11 @@ class Command(BaseCommand):
             action='store_true',
             help='Allow downloading multiple items from playlists or pages with multiple videos',
         )
+        parser.add_argument(
+            '--auto-select',
+            action='store_true',
+            help='For Spotify URLs, automatically select the first search result',
+        )
 
     def handle(self, *args, **options):
         url = options['url']
@@ -56,6 +61,7 @@ class Command(BaseCommand):
         verbose = options['verbose']
         json_output = options['json']
         allow_multiple = options['allow_multiple']
+        auto_select = options['auto_select']
 
         # Map type to MediaItem constants
         if media_type == 'auto':
@@ -65,8 +71,17 @@ class Command(BaseCommand):
         else:
             requested_type = MediaItem.REQUESTED_TYPE_VIDEO
 
-        # First, check for multiple items BEFORE creating any MediaItem
+        # First, check for special URL types BEFORE creating any MediaItem
         strategy = choose_download_strategy(url)
+
+        # Handle Spotify URLs - require selection from alternative sources
+        if strategy == 'spotify':
+            url = self._handle_spotify_url(url, verbose, json_output, auto_select)
+            if url is None:
+                return  # User cancelled or error occurred
+            # Update strategy for the selected URL
+            strategy = choose_download_strategy(url)
+
         if strategy == 'ytdlp':
             try:
                 prefetch_result = prefetch(url, strategy, logger=None)
@@ -314,3 +329,129 @@ class Command(BaseCommand):
 
             # Return None instead of raising to allow multi-item mode to continue
             return None
+
+    def _handle_spotify_url(self, url, verbose, json_output, auto_select):
+        """Handle Spotify URLs by searching for alternatives.
+
+        Returns the selected URL to use, or None if cancelled/error.
+        """
+        from media.service.spotify import resolve_spotify_url
+
+        if not json_output:
+            self.stdout.write(
+                self.style.WARNING('Spotify URL detected - searching for alternatives...')
+            )
+
+        try:
+            resolution = resolve_spotify_url(url, max_results=5, search_all=True)
+        except Exception as e:
+            if json_output:
+                self.stdout.write(json.dumps({'status': 'error', 'error': str(e)}))
+            else:
+                self.stderr.write(self.style.ERROR(f'Failed to resolve Spotify URL: {e}'))
+            return None
+
+        if not json_output:
+            self.stdout.write(f'  Title: {resolution.spotify_metadata.title}')
+            self.stdout.write(f'  Search query: {resolution.search_query}')
+            self.stdout.write('')
+
+        if not resolution.all_results:
+            if json_output:
+                self.stdout.write(
+                    json.dumps(
+                        {
+                            'status': 'error',
+                            'error': 'No alternative sources found',
+                            'spotify_title': resolution.spotify_metadata.title,
+                            'search_query': resolution.search_query,
+                        }
+                    )
+                )
+            else:
+                self.stderr.write(self.style.ERROR('No alternative sources found on any platform.'))
+            return None
+
+        # Auto-select first result
+        if auto_select:
+            selected = resolution.all_results[0]
+            if not json_output:
+                self.stdout.write(f'Auto-selecting: [{selected.platform}] {selected.title}')
+            return selected.url
+
+        # Interactive selection (not available in JSON mode)
+        if json_output:
+            self.stdout.write(
+                json.dumps(
+                    {
+                        'status': 'error',
+                        'error': 'Spotify URL requires selection. Use --auto-select or choose from results.',
+                        'spotify_title': resolution.spotify_metadata.title,
+                        'search_query': resolution.search_query,
+                        'results': [
+                            {
+                                'platform': r.platform,
+                                'url': r.url,
+                                'title': r.title,
+                                'channel': r.channel,
+                                'duration_seconds': r.duration_seconds,
+                            }
+                            for r in resolution.all_results
+                        ],
+                    },
+                    indent=2,
+                )
+            )
+            return None
+
+        # Interactive CLI selection
+        self._print_spotify_results(resolution.all_results)
+        self.stdout.write('')
+        self.stdout.write('Enter number to download, or "q" to quit:')
+
+        try:
+            choice = input('> ').strip()
+            if choice.lower() == 'q':
+                self.stdout.write('Cancelled.')
+                return None
+
+            idx = int(choice) - 1
+            if idx < 0 or idx >= len(resolution.all_results):
+                self.stderr.write(self.style.ERROR(f'Invalid choice: {choice}'))
+                return None
+
+            selected = resolution.all_results[idx]
+            self.stdout.write(f'\nDownloading: [{selected.platform}] {selected.title}')
+            return selected.url
+
+        except (ValueError, EOFError):
+            self.stderr.write(
+                self.style.ERROR('Invalid input. Use --auto-select for non-interactive mode.')
+            )
+            return None
+
+    def _print_spotify_results(self, results):
+        """Print Spotify search results grouped by platform."""
+        current_platform = None
+        idx = 1
+
+        for result in results:
+            if result.platform != current_platform:
+                current_platform = result.platform
+                platform_name = {
+                    'youtube': 'YouTube',
+                    'soundcloud': 'SoundCloud',
+                    'dailymotion': 'Dailymotion',
+                    'podcast_index': 'Podcast RSS',
+                }.get(current_platform, current_platform)
+                self.stdout.write(self.style.MIGRATE_HEADING(f'\n  {platform_name}:'))
+
+            duration = ''
+            if result.duration_seconds:
+                mins = result.duration_seconds // 60
+                secs = result.duration_seconds % 60
+                duration = f' [{mins}:{secs:02d}]'
+
+            channel = f' - {result.channel}' if result.channel else ''
+            self.stdout.write(f'    {idx}. {result.title}{channel}{duration}')
+            idx += 1

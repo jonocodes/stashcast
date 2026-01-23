@@ -35,6 +35,31 @@ class MultipleItemsDetected(Exception):
         self.count = len(entries)
 
 
+class SpotifyUrlDetected(Exception):
+    """
+    Raised when a Spotify URL is detected.
+
+    Spotify content is DRM-protected and requires searching alternative platforms.
+    The caller should handle this by presenting search results to the user.
+    """
+
+    def __init__(self, resolution):
+        """
+        Args:
+            resolution: SpotifyResolution object with metadata and search results
+        """
+        self.resolution = resolution
+        self.spotify_title = resolution.spotify_metadata.title
+        self.spotify_url = resolution.spotify_metadata.spotify_url
+        self.search_query = resolution.search_query
+        self.all_results = resolution.all_results
+        self.youtube_results = resolution.youtube_results
+        super().__init__(
+            f'Spotify URL detected: "{self.spotify_title}". '
+            f'Found {len(self.all_results)} alternative sources.'
+        )
+
+
 @dataclass
 class EntryInfo:
     """Information about a single entry in a multi-item result"""
