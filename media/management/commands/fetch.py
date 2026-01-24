@@ -16,6 +16,7 @@ from media.service.transcode_service import transcode_url_to_dir
 from media.service.resolve import (
     PlaylistNotSupported,
     MultipleItemsDetected,
+    SpotifyUrlDetected,
     prefetch,
     check_multiple_items,
 )
@@ -61,6 +62,10 @@ class Command(BaseCommand):
 
         # Check for multiple items BEFORE doing anything else
         strategy = choose_download_strategy(input_url)
+
+        # Note: Spotify URLs are handled via SpotifyUrlDetected exception
+        # raised by transcode_url_to_dir in _transcode_single_url
+
         if strategy == 'ytdlp':
             try:
                 prefetch_result = prefetch(input_url, strategy, logger=None)
@@ -165,11 +170,23 @@ class Command(BaseCommand):
 
             return
 
-        # Single item flow
-        self._transcode_single_url(input_url, outdir, requested_type, verbose, output_json)
+        # Single item flow - SpotifyUrlDetected exception handled inside
+        self._transcode_single_url(
+            input_url,
+            outdir,
+            requested_type,
+            verbose,
+            output_json,
+        )
 
     def _transcode_single_url(
-        self, input_url, outdir, requested_type, verbose, output_json, title_override=None
+        self,
+        input_url,
+        outdir,
+        requested_type,
+        verbose,
+        output_json,
+        title_override=None,
     ):
         """Transcode a single URL and return result dict for JSON output."""
         try:
@@ -228,6 +245,18 @@ class Command(BaseCommand):
 
             return output
 
+        except SpotifyUrlDetected:
+            # Spotify URL detected - use shared selection logic
+            from media.service.spotify import select_spotify_alternative
+
+            try:
+                selected_url = select_spotify_alternative(input_url, logger=self.stdout.write)
+                return self._transcode_single_url(
+                    selected_url, outdir, requested_type, verbose, output_json
+                )
+            except ValueError as e:
+                self.stderr.write(self.style.ERROR(str(e)))
+                return None
         except PlaylistNotSupported as e:
             if output_json:
                 error_output = {'success': False, 'error': f'Playlist not supported: {e}'}

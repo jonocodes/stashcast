@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-16 16:37-0800\n"
+"POT-Creation-Date: 2026-01-24 00:26+0000\n"
 "PO-Revision-Date: 2026-01-12 22:00+0000\n"
 "Last-Translator: StashCast Team\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -66,6 +66,88 @@ msgstr "Vídeo"
 msgid "Auto"
 msgstr "Auto"
 
+#: media/templates/admin/admin_spotify_confirm.html:5
+msgid "Spotify"
+msgstr "Spotify"
+
+#: media/templates/admin/admin_spotify_confirm.html:5
+#: media/templates/admin/admin_spotify_confirm.html:295
+#: media/templates/admin/admin_spotify_confirm.html:302
+msgid "Select Source"
+msgstr "Selecionar fonte"
+
+#: media/templates/admin/admin_spotify_confirm.html:293
+#: media/templates/admin/admin_stash_confirm_multiple.html:160
+#: media/templates/admin/admin_stash_form.html:233
+#: media/templates/admin/admin_stash_progress.html:186
+#: media/templates/media/stash_progress.html:265
+msgid "Home"
+msgstr "Início"
+
+#: media/templates/admin/admin_spotify_confirm.html:294
+#: media/templates/admin/admin_stash_confirm_multiple.html:161
+#: media/templates/admin/admin_stash_form.html:4
+#: media/templates/admin/admin_stash_form.html:234
+#: media/templates/admin/admin_stash_progress.html:187
+#: media/templates/admin/nav_sidebar.html:12
+msgid "Add URL"
+msgstr "Adicionar URL"
+
+#: media/templates/admin/admin_spotify_confirm.html:309
+msgid "Spotify content detected"
+msgstr "Conteúdo do Spotify detectado"
+
+#: media/templates/admin/admin_spotify_confirm.html:311
+msgid ""
+"Spotify audio is DRM-protected. We've searched multiple platforms for "
+"matching content."
+msgstr ""
+"O áudio do Spotify é protegido por DRM. Pesquisamos conteúdo correspondente "
+"em várias plataformas."
+
+#: media/templates/admin/admin_spotify_confirm.html:328
+msgid "Search query:"
+msgstr "Pesquisa:"
+
+#: media/templates/admin/admin_spotify_confirm.html:369
+msgid "min"
+msgstr "min"
+
+#: media/templates/admin/admin_spotify_confirm.html:372
+msgid "views"
+msgstr "visualizações"
+
+#: media/templates/admin/admin_spotify_confirm.html:386
+msgid "Or enter a custom URL"
+msgstr "Ou insira uma URL personalizada"
+
+#: media/templates/admin/admin_spotify_confirm.html:393
+#: media/templates/admin/admin_spotify_confirm.html:411
+#: media/templates/admin/admin_stash_confirm_multiple.html:215
+msgid "Cancel"
+msgstr "Cancelar"
+
+#: media/templates/admin/admin_spotify_confirm.html:394
+msgid "Download Selected"
+msgstr "Baixar selecionado"
+
+#: media/templates/admin/admin_spotify_confirm.html:399
+msgid "No results found on any platform."
+msgstr "Nenhum resultado encontrado em nenhuma plataforma."
+
+#: media/templates/admin/admin_spotify_confirm.html:400
+msgid "You can try entering a custom URL below."
+msgstr "Você pode tentar inserir uma URL personalizada abaixo."
+
+#: media/templates/admin/admin_spotify_confirm.html:404
+msgid "Enter a custom URL"
+msgstr "Insira uma URL personalizada"
+
+#: media/templates/admin/admin_spotify_confirm.html:412
+#: media/templates/admin/item_detail.html:182
+msgid "Download"
+msgstr "Baixar"
+
 #: media/templates/admin/admin_stash_confirm_multiple.html:5
 #: media/templates/admin/admin_stash_confirm_multiple.html:169
 msgid "Confirm Download"
@@ -74,21 +156,6 @@ msgstr "Confirmar download"
 #: media/templates/admin/admin_stash_confirm_multiple.html:5
 msgid "Items"
 msgstr "Itens"
-
-#: media/templates/admin/admin_stash_confirm_multiple.html:160
-#: media/templates/admin/admin_stash_form.html:233
-#: media/templates/admin/admin_stash_progress.html:186
-#: media/templates/media/stash_progress.html:265
-msgid "Home"
-msgstr "Início"
-
-#: media/templates/admin/admin_stash_confirm_multiple.html:161
-#: media/templates/admin/admin_stash_form.html:4
-#: media/templates/admin/admin_stash_form.html:234
-#: media/templates/admin/admin_stash_progress.html:187
-#: media/templates/admin/nav_sidebar.html:12
-msgid "Add URL"
-msgstr "Adicionar URL"
 
 #: media/templates/admin/admin_stash_confirm_multiple.html:162
 msgid "Confirm Multiple Items"
@@ -125,10 +192,6 @@ msgstr "Título"
 #: media/templates/admin/admin_stash_confirm_multiple.html:189
 msgid "Duration"
 msgstr "Duração"
-
-#: media/templates/admin/admin_stash_confirm_multiple.html:215
-msgid "Cancel"
-msgstr "Cancelar"
 
 #: media/templates/admin/admin_stash_confirm_multiple.html:216
 #, python-format
@@ -644,10 +707,6 @@ msgstr "Desarquivar"
 #: media/templates/admin/item_detail.html:178
 msgid "Delete"
 msgstr "Excluir"
-
-#: media/templates/admin/item_detail.html:182
-msgid "Download"
-msgstr "Baixar"
 
 #: media/templates/admin/item_detail.html:184
 msgid "Download Subtitles"

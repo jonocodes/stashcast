@@ -8,6 +8,7 @@ from urllib.parse import urlparse
 from pathlib import Path
 
 from media.service.constants import MEDIA_EXTENSIONS
+from media.service.spotify import is_spotify_url
 
 
 def choose_download_strategy(url):
@@ -19,8 +20,13 @@ def choose_download_strategy(url):
 
     Returns:
         str: 'file' for local media files, 'direct' for direct media URLs,
-             'ytdlp' for hosted content or HTML files
+             'ytdlp' for hosted content or HTML files,
+             'spotify' for Spotify URLs (requires YouTube fallback)
     """
+    # Check for Spotify URLs first (DRM-protected, need YouTube fallback)
+    if is_spotify_url(url):
+        return 'spotify'
+
     # Check if it's a local file path
     file_path = Path(url)
     if file_path.exists():

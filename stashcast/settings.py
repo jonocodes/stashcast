@@ -240,6 +240,18 @@ STASHCAST_SUMMARY_SENTENCES = int(os.environ.get('STASHCAST_SUMMARY_SENTENCES', 
 # See docs/YOUTUBE_AUTH.md for setup instructions
 STASHCAST_YTDLP_PROXY = os.environ.get('STASHCAST_YTDLP_PROXY', None)
 
+# Podcast Index API credentials (optional, for podcast RSS feed discovery)
+# Get free API keys at: https://podcastindex.org/
+PODCAST_INDEX_API_KEY = os.environ.get('PODCAST_INDEX_API_KEY', None)
+PODCAST_INDEX_API_SECRET = os.environ.get('PODCAST_INDEX_API_SECRET', None)
+
+# Spotify URL handling: auto-select first search result (no user input needed)
+STASHCAST_ACCEPT_FIRST_MATCH = os.environ.get('STASHCAST_ACCEPT_FIRST_MATCH', '').lower() in (
+    'true',
+    '1',
+    'yes',
+)
+
 # Ensure media directories exist
 os.makedirs(STASHCAST_MEDIA_DIR, exist_ok=True)
 

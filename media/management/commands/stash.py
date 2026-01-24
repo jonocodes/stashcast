@@ -65,8 +65,20 @@ class Command(BaseCommand):
         else:
             requested_type = MediaItem.REQUESTED_TYPE_VIDEO
 
-        # First, check for multiple items BEFORE creating any MediaItem
+        # First, check for special URL types BEFORE creating any MediaItem
         strategy = choose_download_strategy(url)
+
+        # Handle Spotify URLs - search for alternatives and select
+        if strategy == 'spotify':
+            from media.service.spotify import select_spotify_alternative
+
+            try:
+                url = select_spotify_alternative(url, logger=self.stdout.write)
+            except ValueError as e:
+                self.stderr.write(self.style.ERROR(str(e)))
+                return
+            strategy = choose_download_strategy(url)
+
         if strategy == 'ytdlp':
             try:
                 prefetch_result = prefetch(url, strategy, logger=None)

@@ -12,7 +12,11 @@ import tempfile
 import shutil
 
 from media.service.strategy import choose_download_strategy
-from media.service.resolve import prefetch, resolve_media_type, MultipleItemsDetected
+from media.service.resolve import (
+    prefetch,
+    resolve_media_type,
+    MultipleItemsDetected,
+)
 from media.service.media_info import (
     extract_ffprobe_metadata,
     get_output_extension,
@@ -121,6 +125,17 @@ def transcode_url_to_dir(
     # Step 1: Determine download strategy (use original path for strategy detection)
     strategy = choose_download_strategy(original_url)
     logger(f'Strategy: {strategy}')
+
+    # Handle Spotify URLs - these require user selection from alternative sources
+    if strategy == 'spotify':
+        from media.service.spotify import resolve_spotify_url
+        from media.service.resolve import SpotifyUrlDetected
+
+        logger('Spotify URL detected - searching alternative platforms...')
+        resolution = resolve_spotify_url(
+            original_url, max_results=5, search_all=True, logger=logger
+        )
+        raise SpotifyUrlDetected(resolution)
 
     # Step 2: Prefetch metadata
     logger('Prefetching metadata...')
