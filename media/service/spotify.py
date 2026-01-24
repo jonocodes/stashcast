@@ -549,3 +549,59 @@ def resolve_spotify_url(
         all_results=all_results,
         podcast_index_results=podcast_index_results,
     )
+
+
+def select_spotify_alternative(url: str, logger=None) -> str:
+    """
+    Resolve a Spotify URL and select an alternative source.
+
+    This consolidates the Spotify handling logic used by CLI commands.
+    Shows available alternatives and either auto-selects the first one
+    (if STASHCAST_ACCEPT_FIRST_MATCH is set) or prompts for user selection.
+
+    Args:
+        url: Spotify URL to resolve
+        logger: Optional callable for logging messages
+
+    Returns:
+        URL of the selected alternative source
+
+    Raises:
+        ValueError: If no alternatives found or selection cancelled
+    """
+
+    def log(msg):
+        if logger:
+            logger(msg)
+        else:
+            print(msg)
+
+    log('Spotify URL detected - searching alternatives...')
+    resolution = resolve_spotify_url(url, max_results=5, search_all=True, logger=logger)
+
+    if not resolution.all_results:
+        raise ValueError('No alternative sources found for Spotify URL')
+
+    # Show results
+    for i, r in enumerate(resolution.all_results, 1):
+        duration = (
+            f' [{r.duration_seconds // 60}:{r.duration_seconds % 60:02d}]'
+            if r.duration_seconds
+            else ''
+        )
+        log(f'  {i}. [{r.platform}] {r.title}{duration}')
+
+    # Auto-select or prompt
+    if settings.STASHCAST_ACCEPT_FIRST_MATCH:
+        selected = resolution.all_results[0]
+        log(f'Auto-selecting: {selected.title}')
+        return selected.url
+
+    # Interactive selection
+    try:
+        choice = int(input(f'Select (1-{len(resolution.all_results)}): ')) - 1
+        if choice < 0 or choice >= len(resolution.all_results):
+            raise ValueError('Invalid selection')
+        return resolution.all_results[choice].url
+    except (ValueError, EOFError) as e:
+        raise ValueError(f'Selection cancelled: {e}')

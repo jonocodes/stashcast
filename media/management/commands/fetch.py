@@ -245,11 +245,18 @@ class Command(BaseCommand):
 
             return output
 
-        except SpotifyUrlDetected as e:
-            # Spotify URL detected - handle selection from alternative sources
-            return self._handle_spotify_selection(
-                e.resolution, outdir, requested_type, verbose, output_json
-            )
+        except SpotifyUrlDetected:
+            # Spotify URL detected - use shared selection logic
+            from media.service.spotify import select_spotify_alternative
+
+            try:
+                selected_url = select_spotify_alternative(input_url, logger=self.stdout.write)
+                return self._transcode_single_url(
+                    selected_url, outdir, requested_type, verbose, output_json
+                )
+            except ValueError as e:
+                self.stderr.write(self.style.ERROR(str(e)))
+                return None
         except PlaylistNotSupported as e:
             if output_json:
                 error_output = {'success': False, 'error': f'Playlist not supported: {e}'}
@@ -263,39 +270,4 @@ class Command(BaseCommand):
                 self.stdout.write(json.dumps(error_output, indent=2))
             else:
                 self.stderr.write(self.style.ERROR(f'Transcode failed: {e}'))
-            return None
-
-    def _handle_spotify_selection(self, resolution, outdir, requested_type, verbose, output_json):
-        """Handle Spotify URL by selecting from alternative sources."""
-        from django.conf import settings as django_settings
-
-        if not resolution.all_results:
-            self.stderr.write(self.style.ERROR('No alternative sources found'))
-            return None
-
-        # Show results
-        for i, r in enumerate(resolution.all_results, 1):
-            duration = (
-                f' [{r.duration_seconds // 60}:{r.duration_seconds % 60:02d}]'
-                if r.duration_seconds
-                else ''
-            )
-            self.stdout.write(f'  {i}. [{r.platform}] {r.title}{duration}')
-
-        # Auto-select or prompt
-        if django_settings.STASHCAST_ACCEPT_FIRST_MATCH:
-            selected = resolution.all_results[0]
-            self.stdout.write(f'Auto-selecting: {selected.title}')
-            return self._transcode_single_url(
-                selected.url, outdir, requested_type, verbose, output_json
-            )
-
-        try:
-            choice = int(input('Select (1-{}): '.format(len(resolution.all_results)))) - 1
-            selected = resolution.all_results[choice]
-            return self._transcode_single_url(
-                selected.url, outdir, requested_type, verbose, output_json
-            )
-        except (ValueError, IndexError, EOFError):
-            self.stderr.write(self.style.ERROR('Invalid selection'))
             return None

@@ -70,40 +70,13 @@ class Command(BaseCommand):
 
         # Handle Spotify URLs - search for alternatives and select
         if strategy == 'spotify':
-            from django.conf import settings as django_settings
-            from media.service.spotify import resolve_spotify_url
+            from media.service.spotify import select_spotify_alternative
 
-            self.stdout.write(
-                self.style.WARNING('Spotify URL detected - searching alternatives...')
-            )
-            resolution = resolve_spotify_url(url, max_results=5, search_all=True)
-
-            if not resolution.all_results:
-                self.stderr.write(self.style.ERROR('No alternative sources found'))
+            try:
+                url = select_spotify_alternative(url, logger=self.stdout.write)
+            except ValueError as e:
+                self.stderr.write(self.style.ERROR(str(e)))
                 return
-
-            # Show results
-            for i, r in enumerate(resolution.all_results, 1):
-                duration = (
-                    f' [{r.duration_seconds // 60}:{r.duration_seconds % 60:02d}]'
-                    if r.duration_seconds
-                    else ''
-                )
-                self.stdout.write(f'  {i}. [{r.platform}] {r.title}{duration}')
-
-            # Auto-select or prompt
-            if django_settings.STASHCAST_ACCEPT_FIRST_MATCH:
-                selected = resolution.all_results[0]
-                self.stdout.write(f'Auto-selecting: {selected.title}')
-                url = selected.url
-            else:
-                try:
-                    choice = int(input('Select (1-{}): '.format(len(resolution.all_results)))) - 1
-                    url = resolution.all_results[choice].url
-                except (ValueError, IndexError, EOFError):
-                    self.stderr.write('Invalid selection')
-                    return
-
             strategy = choose_download_strategy(url)
 
         if strategy == 'ytdlp':
