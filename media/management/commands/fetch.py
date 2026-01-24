@@ -50,11 +50,6 @@ class Command(BaseCommand):
             action='store_true',
             help='Allow downloading multiple items from playlists or pages with multiple videos',
         )
-        parser.add_argument(
-            '--auto-select',
-            action='store_true',
-            help='For Spotify URLs, automatically select the first search result',
-        )
 
     def handle(self, *args, **options):
         input_url = options['input']
@@ -64,7 +59,6 @@ class Command(BaseCommand):
         verbose = options['verbose']
         output_json = options['json']
         allow_multiple = options['allow_multiple']
-        auto_select = options['auto_select']
 
         # Check for multiple items BEFORE doing anything else
         strategy = choose_download_strategy(input_url)
@@ -183,8 +177,6 @@ class Command(BaseCommand):
             requested_type,
             verbose,
             output_json,
-            auto_select=auto_select,
-            dry_run=dry_run,
         )
 
     def _transcode_single_url(
@@ -195,8 +187,6 @@ class Command(BaseCommand):
         verbose,
         output_json,
         title_override=None,
-        auto_select=False,
-        dry_run=False,
     ):
         """Transcode a single URL and return result dict for JSON output."""
         try:
@@ -258,14 +248,7 @@ class Command(BaseCommand):
         except SpotifyUrlDetected as e:
             # Spotify URL detected - handle selection from alternative sources
             return self._handle_spotify_selection(
-                e.resolution,
-                input_url,
-                outdir,
-                requested_type,
-                verbose,
-                output_json,
-                dry_run,
-                auto_select,
+                e.resolution, outdir, requested_type, verbose, output_json
             )
         except PlaylistNotSupported as e:
             if output_json:
@@ -282,162 +265,37 @@ class Command(BaseCommand):
                 self.stderr.write(self.style.ERROR(f'Transcode failed: {e}'))
             return None
 
-    def _handle_spotify_selection(
-        self,
-        resolution,
-        input_url,
-        outdir,
-        requested_type,
-        verbose,
-        output_json,
-        dry_run,
-        auto_select,
-    ):
-        """Handle Spotify URL by presenting selection from alternative sources.
-
-        Args:
-            resolution: SpotifyResolution object with metadata and search results
-                       (passed from SpotifyUrlDetected exception)
-            input_url: Original Spotify URL
-            outdir: Output directory
-            requested_type: 'auto', 'audio', or 'video'
-            verbose: Enable verbose output
-            output_json: Output result as JSON
-            dry_run: Show what would be done without downloading
-            auto_select: Automatically select first result
-        """
-        if not output_json:
-            self.stdout.write(f'  Title: {resolution.spotify_metadata.title}')
-            self.stdout.write(f'  Search query: {resolution.search_query}')
-            self.stdout.write('')
+    def _handle_spotify_selection(self, resolution, outdir, requested_type, verbose, output_json):
+        """Handle Spotify URL by selecting from alternative sources."""
+        from django.conf import settings as django_settings
 
         if not resolution.all_results:
-            if output_json:
-                self.stdout.write(
-                    json.dumps(
-                        {
-                            'success': False,
-                            'error': 'No alternative sources found',
-                            'spotify_title': resolution.spotify_metadata.title,
-                            'search_query': resolution.search_query,
-                        }
-                    )
-                )
-            else:
-                self.stderr.write(self.style.ERROR('No alternative sources found on any platform.'))
-            sys.exit(1)
+            self.stderr.write(self.style.ERROR('No alternative sources found'))
+            return None
 
-        # Dry run - just show what we found
-        if dry_run:
-            if output_json:
-                self.stdout.write(
-                    json.dumps(
-                        {
-                            'dry_run': True,
-                            'spotify_url': input_url,
-                            'spotify_title': resolution.spotify_metadata.title,
-                            'search_query': resolution.search_query,
-                            'results': [
-                                {
-                                    'platform': r.platform,
-                                    'url': r.url,
-                                    'title': r.title,
-                                    'channel': r.channel,
-                                    'duration_seconds': r.duration_seconds,
-                                }
-                                for r in resolution.all_results
-                            ],
-                        },
-                        indent=2,
-                    )
-                )
-            else:
-                self.stdout.write(self.style.WARNING('DRY RUN - showing search results:'))
-                self._print_spotify_results(resolution.all_results)
-            return
-
-        # Auto-select first result
-        if auto_select:
-            selected = resolution.all_results[0]
-            if not output_json:
-                self.stdout.write(f'Auto-selecting: [{selected.platform}] {selected.title}')
-            self._transcode_single_url(selected.url, outdir, requested_type, verbose, output_json)
-            return
-
-        # Interactive selection
-        if output_json:
-            # For JSON mode without auto-select, return results for external handling
-            self.stdout.write(
-                json.dumps(
-                    {
-                        'success': False,
-                        'error': 'Spotify URL requires selection. Use --auto-select or choose from results.',
-                        'spotify_title': resolution.spotify_metadata.title,
-                        'search_query': resolution.search_query,
-                        'results': [
-                            {
-                                'platform': r.platform,
-                                'url': r.url,
-                                'title': r.title,
-                                'channel': r.channel,
-                                'duration_seconds': r.duration_seconds,
-                            }
-                            for r in resolution.all_results
-                        ],
-                    },
-                    indent=2,
-                )
+        # Show results
+        for i, r in enumerate(resolution.all_results, 1):
+            duration = (
+                f' [{r.duration_seconds // 60}:{r.duration_seconds % 60:02d}]'
+                if r.duration_seconds
+                else ''
             )
-            sys.exit(1)
+            self.stdout.write(f'  {i}. [{r.platform}] {r.title}{duration}')
 
-        # Interactive CLI selection
-        self._print_spotify_results(resolution.all_results)
-        self.stdout.write('')
-        self.stdout.write('Enter number to download, or "q" to quit:')
+        # Auto-select or prompt
+        if django_settings.STASHCAST_ACCEPT_FIRST_MATCH:
+            selected = resolution.all_results[0]
+            self.stdout.write(f'Auto-selecting: {selected.title}')
+            return self._transcode_single_url(
+                selected.url, outdir, requested_type, verbose, output_json
+            )
 
         try:
-            choice = input('> ').strip()
-            if choice.lower() == 'q':
-                self.stdout.write('Cancelled.')
-                return
-
-            idx = int(choice) - 1
-            if idx < 0 or idx >= len(resolution.all_results):
-                self.stderr.write(self.style.ERROR(f'Invalid choice: {choice}'))
-                sys.exit(1)
-
-            selected = resolution.all_results[idx]
-            self.stdout.write(f'\nDownloading: [{selected.platform}] {selected.title}')
-            self._transcode_single_url(selected.url, outdir, requested_type, verbose, output_json)
-
-        except (ValueError, EOFError):
-            self.stderr.write(
-                self.style.ERROR('Invalid input. Use --auto-select for non-interactive mode.')
+            choice = int(input('Select (1-{}): '.format(len(resolution.all_results)))) - 1
+            selected = resolution.all_results[choice]
+            return self._transcode_single_url(
+                selected.url, outdir, requested_type, verbose, output_json
             )
-            sys.exit(1)
-
-    def _print_spotify_results(self, results):
-        """Print Spotify search results grouped by platform."""
-        current_platform = None
-        idx = 1
-
-        for result in results:
-            if result.platform != current_platform:
-                current_platform = result.platform
-                platform_name = {
-                    'youtube': 'YouTube',
-                    'soundcloud': 'SoundCloud',
-                    'dailymotion': 'Dailymotion',
-                    'podcast_index': 'Podcast RSS',
-                }.get(current_platform, current_platform)
-                self.stdout.write(self.style.MIGRATE_HEADING(f'\n  {platform_name}:'))
-
-            duration = ''
-            if result.duration_seconds:
-                mins = result.duration_seconds // 60
-                secs = result.duration_seconds % 60
-                duration = f' [{mins}:{secs:02d}]'
-
-            channel = f' - {result.channel}' if result.channel else ''
-            self.stdout.write(f'    {idx}. {result.title}{channel}{duration}')
-            idx += 1
+        except (ValueError, IndexError, EOFError):
+            self.stderr.write(self.style.ERROR('Invalid selection'))
+            return None
