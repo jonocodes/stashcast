@@ -1,0 +1,21 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block content %}
+  <div id="content-main">
+    {% include "admin/app_list.html" with app_list=app_list show_changelinks=False %}
+  </div>
+
+  <div id="content-related">
+    <div class="module">
+      <h2>{% translate "Project links" %}</h2>
+      <ul class="actionlist">
+        <li>
+          <a href="https://github.com/jonocodes/stashcast" target="_blank" rel="noopener noreferrer">
+            {% translate "GitHub project" %}
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+{% endblock %}
