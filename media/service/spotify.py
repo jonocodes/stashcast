@@ -584,11 +584,11 @@ def select_spotify_alternative(url: str, logger=None) -> str:
 
     # Show results
     for i, r in enumerate(resolution.all_results, 1):
-        duration = (
-            f' [{r.duration_seconds // 60}:{r.duration_seconds % 60:02d}]'
-            if r.duration_seconds
-            else ''
-        )
+        duration = ''
+        if r.duration_seconds:
+            mins = int(r.duration_seconds) // 60
+            secs = int(r.duration_seconds) % 60
+            duration = f' [{mins}:{secs:02d}]'
         log(f'  {i}. [{r.platform}] {r.title}{duration}')
 
     # Auto-select or prompt
