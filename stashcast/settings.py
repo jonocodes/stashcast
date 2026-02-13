@@ -234,6 +234,31 @@ STASHCAST_SLUG_MAX_WORDS = int(os.environ.get('STASHCAST_SLUG_MAX_WORDS', '6'))
 STASHCAST_SLUG_MAX_CHARS = int(os.environ.get('STASHCAST_SLUG_MAX_CHARS', '40'))
 STASHCAST_SUMMARY_SENTENCES = int(os.environ.get('STASHCAST_SUMMARY_SENTENCES', '8'))
 
+# Speech-to-text transcription (opt-in, offline, uses faster-whisper)
+# Set STASHCAST_STT_MODEL to enable (e.g. 'base', 'small', 'medium', 'large-v3')
+# Leave empty/unset to disable transcription
+# Model sizes and approximate VRAM/RAM usage:
+#   tiny   ~75MB   - fastest, least accurate
+#   base   ~150MB  - good balance for English
+#   small  ~500MB  - better multilingual accuracy
+#   medium ~1.5GB  - high accuracy
+#   large-v3 ~3GB  - best accuracy, needs GPU for reasonable speed
+STASHCAST_STT_MODEL = os.environ.get('STASHCAST_STT_MODEL', '')
+
+# Language for speech-to-text: ISO code like 'en', 'es', 'pt', or 'auto' for detection
+# Defaults to the same language as LANGUAGE_CODE
+STASHCAST_STT_LANGUAGE = os.environ.get(
+    'STASHCAST_STT_LANGUAGE', STASHCAST_SUBTITLE_LANGUAGE
+)
+if STASHCAST_STT_LANGUAGE == 'auto':
+    STASHCAST_STT_LANGUAGE = None  # faster-whisper uses None for auto-detect
+
+# Device and compute type for faster-whisper
+# Device: 'auto' (detect GPU), 'cpu', 'cuda'
+# Compute: 'auto', 'int8' (CPU-friendly), 'float16' (GPU), 'float32'
+STASHCAST_STT_DEVICE = os.environ.get('STASHCAST_STT_DEVICE', 'auto')
+STASHCAST_STT_COMPUTE_TYPE = os.environ.get('STASHCAST_STT_COMPUTE_TYPE', 'auto')
+
 # Optional: Proxy URL for yt-dlp requests
 # Use residential proxy to avoid YouTube blocking cloud VM IPs
 # Formats: http://host:port, socks5://host:port, socks5://user:pass@host:port

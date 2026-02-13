@@ -158,8 +158,12 @@ def process_media(guid):
 
         clear_progress(item.guid)
 
-        # Generate summary if subtitles are available
-        if item.subtitle_path and settings.STASHCAST_SUMMARY_SENTENCES > 0:
+        # Transcribe if no subtitles and STT is enabled
+        if not item.subtitle_path and settings.STASHCAST_STT_MODEL:
+            write_log(log_path, 'No subtitles available, enqueuing transcription task')
+            transcribe_media(item.guid)
+        elif item.subtitle_path and settings.STASHCAST_SUMMARY_SENTENCES > 0:
+            # Generate summary if subtitles are already available
             write_log(log_path, 'Enqueuing summary generation task')
             generate_summary(item.guid)
 
@@ -181,6 +185,75 @@ def process_media(guid):
                 write_log(log_path, f'Failed to clean up tmp: {cleanup_error}')
 
         raise
+
+
+@db_task()
+def transcribe_media(guid):
+    """
+    Transcribe media to VTT using faster-whisper when no subtitles exist.
+
+    Loads the model, transcribes, frees memory, then chains to summary generation.
+    Timing is logged so operators can gauge cost per item.
+    """
+    if not settings.STASHCAST_STT_MODEL:
+        return
+
+    try:
+        item = MediaItem.objects.get(guid=guid)
+    except MediaItem.DoesNotExist:
+        return
+
+    # Skip if subtitles already exist
+    if item.subtitle_path:
+        return
+
+    content_path = item.get_absolute_content_path()
+    if not content_path or not os.path.exists(content_path):
+        return
+
+    log_path = item.get_absolute_log_path() if item.log_path else None
+    base_dir = item.get_base_dir()
+    if not base_dir:
+        return
+
+    vtt_output = base_dir / 'subtitles.vtt'
+
+    try:
+        if log_path:
+            write_log(log_path, '=== TRANSCRIBING (speech-to-text) ===')
+            write_log(log_path, f'Model: {settings.STASHCAST_STT_MODEL}')
+            write_log(log_path, f'Language: {settings.STASHCAST_STT_LANGUAGE or "auto-detect"}')
+
+        from media.service.transcribe import transcribe
+
+        result = transcribe(
+            media_path=content_path,
+            output_path=vtt_output,
+            model_size=settings.STASHCAST_STT_MODEL,
+            language=settings.STASHCAST_STT_LANGUAGE,
+            device=settings.STASHCAST_STT_DEVICE,
+            compute_type=settings.STASHCAST_STT_COMPUTE_TYPE,
+            logger=lambda m: write_log(log_path, m) if log_path else None,
+        )
+
+        item.subtitle_path = 'subtitles.vtt'
+        item.save()
+
+        if log_path:
+            write_log(
+                log_path,
+                f'Transcription complete: language={result.language}, '
+                f'took {result.duration_seconds:.1f}s',
+            )
+
+        # Now chain to summary generation
+        if settings.STASHCAST_SUMMARY_SENTENCES > 0:
+            generate_summary(item.guid)
+
+    except Exception as e:
+        if log_path:
+            write_log(log_path, f'Transcription failed: {str(e)}')
+        # Don't fail the whole item — it's already READY, just without a transcript
 
 
 @db_task()
@@ -558,7 +631,9 @@ def process_media_batch(guids: List[str]):
 
                 clear_progress(guid)
 
-                if item.subtitle_path and settings.STASHCAST_SUMMARY_SENTENCES > 0:
+                if not item.subtitle_path and settings.STASHCAST_STT_MODEL:
+                    transcribe_media(item.guid)
+                elif item.subtitle_path and settings.STASHCAST_SUMMARY_SENTENCES > 0:
                     generate_summary(item.guid)
 
                 write_log(batch_log_path, f'Completed: {item.title}')
