@@ -164,10 +164,7 @@
     <table class="info-table">
         <tr>
             <td>{% trans "Storage Used" %}</td>
-            <td>
-                {% widthratio total_storage_bytes 1073741824 1 %} GB
-                ({{ total_storage_bytes|filesizeformat }})
-            </td>
+            <td>{{ total_storage_bytes|filesizeformat }}</td>
         </tr>
         <tr>
             <td>{% trans "Last Download" %}</td>
