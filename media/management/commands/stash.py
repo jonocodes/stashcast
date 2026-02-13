@@ -28,6 +28,7 @@ from media.service.resolve import (
     MultipleItemsDetected,
     check_multiple_items,
 )
+from media.tasks import check_episode_limit
 
 
 class Command(BaseCommand):
@@ -64,6 +65,15 @@ class Command(BaseCommand):
             requested_type = MediaItem.REQUESTED_TYPE_AUDIO
         else:
             requested_type = MediaItem.REQUESTED_TYPE_VIDEO
+
+        # Check episode limit before doing any work
+        limit_error = check_episode_limit()
+        if limit_error:
+            if json_output:
+                self.stdout.write(json.dumps({'status': 'error', 'error': limit_error}))
+            else:
+                self.stderr.write(self.style.ERROR(f'Error: {limit_error}'))
+            return
 
         # First, check for special URL types BEFORE creating any MediaItem
         strategy = choose_download_strategy(url)
@@ -145,6 +155,16 @@ class Command(BaseCommand):
 
     def _process_single_url(self, url, requested_type, verbose, json_output):
         """Process a single URL and return result dict for JSON output."""
+        # Check episode limit (important for batch/playlist processing where
+        # the limit may be reached mid-way through)
+        limit_error = check_episode_limit()
+        if limit_error:
+            if json_output:
+                self.stdout.write(json.dumps({'status': 'error', 'error': limit_error}))
+            else:
+                self.stderr.write(self.style.ERROR(f'Error: {limit_error}'))
+            return None
+
         # Check if this URL already exists with this requested type
         existing_item = MediaItem.objects.filter(
             source_url=url, requested_type=requested_type
