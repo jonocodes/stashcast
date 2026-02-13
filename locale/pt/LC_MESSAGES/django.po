@@ -717,6 +717,14 @@ msgstr "Excluir"
 msgid "Download Subtitles"
 msgstr "Baixar legendas"
 
+#: media/templates/admin/item_detail.html:187
+msgid "Regenerate Summary"
+msgstr "Regenerar resumo"
+
+#: media/templates/admin/item_detail.html:187
+msgid "Generate Summary"
+msgstr "Gerar resumo"
+
 #: media/templates/admin/item_detail.html:190
 msgid "Source"
 msgstr "Fonte"

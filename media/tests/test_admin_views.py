@@ -269,6 +269,53 @@ class AdminItemDetailViewTest(TestCase):
         response = self.client.get('/admin/tools/item/invalid-guid-xyz/')
         self.assertEqual(response.status_code, 404)
 
+    def test_item_detail_shows_generate_summary_when_no_summary(self):
+        """Test that 'Generate Summary' button shows when subtitles exist but no summary"""
+        item = MediaItem.objects.create(
+            source_url='http://example.com/test.mp3',
+            requested_type=MediaItem.REQUESTED_TYPE_AUDIO,
+            slug='test-audio',
+            title='Test Audio',
+            status=MediaItem.STATUS_READY,
+            subtitle_path='subtitles.vtt',
+        )
+
+        response = self.client.get(f'/admin/tools/item/{item.guid}/')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Generate Summary')
+        self.assertNotContains(response, 'Regenerate Summary')
+
+    def test_item_detail_shows_regenerate_summary_when_summary_exists(self):
+        """Test that 'Regenerate Summary' button shows when summary already exists"""
+        item = MediaItem.objects.create(
+            source_url='http://example.com/test.mp3',
+            requested_type=MediaItem.REQUESTED_TYPE_AUDIO,
+            slug='test-audio',
+            title='Test Audio',
+            status=MediaItem.STATUS_READY,
+            subtitle_path='subtitles.vtt',
+            summary='An existing summary of the episode.',
+        )
+
+        response = self.client.get(f'/admin/tools/item/{item.guid}/')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Regenerate Summary')
+
+    def test_item_detail_no_summary_button_without_subtitles(self):
+        """Test that no summary button shows when there are no subtitles"""
+        item = MediaItem.objects.create(
+            source_url='http://example.com/test.mp3',
+            requested_type=MediaItem.REQUESTED_TYPE_AUDIO,
+            slug='test-audio',
+            title='Test Audio',
+            status=MediaItem.STATUS_READY,
+        )
+
+        response = self.client.get(f'/admin/tools/item/{item.guid}/')
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, 'Generate Summary')
+        self.assertNotContains(response, 'Regenerate Summary')
+
     def test_item_detail_view_requires_authentication(self):
         """Test that item detail requires login"""
         item = MediaItem.objects.create(

@@ -680,6 +680,14 @@ msgstr ""
 msgid "Download Subtitles"
 msgstr ""
 
+#: media/templates/admin/item_detail.html:187
+msgid "Regenerate Summary"
+msgstr ""
+
+#: media/templates/admin/item_detail.html:187
+msgid "Generate Summary"
+msgstr ""
+
 #: media/templates/admin/item_detail.html:190
 msgid "Source"
 msgstr ""

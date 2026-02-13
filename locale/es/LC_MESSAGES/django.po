@@ -720,6 +720,14 @@ msgstr "Eliminar"
 msgid "Download Subtitles"
 msgstr "Descargar subtítulos"
 
+#: media/templates/admin/item_detail.html:187
+msgid "Regenerate Summary"
+msgstr "Regenerar resumen"
+
+#: media/templates/admin/item_detail.html:187
+msgid "Generate Summary"
+msgstr "Generar resumen"
+
 #: media/templates/admin/item_detail.html:190
 msgid "Source"
 msgstr "Fuente"
