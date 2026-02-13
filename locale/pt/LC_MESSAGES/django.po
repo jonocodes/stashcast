@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-02-13 17:27+0000\n"
+"POT-Creation-Date: 2026-02-13 18:31+0000\n"
 "PO-Revision-Date: 2026-01-12 22:00+0000\n"
 "Last-Translator: StashCast Team\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -147,7 +147,7 @@ msgid "Enter a custom URL"
 msgstr "Insira uma URL personalizada"
 
 #: media/templates/admin/admin_spotify_confirm.html:412
-#: media/templates/admin/item_detail.html:182
+#: media/templates/admin/item_detail.html:193
 msgid "Download"
 msgstr "Baixar"
 
@@ -662,7 +662,7 @@ msgid "Media Grid"
 msgstr "Grade de mídia"
 
 #: media/templates/admin/grid_view.html:187
-#: media/templates/admin/item_detail.html:204
+#: media/templates/admin/item_detail.html:215
 #: media/templates/admin/list_view.html:228
 msgid "Type:"
 msgstr "Tipo:"
@@ -713,43 +713,57 @@ msgstr "Desarquivar"
 msgid "Delete"
 msgstr "Excluir"
 
-#: media/templates/admin/item_detail.html:184
+#: media/templates/admin/item_detail.html:182
+#, fuzzy
+#| msgid "Prefetching"
+msgid "Refetch"
+msgstr "Preparando"
+
+#: media/templates/admin/item_detail.html:187
+msgid "Regenerate Summary"
+msgstr "Regenerar resumo"
+
+#: media/templates/admin/item_detail.html:187
+msgid "Generate Summary"
+msgstr "Gerar resumo"
+
+#: media/templates/admin/item_detail.html:195
 msgid "Download Subtitles"
 msgstr "Baixar legendas"
 
-#: media/templates/admin/item_detail.html:190
+#: media/templates/admin/item_detail.html:201
 msgid "Source"
 msgstr "Fonte"
 
-#: media/templates/admin/item_detail.html:196
+#: media/templates/admin/item_detail.html:207
 msgid "By:"
 msgstr "Por:"
 
-#: media/templates/admin/item_detail.html:199
+#: media/templates/admin/item_detail.html:210
 msgid "Published:"
 msgstr "Publicado:"
 
-#: media/templates/admin/item_detail.html:202
+#: media/templates/admin/item_detail.html:213
 msgid "Duration:"
 msgstr "Duração:"
 
-#: media/templates/admin/item_detail.html:209
+#: media/templates/admin/item_detail.html:220
 msgid "Error:"
 msgstr "Erro:"
 
-#: media/templates/admin/item_detail.html:219
+#: media/templates/admin/item_detail.html:230
 msgid "Summary"
 msgstr "Resumo"
 
-#: media/templates/admin/item_detail.html:226
+#: media/templates/admin/item_detail.html:237
 msgid "Description"
 msgstr "Descrição"
 
-#: media/templates/admin/item_detail.html:236
+#: media/templates/admin/item_detail.html:247
 msgid "Your browser does not support audio element."
 msgstr "Seu navegador não suporta o elemento de áudio."
 
-#: media/templates/admin/item_detail.html:244
+#: media/templates/admin/item_detail.html:255
 msgid "Your browser does not support video element."
 msgstr "Seu navegador não suporta o elemento de vídeo."
 

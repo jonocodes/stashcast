@@ -405,3 +405,76 @@ class AdminStashFormEpisodeLimitTest(TestCase):
         self.assertNotIn('/admin/tools/add-url/$', response.url)
         # The process_media task should have been called
         self.mock_process_media.assert_called_once()
+
+
+class StashCommandEpisodeLimitTest(TestCase):
+    """Tests for episode limit enforcement in the stash management command."""
+
+    @override_settings(STASHCAST_MAX_EPISODES=2)
+    def test_blocks_stash_when_at_episode_limit(self):
+        """The stash command exits with an error when the episode limit is reached."""
+        from io import StringIO
+
+        from django.core.management import call_command
+
+        for i in range(2):
+            MediaItem.objects.create(
+                source_url=f'http://example.com/{i}.mp3',
+                requested_type=MediaItem.REQUESTED_TYPE_AUDIO,
+                slug=f'ep-{i}',
+                title=f'Episode {i}',
+                media_type=MediaItem.MEDIA_TYPE_AUDIO,
+                status=MediaItem.STATUS_READY,
+            )
+
+        stderr = StringIO()
+        call_command('stash', 'http://example.com/new.mp3', stderr=stderr)
+        self.assertIn('Episode limit reached', stderr.getvalue())
+
+    @override_settings(STASHCAST_MAX_EPISODES=2)
+    def test_blocks_stash_json_output_when_at_limit(self):
+        """The stash command returns JSON error when at limit with --json flag."""
+        import json
+        from io import StringIO
+
+        from django.core.management import call_command
+
+        for i in range(3):
+            MediaItem.objects.create(
+                source_url=f'http://example.com/{i}.mp3',
+                requested_type=MediaItem.REQUESTED_TYPE_AUDIO,
+                slug=f'ep-{i}',
+                title=f'Episode {i}',
+                media_type=MediaItem.MEDIA_TYPE_AUDIO,
+                status=MediaItem.STATUS_READY,
+            )
+
+        stdout = StringIO()
+        call_command('stash', 'http://example.com/new.mp3', '--json', stdout=stdout)
+        output = json.loads(stdout.getvalue())
+        self.assertEqual(output['status'], 'error')
+        self.assertIn('Episode limit reached', output['error'])
+        self.assertIn('3/2', output['error'])
+
+    @override_settings(STASHCAST_MAX_EPISODES=0)
+    def test_no_limit_when_max_episodes_is_zero(self):
+        """The stash command does not block when STASHCAST_MAX_EPISODES=0."""
+        from io import StringIO
+
+        from django.core.management import call_command
+
+        for i in range(5):
+            MediaItem.objects.create(
+                source_url=f'http://example.com/{i}.mp3',
+                requested_type=MediaItem.REQUESTED_TYPE_AUDIO,
+                slug=f'ep-{i}',
+                title=f'Episode {i}',
+                media_type=MediaItem.MEDIA_TYPE_AUDIO,
+                status=MediaItem.STATUS_READY,
+            )
+
+        stderr = StringIO()
+        # This will fail for other reasons (network), but it should NOT fail
+        # due to episode limit. We just check stderr doesn't mention the limit.
+        call_command('stash', 'http://example.com/new.mp3', stderr=stderr)
+        self.assertNotIn('Episode limit reached', stderr.getvalue())
