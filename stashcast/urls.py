@@ -35,6 +35,7 @@ from media.views import (
     item_detail_view,
     item_unarchive_view,
     list_view,
+    preferences_view,
     stash_progress_view,
     stash_status_stream,
     stash_view,
@@ -78,6 +79,7 @@ urlpatterns = [
     path('admin/tools/item/<str:guid>/', item_detail_view, name='item_detail'),
     path('admin/tools/item/<str:guid>/archive/', item_archive_view, name='item_archive'),
     path('admin/tools/item/<str:guid>/unarchive/', item_unarchive_view, name='item_unarchive'),
+    path('admin/tools/preferences/', preferences_view, name='preferences'),
     # Redirect admin index to grid view (must come before admin.site.urls)
     re_path(r'^admin/$', RedirectView.as_view(url='/admin/tools/grid/', permanent=False)),
     # Standard admin (includes django-huey-monitor integration)
