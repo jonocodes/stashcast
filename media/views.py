@@ -991,7 +991,7 @@ def preferences_view(request):
 
     context = {
         **admin.site.each_context(request),
-        'title': 'Preferences',
+        'title': 'About',
         'ready_count': ready_count,
         'archived_count': archived_count,
         'audio_count': audio_count,
