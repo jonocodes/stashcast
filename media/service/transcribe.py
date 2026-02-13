@@ -106,7 +106,9 @@ def transcribe(
 
         transcribe_elapsed = time.monotonic() - transcribe_start
         total_elapsed = time.monotonic() - start_time
-        log(f'Transcription completed in {transcribe_elapsed:.1f}s (total with model load: {total_elapsed:.1f}s)')
+        log(
+            f'Transcription completed in {transcribe_elapsed:.1f}s (total with model load: {total_elapsed:.1f}s)'
+        )
 
         return TranscriptionResult(
             vtt_path=output_path,

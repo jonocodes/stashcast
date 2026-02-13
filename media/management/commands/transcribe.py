@@ -92,15 +92,14 @@ class Command(BaseCommand):
             )
 
             self.stdout.write('')
-            self.stdout.write(self.style.SUCCESS(f'Transcription complete'))
+            self.stdout.write(self.style.SUCCESS('Transcription complete'))
             self.stdout.write(self.style.SUCCESS(f'Language: {result.language}'))
             self.stdout.write(self.style.SUCCESS(f'Time:     {result.duration_seconds:.1f}s'))
             self.stdout.write(self.style.SUCCESS(f'Output:   {result.vtt_path}'))
 
         except ImportError:
             raise CommandError(
-                'faster-whisper is not installed. Install it with:\n'
-                '  pip install faster-whisper'
+                'faster-whisper is not installed. Install it with:\n  pip install faster-whisper'
             )
         except Exception as e:
             raise CommandError(f'Transcription failed: {e}')

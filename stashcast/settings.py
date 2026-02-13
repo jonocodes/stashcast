@@ -247,9 +247,7 @@ STASHCAST_STT_MODEL = os.environ.get('STASHCAST_STT_MODEL', '')
 
 # Language for speech-to-text: ISO code like 'en', 'es', 'pt', or 'auto' for detection
 # Defaults to the same language as LANGUAGE_CODE
-STASHCAST_STT_LANGUAGE = os.environ.get(
-    'STASHCAST_STT_LANGUAGE', STASHCAST_SUBTITLE_LANGUAGE
-)
+STASHCAST_STT_LANGUAGE = os.environ.get('STASHCAST_STT_LANGUAGE', STASHCAST_SUBTITLE_LANGUAGE)
 if STASHCAST_STT_LANGUAGE == 'auto':
     STASHCAST_STT_LANGUAGE = None  # faster-whisper uses None for auto-detect
 
