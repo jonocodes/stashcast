@@ -801,3 +801,80 @@ msgstr ""
 #: media/templates/media/stash_progress.html:272
 msgid "items queued"
 msgstr ""
+
+#: media/templates/admin/preferences.html:4
+#: media/templates/admin/preferences.html:141
+msgid "About"
+msgstr ""
+
+#: media/templates/admin/preferences.html:148
+msgid "Episodes"
+msgstr ""
+
+#: media/templates/admin/preferences.html:166
+msgid "Storage Used"
+msgstr ""
+
+#: media/templates/admin/preferences.html:170
+msgid "Last Download"
+msgstr ""
+
+#: media/templates/admin/preferences.html:176
+msgid "No downloads yet"
+msgstr ""
+
+#: media/templates/admin/preferences.html:179
+msgid "Errors"
+msgstr ""
+
+#: media/templates/admin/preferences.html:180
+msgid "items with errors"
+msgstr ""
+
+#: media/templates/admin/preferences.html:184
+msgid "Episode Limit"
+msgstr ""
+
+#: media/templates/admin/preferences.html:188
+msgid "Max Episodes"
+msgstr ""
+
+#: media/templates/admin/preferences.html:191
+msgid "At limit"
+msgstr ""
+
+#: media/templates/admin/preferences.html:193
+msgid "Almost full"
+msgstr ""
+
+#: media/templates/admin/preferences.html:195
+msgid "OK"
+msgstr ""
+
+#: media/templates/admin/preferences.html:197
+msgid "Unlimited"
+msgstr ""
+
+#: media/templates/admin/preferences.html:198
+msgid "No limit set"
+msgstr ""
+
+#: media/templates/admin/preferences.html:202
+msgid "Current Usage"
+msgstr ""
+
+#: media/templates/admin/preferences.html:203
+msgid "episodes"
+msgstr ""
+
+#: media/templates/admin/preferences.html:208
+msgid "To change the episode limit, set the"
+msgstr ""
+
+#: media/templates/admin/preferences.html:208
+msgid "environment variable and restart the server. Set to 0 or leave unset for unlimited episodes."
+msgstr ""
+
+#: media/templates/admin/preferences.html:214
+msgid "Project"
+msgstr ""

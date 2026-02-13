@@ -841,3 +841,81 @@ msgstr "StashCast - Processando mídia"
 #: media/templates/media/stash_progress.html:272
 msgid "items queued"
 msgstr "itens na fila"
+
+#: media/templates/admin/preferences.html:4
+#: media/templates/admin/preferences.html:141
+#: media/templates/admin/nav_sidebar.html:29
+msgid "About"
+msgstr "Sobre"
+
+#: media/templates/admin/preferences.html:148
+msgid "Episodes"
+msgstr "Episódios"
+
+#: media/templates/admin/preferences.html:166
+msgid "Storage Used"
+msgstr "Armazenamento utilizado"
+
+#: media/templates/admin/preferences.html:170
+msgid "Last Download"
+msgstr "Último download"
+
+#: media/templates/admin/preferences.html:176
+msgid "No downloads yet"
+msgstr "Nenhum download ainda"
+
+#: media/templates/admin/preferences.html:179
+msgid "Errors"
+msgstr "Erros"
+
+#: media/templates/admin/preferences.html:180
+msgid "items with errors"
+msgstr "itens com erros"
+
+#: media/templates/admin/preferences.html:184
+msgid "Episode Limit"
+msgstr "Limite de episódios"
+
+#: media/templates/admin/preferences.html:188
+msgid "Max Episodes"
+msgstr "Máximo de episódios"
+
+#: media/templates/admin/preferences.html:191
+msgid "At limit"
+msgstr "No limite"
+
+#: media/templates/admin/preferences.html:193
+msgid "Almost full"
+msgstr "Quase cheio"
+
+#: media/templates/admin/preferences.html:195
+msgid "OK"
+msgstr "OK"
+
+#: media/templates/admin/preferences.html:197
+msgid "Unlimited"
+msgstr "Ilimitado"
+
+#: media/templates/admin/preferences.html:198
+msgid "No limit set"
+msgstr "Sem limite"
+
+#: media/templates/admin/preferences.html:202
+msgid "Current Usage"
+msgstr "Uso atual"
+
+#: media/templates/admin/preferences.html:203
+msgid "episodes"
+msgstr "episódios"
+
+#: media/templates/admin/preferences.html:208
+msgid "To change the episode limit, set the"
+msgstr "Para alterar o limite de episódios, defina a"
+
+#: media/templates/admin/preferences.html:208
+msgid "environment variable and restart the server. Set to 0 or leave unset for unlimited episodes."
+msgstr "variável de ambiente e reinicie o servidor. Defina como 0 ou deixe sem definir para episódios ilimitados."
+
+#: media/templates/admin/preferences.html:214
+msgid "Project"
+msgstr "Projeto"
