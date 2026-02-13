@@ -24,6 +24,23 @@ from media.service.strategy import choose_download_strategy
 from media.utils import generate_slug, ensure_unique_slug
 
 
+def check_episode_limit():
+    """Check if the episode limit has been reached.
+
+    Returns None if OK, or an error message string if at capacity.
+    """
+    max_episodes = settings.STASHCAST_MAX_EPISODES
+    if max_episodes <= 0:
+        return None
+    current_count = MediaItem.objects.filter(status=MediaItem.STATUS_READY).count()
+    if current_count >= max_episodes:
+        return (
+            f'Episode limit reached ({current_count}/{max_episodes}). '
+            f'Delete existing episodes to make room for new downloads.'
+        )
+    return None
+
+
 @db_task()
 def process_media(guid):
     """
@@ -42,6 +59,14 @@ def process_media(guid):
     try:
         item = MediaItem.objects.get(guid=guid)
     except MediaItem.DoesNotExist:
+        return
+
+    # Check episode limit before doing any work
+    limit_error = check_episode_limit()
+    if limit_error:
+        item.status = MediaItem.STATUS_ERROR
+        item.error_message = limit_error
+        item.save()
         return
 
     # Check for worker timeout: if task was enqueued but worker wasn't running
@@ -363,6 +388,15 @@ def process_media_batch(guids: List[str]):
     initial_items = {k: v for k, v in initial_items.items() if v is not None}
 
     if not initial_items:
+        return
+
+    # Check episode limit before doing any work
+    limit_error = check_episode_limit()
+    if limit_error:
+        for guid, item in initial_items.items():
+            item.status = MediaItem.STATUS_ERROR
+            item.error_message = limit_error
+            item.save()
         return
 
     # Create batch tmp directory

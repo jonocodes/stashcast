@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-24 00:26+0000\n"
+"POT-Creation-Date: 2026-02-13 17:27+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -40,6 +40,7 @@ msgid "Error"
 msgstr ""
 
 #: media/models.py:32 media/templates/admin/item_detail.html:149
+#: media/templates/admin/preferences.html:160
 msgid "Archived"
 msgstr ""
 
@@ -49,6 +50,7 @@ msgstr ""
 #: media/templates/admin/grid_view.html:224
 #: media/templates/admin/list_view.html:231
 #: media/templates/admin/list_view.html:268
+#: media/templates/admin/preferences.html:152
 msgid "Audio"
 msgstr ""
 
@@ -59,6 +61,7 @@ msgstr ""
 #: media/templates/admin/grid_view.html:226
 #: media/templates/admin/list_view.html:232
 #: media/templates/admin/list_view.html:270
+#: media/templates/admin/preferences.html:156
 msgid "Video"
 msgstr ""
 
@@ -284,6 +287,7 @@ msgstr ""
 
 #: media/templates/admin/admin_stash_form.html:320
 #: media/templates/admin/admin_stash_progress.html:200
+#: media/templates/admin/preferences.html:143
 #: media/templates/media/stash_progress.html:278
 msgid "Status"
 msgstr ""
@@ -297,6 +301,7 @@ msgid "Actions"
 msgstr ""
 
 #: media/templates/admin/admin_stash_form.html:335
+#: media/templates/admin/preferences.html:173
 msgid "ago"
 msgstr ""
 
@@ -748,7 +753,88 @@ msgid "Bookmarklet"
 msgstr ""
 
 #: media/templates/admin/nav_sidebar.html:29
+#: media/templates/admin/preferences.html:4
+#: media/templates/admin/preferences.html:141
+#: media/templates/admin/preferences.html:221
+msgid "About"
+msgstr ""
+
+#: media/templates/admin/nav_sidebar.html:33
 msgid "Site Home"
+msgstr ""
+
+#: media/templates/admin/preferences.html:148
+msgid "Episodes"
+msgstr ""
+
+#: media/templates/admin/preferences.html:166
+msgid "Storage Used"
+msgstr ""
+
+#: media/templates/admin/preferences.html:170
+msgid "Last Download"
+msgstr ""
+
+#: media/templates/admin/preferences.html:176
+msgid "No downloads yet"
+msgstr ""
+
+#: media/templates/admin/preferences.html:182
+msgid "Errors"
+msgstr ""
+
+#: media/templates/admin/preferences.html:183
+msgid "items with errors"
+msgstr ""
+
+#: media/templates/admin/preferences.html:188
+msgid "Episode Limit"
+msgstr ""
+
+#: media/templates/admin/preferences.html:192
+msgid "Max Episodes"
+msgstr ""
+
+#: media/templates/admin/preferences.html:197
+msgid "At limit"
+msgstr ""
+
+#: media/templates/admin/preferences.html:199
+msgid "Almost full"
+msgstr ""
+
+#: media/templates/admin/preferences.html:201
+msgid "OK"
+msgstr ""
+
+#: media/templates/admin/preferences.html:204
+msgid "Unlimited"
+msgstr ""
+
+#: media/templates/admin/preferences.html:205
+msgid "No limit set"
+msgstr ""
+
+#: media/templates/admin/preferences.html:211
+msgid "Current Usage"
+msgstr ""
+
+#: media/templates/admin/preferences.html:212
+msgid "episodes"
+msgstr ""
+
+#: media/templates/admin/preferences.html:218
+msgid "To change the episode limit, set the"
+msgstr ""
+
+#: media/templates/admin/preferences.html:218
+msgid ""
+"environment variable and restart the server. Set to 0 or leave unset for "
+"unlimited episodes."
+msgstr ""
+
+#: media/templates/admin/preferences.html:225
+msgid "Project"
 msgstr ""
 
 #: media/templates/media/home.html:187

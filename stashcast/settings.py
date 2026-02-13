@@ -275,6 +275,11 @@ STASHCAST_ACCEPT_FIRST_MATCH = os.environ.get('STASHCAST_ACCEPT_FIRST_MATCH', ''
     'yes',
 )
 
+# Optional: Maximum number of episodes (READY status) to keep
+# When the limit is reached, new downloads are blocked until episodes are deleted
+# 0 or unset = unlimited
+STASHCAST_MAX_EPISODES = int(os.environ.get('STASHCAST_MAX_EPISODES', '0'))
+
 # Ensure media directories exist
 os.makedirs(STASHCAST_MEDIA_DIR, exist_ok=True)
 

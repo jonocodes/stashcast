@@ -1,0 +1,234 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "About" %}{% endblock %}
+
+{% block extrastyle %}
+<style>
+    :root {
+        --sc-panel-bg: var(--body-bg, #ffffff);
+        --sc-panel-fg: var(--body-fg, #222222);
+        --sc-muted: var(--body-quiet-color, #6b7280);
+        --sc-border: var(--hairline-color, #d4d4d4);
+        --sc-primary: var(--primary, #417690);
+        --sc-primary-fg: var(--primary-fg, #ffffff);
+        --sc-surface: var(--darkened-bg, rgba(0,0,0,0.02));
+    }
+    .container {
+        background: var(--sc-panel-bg);
+        color: var(--sc-panel-fg);
+        border-radius: 8px;
+        padding: 30px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border: 1px solid var(--sc-border);
+    }
+    h1 {
+        color: var(--sc-panel-fg);
+        margin-top: 0;
+    }
+    h2 {
+        color: var(--sc-panel-fg);
+        margin-top: 30px;
+        border-bottom: 2px solid var(--sc-primary);
+        padding-bottom: 10px;
+    }
+    .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 16px;
+        margin: 20px 0;
+    }
+    .stat-card {
+        background: var(--sc-surface);
+        border: 1px solid var(--sc-border);
+        border-radius: 8px;
+        padding: 20px;
+        text-align: center;
+    }
+    .stat-card .stat-value {
+        font-size: 2em;
+        font-weight: 700;
+        color: var(--sc-primary);
+        line-height: 1.2;
+    }
+    .stat-card .stat-label {
+        font-size: 13px;
+        color: var(--sc-muted);
+        margin-top: 4px;
+    }
+    .info-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+    }
+    .info-table td {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--sc-border);
+        vertical-align: top;
+    }
+    .info-table td:first-child {
+        font-weight: 600;
+        width: 200px;
+        color: var(--sc-panel-fg);
+    }
+    .info-table td:last-child {
+        color: var(--sc-panel-fg);
+    }
+    .info-table tr:last-child td {
+        border-bottom: none;
+    }
+    .status-badge {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    .status-badge.ok {
+        background: color-mix(in srgb, #22c55e 15%, transparent);
+        color: #16a34a;
+        border: 1px solid #22c55e;
+    }
+    .status-badge.warning {
+        background: color-mix(in srgb, #f59e0b 15%, transparent);
+        color: #d97706;
+        border: 1px solid #f59e0b;
+    }
+    .status-badge.at-limit {
+        background: color-mix(in srgb, #ef4444 15%, transparent);
+        color: #dc2626;
+        border: 1px solid #ef4444;
+    }
+    .github-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--sc-primary);
+        text-decoration: none;
+        font-weight: 500;
+    }
+    .github-link:hover {
+        text-decoration: underline;
+    }
+    code {
+        background: rgba(0, 0, 0, 0.1);
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.9em;
+    }
+    .explainer {
+        background: color-mix(in srgb, var(--sc-surface) 70%, transparent);
+        border-left: 4px solid var(--sc-primary);
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 4px;
+        border: 1px solid var(--sc-border);
+    }
+    @media (max-width: 600px) {
+        .stat-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        .info-table td:first-child {
+            width: auto;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>{% trans "About" %}</h1>
+
+    <h2>{% trans "Status" %}</h2>
+
+    <div class="stat-grid">
+        <div class="stat-card">
+            <div class="stat-value">{{ ready_count }}</div>
+            <div class="stat-label">{% trans "Episodes" %}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ audio_count }}</div>
+            <div class="stat-label">{% trans "Audio" %}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ video_count }}</div>
+            <div class="stat-label">{% trans "Video" %}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ archived_count }}</div>
+            <div class="stat-label">{% trans "Archived" %}</div>
+        </div>
+    </div>
+
+    <table class="info-table">
+        <tr>
+            <td>{% trans "Storage Used" %}</td>
+            <td>{{ total_storage_bytes|filesizeformat }}</td>
+        </tr>
+        <tr>
+            <td>{% trans "Last Download" %}</td>
+            <td>
+                {% if last_download %}
+                    {{ last_download.downloaded_at|timesince }} {% trans "ago" %}
+                    &mdash; <a href="{% url 'item_detail' guid=last_download.guid %}">{{ last_download.title|truncatechars:60 }}</a>
+                {% else %}
+                    {% trans "No downloads yet" %}
+                {% endif %}
+            </td>
+        </tr>
+        {% if error_count %}
+        <tr>
+            <td>{% trans "Errors" %}</td>
+            <td>{{ error_count }} {% trans "items with errors" %}</td>
+        </tr>
+        {% endif %}
+    </table>
+
+    <h2>{% trans "Episode Limit" %}</h2>
+
+    <table class="info-table">
+        <tr>
+            <td>{% trans "Max Episodes" %}</td>
+            <td>
+                {% if max_episodes > 0 %}
+                    {{ max_episodes }}
+                    {% if ready_count >= max_episodes %}
+                        <span class="status-badge at-limit">{% trans "At limit" %}</span>
+                    {% elif ready_count >= max_episodes|add:"-5" %}
+                        <span class="status-badge warning">{% trans "Almost full" %}</span>
+                    {% else %}
+                        <span class="status-badge ok">{% trans "OK" %}</span>
+                    {% endif %}
+                {% else %}
+                    {% trans "Unlimited" %}
+                    <span class="status-badge ok">{% trans "No limit set" %}</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% if max_episodes > 0 %}
+        <tr>
+            <td>{% trans "Current Usage" %}</td>
+            <td>{{ ready_count }} / {{ max_episodes }} {% trans "episodes" %}</td>
+        </tr>
+        {% endif %}
+    </table>
+
+    <div class="explainer">
+        {% trans "To change the episode limit, set the" %} <code>STASHCAST_MAX_EPISODES</code> {% trans "environment variable and restart the server. Set to 0 or leave unset for unlimited episodes." %}
+    </div>
+
+    <h2>{% trans "About" %}</h2>
+
+    <table class="info-table">
+        <tr>
+            <td>{% trans "Project" %}</td>
+            <td>
+                <a class="github-link" href="https://github.com/jonocodes/stashcast" target="_blank" rel="noopener">
+                    github.com/jonocodes/stashcast
+                </a>
+            </td>
+        </tr>
+    </table>
+</div>
+{% endblock %}
