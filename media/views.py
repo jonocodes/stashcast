@@ -65,6 +65,25 @@ def stash_view(request):
             status=400,
         )
 
+    # Check episode limit
+    from media.tasks import check_episode_limit
+
+    limit_error = check_episode_limit()
+    if limit_error:
+        if redirect_param == 'progress':
+            item = MediaItem.objects.create(
+                source_url=url,
+                requested_type=requested_type,
+                slug='pending',
+                status=MediaItem.STATUS_ERROR,
+                error_message=limit_error,
+            )
+            progress_url = request.build_absolute_uri(f'/stash/{item.guid}/progress/')
+            if close_tab_after:
+                progress_url = f'{progress_url}?closeTabAfter={close_tab_after}'
+            return redirect(progress_url)
+        return JsonResponse({'error': limit_error}, status=400)
+
     # Check for multiple items before processing
     strategy = choose_download_strategy(url)
 
@@ -394,6 +413,14 @@ def admin_stash_form_view(request):
         # Block demo users from submitting
         if is_demo_readonly(request.user):
             messages.error(request, 'Demo users are not allowed to add URLs.')
+            return redirect(request.path)
+
+        # Check episode limit
+        from media.tasks import check_episode_limit
+
+        limit_error = check_episode_limit()
+        if limit_error:
+            messages.error(request, limit_error)
             return redirect(request.path)
 
         url = request.POST.get('url', '').strip()
@@ -917,6 +944,65 @@ def list_view(request):
     }
 
     return render(request, 'admin/list_view.html', context)
+
+
+@staff_member_required
+def preferences_view(request):
+    """
+    Status/preferences page showing system info and current configuration.
+    """
+    import os
+    from pathlib import Path
+
+    from django.db.models import Sum
+
+    # Episode counts
+    ready_count = MediaItem.objects.filter(status=MediaItem.STATUS_READY).count()
+    archived_count = MediaItem.objects.filter(status=MediaItem.STATUS_ARCHIVED).count()
+    audio_count = MediaItem.objects.filter(
+        status=MediaItem.STATUS_READY, media_type='audio'
+    ).count()
+    video_count = MediaItem.objects.filter(
+        status=MediaItem.STATUS_READY, media_type='video'
+    ).count()
+    error_count = MediaItem.objects.filter(status=MediaItem.STATUS_ERROR).count()
+
+    # Last download
+    last_download = (
+        MediaItem.objects.filter(status=MediaItem.STATUS_READY)
+        .order_by('-downloaded_at')
+        .first()
+    )
+
+    # Storage used (walk actual disk)
+    total_storage_bytes = 0
+    media_root = Path(settings.MEDIA_ROOT)
+    if media_root.exists():
+        for dirpath, dirnames, filenames in os.walk(media_root):
+            for filename in filenames:
+                filepath = Path(dirpath) / filename
+                try:
+                    total_storage_bytes += filepath.stat().st_size
+                except (OSError, FileNotFoundError):
+                    pass
+
+    # Episode limit
+    max_episodes = settings.STASHCAST_MAX_EPISODES
+
+    context = {
+        **admin.site.each_context(request),
+        'title': 'About',
+        'ready_count': ready_count,
+        'archived_count': archived_count,
+        'audio_count': audio_count,
+        'video_count': video_count,
+        'error_count': error_count,
+        'last_download': last_download,
+        'total_storage_bytes': total_storage_bytes,
+        'max_episodes': max_episodes,
+    }
+
+    return render(request, 'admin/preferences.html', context)
 
 
 def stash_progress_view(request, guid):

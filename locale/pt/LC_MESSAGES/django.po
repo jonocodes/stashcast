@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-24 00:26+0000\n"
+"POT-Creation-Date: 2026-02-13 17:27+0000\n"
 "PO-Revision-Date: 2026-01-12 22:00+0000\n"
 "Last-Translator: StashCast Team\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -40,6 +40,7 @@ msgid "Error"
 msgstr "Erro"
 
 #: media/models.py:32 media/templates/admin/item_detail.html:149
+#: media/templates/admin/preferences.html:160
 msgid "Archived"
 msgstr "Arquivado"
 
@@ -49,6 +50,7 @@ msgstr "Arquivado"
 #: media/templates/admin/grid_view.html:224
 #: media/templates/admin/list_view.html:231
 #: media/templates/admin/list_view.html:268
+#: media/templates/admin/preferences.html:152
 msgid "Audio"
 msgstr "Áudio"
 
@@ -59,6 +61,7 @@ msgstr "Áudio"
 #: media/templates/admin/grid_view.html:226
 #: media/templates/admin/list_view.html:232
 #: media/templates/admin/list_view.html:270
+#: media/templates/admin/preferences.html:156
 msgid "Video"
 msgstr "Vídeo"
 
@@ -294,6 +297,7 @@ msgstr "Tipo"
 
 #: media/templates/admin/admin_stash_form.html:320
 #: media/templates/admin/admin_stash_progress.html:200
+#: media/templates/admin/preferences.html:143
 #: media/templates/media/stash_progress.html:278
 msgid "Status"
 msgstr "Status"
@@ -307,6 +311,7 @@ msgid "Actions"
 msgstr "Ações"
 
 #: media/templates/admin/admin_stash_form.html:335
+#: media/templates/admin/preferences.html:173
 msgid "ago"
 msgstr "atrás"
 
@@ -785,8 +790,91 @@ msgid "Bookmarklet"
 msgstr "Favorito"
 
 #: media/templates/admin/nav_sidebar.html:29
+#: media/templates/admin/preferences.html:4
+#: media/templates/admin/preferences.html:141
+#: media/templates/admin/preferences.html:221
+msgid "About"
+msgstr "Sobre"
+
+#: media/templates/admin/nav_sidebar.html:33
 msgid "Site Home"
 msgstr "Página inicial"
+
+#: media/templates/admin/preferences.html:148
+msgid "Episodes"
+msgstr "Episódios"
+
+#: media/templates/admin/preferences.html:166
+msgid "Storage Used"
+msgstr "Armazenamento utilizado"
+
+#: media/templates/admin/preferences.html:170
+msgid "Last Download"
+msgstr "Último download"
+
+#: media/templates/admin/preferences.html:176
+msgid "No downloads yet"
+msgstr "Nenhum download ainda"
+
+#: media/templates/admin/preferences.html:182
+msgid "Errors"
+msgstr "Erros"
+
+#: media/templates/admin/preferences.html:183
+msgid "items with errors"
+msgstr "itens com erros"
+
+#: media/templates/admin/preferences.html:188
+msgid "Episode Limit"
+msgstr "Limite de episódios"
+
+#: media/templates/admin/preferences.html:192
+msgid "Max Episodes"
+msgstr "Máximo de episódios"
+
+#: media/templates/admin/preferences.html:197
+msgid "At limit"
+msgstr "No limite"
+
+#: media/templates/admin/preferences.html:199
+msgid "Almost full"
+msgstr "Quase cheio"
+
+#: media/templates/admin/preferences.html:201
+msgid "OK"
+msgstr "OK"
+
+#: media/templates/admin/preferences.html:204
+msgid "Unlimited"
+msgstr "Ilimitado"
+
+#: media/templates/admin/preferences.html:205
+msgid "No limit set"
+msgstr "Sem limite"
+
+#: media/templates/admin/preferences.html:211
+msgid "Current Usage"
+msgstr "Uso atual"
+
+#: media/templates/admin/preferences.html:212
+msgid "episodes"
+msgstr "episódios"
+
+#: media/templates/admin/preferences.html:218
+msgid "To change the episode limit, set the"
+msgstr "Para alterar o limite de episódios, defina a"
+
+#: media/templates/admin/preferences.html:218
+msgid ""
+"environment variable and restart the server. Set to 0 or leave unset for "
+"unlimited episodes."
+msgstr ""
+"variável de ambiente e reinicie o servidor. Defina como 0 ou deixe sem "
+"definir para episódios ilimitados."
+
+#: media/templates/admin/preferences.html:225
+msgid "Project"
+msgstr "Projeto"
 
 #: media/templates/media/home.html:187
 msgid "StashCast illustration"
