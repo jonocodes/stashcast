@@ -177,6 +177,17 @@
         {% endif %}
         <a href="{% url 'admin:media_mediaitem_delete' item.guid %}" class="btn btn-danger">{% trans "Delete" %}</a>
 
+        <form method="post" action="{% url 'item_refetch' item.guid %}">
+            {% csrf_token %}
+            <button type="submit" class="btn">{% trans "Refetch" %}</button>
+        </form>
+        {% if item.subtitle_path %}
+            <form method="post" action="{% url 'item_regenerate_summary' item.guid %}">
+                {% csrf_token %}
+                <button type="submit" class="btn">{% trans "Regenerate Summary" %}</button>
+            </form>
+        {% endif %}
+
         {% if item.is_ready and media_url %}
             <span class="separator"></span>
             <a href="{{ media_url }}" download class="btn">{% trans "Download" %} {{ item.media_type|title }}</a>

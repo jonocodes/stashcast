@@ -33,6 +33,8 @@ from media.views import (
     home_view,
     item_archive_view,
     item_detail_view,
+    item_refetch_view,
+    item_regenerate_summary_view,
     item_unarchive_view,
     list_view,
     preferences_view,
@@ -79,6 +81,12 @@ urlpatterns = [
     path('admin/tools/item/<str:guid>/', item_detail_view, name='item_detail'),
     path('admin/tools/item/<str:guid>/archive/', item_archive_view, name='item_archive'),
     path('admin/tools/item/<str:guid>/unarchive/', item_unarchive_view, name='item_unarchive'),
+    path('admin/tools/item/<str:guid>/refetch/', item_refetch_view, name='item_refetch'),
+    path(
+        'admin/tools/item/<str:guid>/regenerate-summary/',
+        item_regenerate_summary_view,
+        name='item_regenerate_summary',
+    ),
     path('admin/tools/preferences/', preferences_view, name='preferences'),
     # Redirect admin index to grid view (must come before admin.site.urls)
     re_path(r'^admin/$', RedirectView.as_view(url='/admin/tools/grid/', permanent=False)),

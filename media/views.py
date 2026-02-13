@@ -10,7 +10,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
 from media.models import MediaItem
-from media.tasks import process_media, process_media_batch
+from media.tasks import generate_summary, process_media, process_media_batch
 from media.utils import build_media_url
 
 
@@ -1095,6 +1095,52 @@ def item_archive_view(request, guid):
         messages.success(request, f'Archived: {item.title or item.guid}')
     else:
         messages.error(request, 'Only ready items can be archived.')
+
+    return redirect('item_detail', guid=guid)
+
+
+@staff_member_required
+@require_http_methods(['POST'])
+def item_refetch_view(request, guid):
+    """Re-fetch a media item (re-download and re-process)."""
+    from django.contrib import messages
+    from django.core.exceptions import PermissionDenied
+
+    from media.admin import is_demo_readonly
+
+    if is_demo_readonly(request.user):
+        raise PermissionDenied('Demo users are not allowed to refetch items.')
+
+    item = get_object_or_404(MediaItem, guid=guid)
+
+    item.status = MediaItem.STATUS_PREFETCHING
+    item.error_message = ''
+    item.save()
+    process_media(item.guid)
+    messages.success(request, f'Re-fetching: {item.title or item.guid}')
+
+    return redirect('item_detail', guid=guid)
+
+
+@staff_member_required
+@require_http_methods(['POST'])
+def item_regenerate_summary_view(request, guid):
+    """Regenerate the summary for a media item."""
+    from django.contrib import messages
+    from django.core.exceptions import PermissionDenied
+
+    from media.admin import is_demo_readonly
+
+    if is_demo_readonly(request.user):
+        raise PermissionDenied('Demo users are not allowed to regenerate summaries.')
+
+    item = get_object_or_404(MediaItem, guid=guid)
+
+    if item.subtitle_path:
+        generate_summary(item.guid)
+        messages.success(request, f'Regenerating summary for: {item.title or item.guid}')
+    else:
+        messages.error(request, 'No subtitles available for summary generation.')
 
     return redirect('item_detail', guid=guid)
 
