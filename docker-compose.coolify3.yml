@@ -1,0 +1,64 @@
+services:
+  caddy:
+    image: caddy:2-alpine
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.stashcast.rule=Host(`jono.stash.dgt.is`)"
+      - "traefik.http.services.stashcast.loadbalancer.server.port=80"
+      # Disable HTTPS redirect at Traefik level
+      - "traefik.http.routers.stashcast.entrypoints=http"
+    ports:
+      - "80"
+    expose:
+      - "80"
+    volumes:
+      - static:/srv/static:ro
+      - ./data_docker/media:/srv/media:ro
+    configs:
+      - source: caddyfile
+        target: /etc/caddy/Caddyfile
+    depends_on:
+      - web
+
+  web:
+    build: .
+    container_name: stashcast_web
+    environment:
+      STASHCAST_DATA_DIR: /app/data_docker
+    volumes:
+      - static:/app/staticfiles
+      - .:/app
+      - ./data_docker:/app/data_docker
+
+  worker:
+    build: .
+    container_name: stashcast_worker
+    command: python manage.py run_huey
+    depends_on:
+      - web
+    environment:
+      STASHCAST_DATA_DIR: /app/data_docker
+    volumes:
+      - .:/app
+      - ./data_docker:/app/data_docker
+
+volumes:
+  static:
+
+configs:
+  caddyfile:
+    content: |
+      :80 {
+        # encode gzip
+        handle /static/* {
+          uri strip_prefix /static
+          root * /srv/static
+          file_server
+        }
+        handle /media/files/* {
+          uri strip_prefix /media/files
+          root * /srv/media
+          file_server
+        }
+        reverse_proxy web:8000
+      }
