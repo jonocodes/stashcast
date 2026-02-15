@@ -2,7 +2,9 @@ services:
   caddy:
     image: caddy:2-alpine
     ports:
-      - "8000:80"
+      - "80"
+    expose:
+      - "80"
     volumes:
       - static:/srv/static:ro
       - ./data_docker/media:/srv/media:ro
