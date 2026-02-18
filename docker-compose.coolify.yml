@@ -1,17 +1,13 @@
 services:
   caddy:
     image: caddy:2-alpine
-    # ports:
-    #   - "8000:80"
     volumes:
       - ./staticfiles:/srv/static:ro
       - ./data_docker/media:/srv/media:ro
     configs:
       - source: caddyfile
         target: /etc/caddy/Caddyfile
-    # environment:
-    #   - SERVICE_NAME_CADDY=caddy
-    hostname: caddy
+    hostname: caddy # needed for coolify preview deploys
     depends_on:
       - web
 
@@ -20,10 +16,9 @@ services:
     container_name: stashcast_web
     environment:
       STASHCAST_DATA_DIR: /app/data_docker
-      # SERVICE_NAME_WEB: web # needed for preview deploys
     hostname: web
     volumes:
-      - ./staticfiles:/app/staticfiles
+      # - ./staticfiles:/app/staticfiles
       - .:/app
       - ./data_docker:/app/data_docker
 
@@ -36,7 +31,6 @@ services:
       - web
     environment:
       STASHCAST_DATA_DIR: /app/data_docker
-      # SERVICE_NAME_WORKER: worker
     volumes:
       - .:/app
       - ./data_docker:/app/data_docker
