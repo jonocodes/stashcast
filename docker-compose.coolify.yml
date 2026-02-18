@@ -4,7 +4,7 @@ services:
     # ports:
     #   - "8000:80"
     volumes:
-      - static:/srv/static:ro
+      - ./staticfiles:/srv/static:ro
       - ./data_docker/media:/srv/media:ro
     configs:
       - source: caddyfile
@@ -23,7 +23,7 @@ services:
       # SERVICE_NAME_WEB: web # needed for preview deploys
     hostname: web
     volumes:
-      - static:/app/staticfiles
+      # - ./staticfiles:/app/staticfiles
       - .:/app
       - ./data_docker:/app/data_docker
 
@@ -41,8 +41,8 @@ services:
       - .:/app
       - ./data_docker:/app/data_docker
 
-volumes:
-  static:
+# volumes:
+#   static:
 
 configs:
   caddyfile:
