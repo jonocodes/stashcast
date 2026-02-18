@@ -23,7 +23,7 @@ services:
       # SERVICE_NAME_WEB: web # needed for preview deploys
     hostname: web
     volumes:
-      # - ./staticfiles:/app/staticfiles
+      - ./staticfiles:/app/staticfiles
       - .:/app
       - ./data_docker:/app/data_docker
 
