@@ -9,6 +9,8 @@ services:
     configs:
       - source: caddyfile
         target: /etc/caddy/Caddyfile
+    environment:
+      - SERVICE_NAME_CADDY=caddy
     depends_on:
       - web
 
@@ -17,6 +19,7 @@ services:
     container_name: stashcast_web
     environment:
       STASHCAST_DATA_DIR: /app/data_docker
+      SERVICE_NAME_WEB: web # needed for preview deploys
     volumes:
       - static:/app/staticfiles
       - .:/app
@@ -30,6 +33,7 @@ services:
       - web
     environment:
       STASHCAST_DATA_DIR: /app/data_docker
+      SERVICE_NAME_WORKER: worker
     volumes:
       - .:/app
       - ./data_docker:/app/data_docker
