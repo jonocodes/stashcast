@@ -9,8 +9,9 @@ services:
     configs:
       - source: caddyfile
         target: /etc/caddy/Caddyfile
-    environment:
-      - SERVICE_NAME_CADDY=caddy
+    # environment:
+    #   - SERVICE_NAME_CADDY=caddy
+    hostname: caddy
     depends_on:
       - web
 
@@ -19,7 +20,8 @@ services:
     container_name: stashcast_web
     environment:
       STASHCAST_DATA_DIR: /app/data_docker
-      SERVICE_NAME_WEB: web # needed for preview deploys
+      # SERVICE_NAME_WEB: web # needed for preview deploys
+    hostname: web
     volumes:
       - static:/app/staticfiles
       - .:/app
@@ -29,11 +31,12 @@ services:
     build: .
     container_name: stashcast_worker
     command: python manage.py run_huey
+    hostname: worker
     depends_on:
       - web
     environment:
       STASHCAST_DATA_DIR: /app/data_docker
-      SERVICE_NAME_WORKER: worker
+      # SERVICE_NAME_WORKER: worker
     volumes:
       - .:/app
       - ./data_docker:/app/data_docker
