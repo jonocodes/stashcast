@@ -19,7 +19,7 @@ StashCast is an application for downloading online media (audio/video) for offli
 ## Demo
 
 Demo instance running here:
-https://demo.stashcast.dgt.is/
+https://demo.stashcast.net/
 
 The user is 'demo' and the password is 'demo' spelled backwards. The demo user can not add/remove/update content.
 

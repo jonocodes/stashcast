@@ -15,8 +15,6 @@ services:
   web:
     build: .
     container_name: stashcast_web
-    # ports:
-    #   - "8000:8000"
     environment:
       STASHCAST_DATA_DIR: /app/data_docker
     volumes:
