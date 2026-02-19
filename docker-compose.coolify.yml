@@ -2,7 +2,7 @@ services:
   caddy:
     image: caddy:2-alpine
     volumes:
-      - ./staticfiles:/srv/static:ro
+      - static:/srv/static:ro
       - ./data_docker/media:/srv/media:ro
     configs:
       - source: caddyfile
@@ -18,7 +18,7 @@ services:
       STASHCAST_DATA_DIR: /app/data_docker
     hostname: web
     volumes:
-      # - ./staticfiles:/app/staticfiles
+      - static:/app/staticfiles
       - .:/app
       - ./data_docker:/app/data_docker
 
@@ -35,8 +35,8 @@ services:
       - .:/app
       - ./data_docker:/app/data_docker
 
-# volumes:
-#   static:
+volumes:
+  static:
 
 configs:
   caddyfile:
