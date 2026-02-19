@@ -1620,3 +1620,281 @@ class BatchProcessingSettingsTest(TestCase):
         self.assertTrue(hasattr(settings, 'STASHCAST_DEFAULT_YTDLP_ARGS_AUDIO'))
         self.assertTrue(hasattr(settings, 'STASHCAST_DEFAULT_YTDLP_ARGS_VIDEO'))
         self.assertTrue(hasattr(settings, 'STASHCAST_SUMMARY_SENTENCES'))
+
+
+class TranscribeMediaTaskTest(TestCase):
+    """Tests for the transcribe_media Huey task"""
+
+    def test_stt_settings_exist(self):
+        """Test that all STT settings exist"""
+        self.assertTrue(hasattr(settings, 'STASHCAST_STT_MODEL'))
+        self.assertTrue(hasattr(settings, 'STASHCAST_STT_LANGUAGE'))
+        self.assertTrue(hasattr(settings, 'STASHCAST_STT_DEVICE'))
+        self.assertTrue(hasattr(settings, 'STASHCAST_STT_COMPUTE_TYPE'))
+
+    @override_settings(STASHCAST_STT_MODEL='')
+    def test_transcribe_skipped_when_disabled(self):
+        """Transcription is skipped when STASHCAST_STT_MODEL is empty"""
+        from media.tasks import transcribe_media
+
+        item = MediaItem.objects.create(
+            source_url='https://example.com/audio.mp3',
+            requested_type=MediaItem.REQUESTED_TYPE_AUTO,
+            slug='test-no-stt',
+            media_type=MediaItem.MEDIA_TYPE_AUDIO,
+            status=MediaItem.STATUS_READY,
+        )
+
+        # Should return immediately without touching the item
+        transcribe_media.call_local(item.guid)
+
+        item.refresh_from_db()
+        self.assertEqual(item.subtitle_path, '')
+
+    @override_settings(STASHCAST_STT_MODEL='base')
+    def test_transcribe_skipped_when_subtitles_exist(self):
+        """Transcription is skipped when subtitles are already present"""
+        from media.tasks import transcribe_media
+
+        item = MediaItem.objects.create(
+            source_url='https://example.com/video.mp4',
+            requested_type=MediaItem.REQUESTED_TYPE_AUTO,
+            slug='test-has-subs',
+            media_type=MediaItem.MEDIA_TYPE_VIDEO,
+            status=MediaItem.STATUS_READY,
+            subtitle_path='subtitles.vtt',
+        )
+
+        # Should return immediately — subtitles already exist
+        transcribe_media.call_local(item.guid)
+
+        item.refresh_from_db()
+        self.assertEqual(item.subtitle_path, 'subtitles.vtt')
+
+    @override_settings(STASHCAST_STT_MODEL='base')
+    def test_transcribe_skipped_when_no_content(self):
+        """Transcription is skipped when content file doesn't exist"""
+        from media.tasks import transcribe_media
+
+        item = MediaItem.objects.create(
+            source_url='https://example.com/audio.mp3',
+            requested_type=MediaItem.REQUESTED_TYPE_AUTO,
+            slug='test-no-content',
+            media_type=MediaItem.MEDIA_TYPE_AUDIO,
+            status=MediaItem.STATUS_READY,
+            content_path='',
+        )
+
+        transcribe_media.call_local(item.guid)
+
+        item.refresh_from_db()
+        self.assertEqual(item.subtitle_path, '')
+
+    def test_transcribe_nonexistent_guid(self):
+        """Transcription handles nonexistent GUID gracefully"""
+        from media.tasks import transcribe_media
+
+        # Should return without error
+        transcribe_media.call_local('nonexistent-guid-12345')
+
+    @override_settings(
+        STASHCAST_STT_MODEL='base',
+        STASHCAST_STT_LANGUAGE='en',
+        STASHCAST_STT_DEVICE='cpu',
+        STASHCAST_STT_COMPUTE_TYPE='int8',
+        STASHCAST_SUMMARY_SENTENCES=0,
+    )
+    @patch('faster_whisper.WhisperModel')
+    def test_transcribe_success_updates_subtitle_path(self, mock_whisper_class):
+        """Successful transcription sets subtitle_path on the item"""
+        from media.tasks import transcribe_media
+
+        mock_model = MagicMock()
+        mock_whisper_class.return_value = mock_model
+
+        segments = [SimpleNamespace(start=0.0, end=2.0, text='Hello world')]
+        info = SimpleNamespace(language='en', language_probability=0.99)
+        mock_model.transcribe.return_value = (iter(segments), info)
+
+        item = MediaItem.objects.create(
+            source_url='https://example.com/audio.mp3',
+            requested_type=MediaItem.REQUESTED_TYPE_AUTO,
+            slug='test-transcribe-ok',
+            media_type=MediaItem.MEDIA_TYPE_AUDIO,
+            status=MediaItem.STATUS_READY,
+            content_path='content.m4a',
+            log_path='download.log',
+        )
+
+        # Create the content file so the task doesn't skip
+        base_dir = item.get_base_dir()
+        base_dir.mkdir(parents=True, exist_ok=True)
+        (base_dir / 'content.m4a').write_bytes(b'fake audio')
+
+        transcribe_media.call_local(item.guid)
+
+        item.refresh_from_db()
+        self.assertEqual(item.subtitle_path, 'subtitles.vtt')
+
+        # VTT file should exist
+        vtt_path = base_dir / 'subtitles.vtt'
+        self.assertTrue(vtt_path.exists())
+        content = vtt_path.read_text()
+        self.assertIn('WEBVTT', content)
+        self.assertIn('Hello world', content)
+
+    @override_settings(
+        STASHCAST_STT_MODEL='base',
+        STASHCAST_STT_LANGUAGE='en',
+        STASHCAST_STT_DEVICE='cpu',
+        STASHCAST_STT_COMPUTE_TYPE='int8',
+        STASHCAST_SUMMARY_SENTENCES=3,
+    )
+    @patch('media.tasks.generate_summary')
+    @patch('faster_whisper.WhisperModel')
+    def test_transcribe_chains_to_summary(self, mock_whisper_class, mock_gen_summary):
+        """After transcription, summary generation is enqueued"""
+        from media.tasks import transcribe_media
+
+        mock_model = MagicMock()
+        mock_whisper_class.return_value = mock_model
+
+        segments = [SimpleNamespace(start=0.0, end=1.0, text='Test')]
+        info = SimpleNamespace(language='en', language_probability=0.99)
+        mock_model.transcribe.return_value = (iter(segments), info)
+
+        item = MediaItem.objects.create(
+            source_url='https://example.com/audio.mp3',
+            requested_type=MediaItem.REQUESTED_TYPE_AUTO,
+            slug='test-chain-summary',
+            media_type=MediaItem.MEDIA_TYPE_AUDIO,
+            status=MediaItem.STATUS_READY,
+            content_path='content.m4a',
+            log_path='download.log',
+        )
+
+        base_dir = item.get_base_dir()
+        base_dir.mkdir(parents=True, exist_ok=True)
+        (base_dir / 'content.m4a').write_bytes(b'fake audio')
+
+        transcribe_media.call_local(item.guid)
+
+        mock_gen_summary.assert_called_once_with(item.guid)
+
+    @override_settings(
+        STASHCAST_STT_MODEL='base',
+        STASHCAST_STT_LANGUAGE='en',
+        STASHCAST_STT_DEVICE='cpu',
+        STASHCAST_STT_COMPUTE_TYPE='int8',
+        STASHCAST_SUMMARY_SENTENCES=0,
+    )
+    @patch('media.tasks.generate_summary')
+    @patch('faster_whisper.WhisperModel')
+    def test_transcribe_skips_summary_when_zero_sentences(
+        self, mock_whisper_class, mock_gen_summary
+    ):
+        """Summary is not enqueued when STASHCAST_SUMMARY_SENTENCES is 0"""
+        from media.tasks import transcribe_media
+
+        mock_model = MagicMock()
+        mock_whisper_class.return_value = mock_model
+
+        segments = [SimpleNamespace(start=0.0, end=1.0, text='Test')]
+        info = SimpleNamespace(language='en', language_probability=0.99)
+        mock_model.transcribe.return_value = (iter(segments), info)
+
+        item = MediaItem.objects.create(
+            source_url='https://example.com/audio.mp3',
+            requested_type=MediaItem.REQUESTED_TYPE_AUTO,
+            slug='test-no-summary',
+            media_type=MediaItem.MEDIA_TYPE_AUDIO,
+            status=MediaItem.STATUS_READY,
+            content_path='content.m4a',
+            log_path='download.log',
+        )
+
+        base_dir = item.get_base_dir()
+        base_dir.mkdir(parents=True, exist_ok=True)
+        (base_dir / 'content.m4a').write_bytes(b'fake audio')
+
+        transcribe_media.call_local(item.guid)
+
+        mock_gen_summary.assert_not_called()
+
+    @override_settings(
+        STASHCAST_STT_MODEL='base',
+        STASHCAST_STT_LANGUAGE='en',
+        STASHCAST_STT_DEVICE='cpu',
+        STASHCAST_STT_COMPUTE_TYPE='int8',
+    )
+    @patch('faster_whisper.WhisperModel')
+    def test_transcribe_failure_does_not_crash_item(self, mock_whisper_class):
+        """Transcription failure is logged but item stays READY"""
+        from media.tasks import transcribe_media
+
+        mock_whisper_class.side_effect = RuntimeError('model load failed')
+
+        item = MediaItem.objects.create(
+            source_url='https://example.com/audio.mp3',
+            requested_type=MediaItem.REQUESTED_TYPE_AUTO,
+            slug='test-transcribe-fail',
+            media_type=MediaItem.MEDIA_TYPE_AUDIO,
+            status=MediaItem.STATUS_READY,
+            content_path='content.m4a',
+            log_path='download.log',
+        )
+
+        base_dir = item.get_base_dir()
+        base_dir.mkdir(parents=True, exist_ok=True)
+        (base_dir / 'content.m4a').write_bytes(b'fake audio')
+
+        # Should not raise
+        transcribe_media.call_local(item.guid)
+
+        item.refresh_from_db()
+        # Item should still be READY, not ERROR
+        self.assertEqual(item.status, MediaItem.STATUS_READY)
+        # subtitle_path should still be empty
+        self.assertEqual(item.subtitle_path, '')
+
+    @override_settings(
+        STASHCAST_STT_MODEL='base',
+        STASHCAST_STT_LANGUAGE='en',
+        STASHCAST_STT_DEVICE='cpu',
+        STASHCAST_STT_COMPUTE_TYPE='int8',
+    )
+    @patch('faster_whisper.WhisperModel')
+    def test_transcribe_logs_timing(self, mock_whisper_class):
+        """Transcription timing is logged"""
+        from media.tasks import transcribe_media
+
+        mock_model = MagicMock()
+        mock_whisper_class.return_value = mock_model
+
+        segments = [SimpleNamespace(start=0.0, end=1.0, text='Test')]
+        info = SimpleNamespace(language='en', language_probability=0.99)
+        mock_model.transcribe.return_value = (iter(segments), info)
+
+        item = MediaItem.objects.create(
+            source_url='https://example.com/audio.mp3',
+            requested_type=MediaItem.REQUESTED_TYPE_AUTO,
+            slug='test-timing-log',
+            media_type=MediaItem.MEDIA_TYPE_AUDIO,
+            status=MediaItem.STATUS_READY,
+            content_path='content.m4a',
+            log_path='download.log',
+        )
+
+        base_dir = item.get_base_dir()
+        base_dir.mkdir(parents=True, exist_ok=True)
+        (base_dir / 'content.m4a').write_bytes(b'fake audio')
+
+        transcribe_media.call_local(item.guid)
+
+        # Check that the log file contains timing info
+        log_file = base_dir / 'download.log'
+        self.assertTrue(log_file.exists())
+        log_content = log_file.read_text()
+        self.assertIn('TRANSCRIBING', log_content)
+        self.assertIn('Transcription complete', log_content)
+        self.assertIn('took', log_content)
