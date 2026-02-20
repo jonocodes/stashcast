@@ -106,7 +106,7 @@ def download_direct(url, out_path, logger=None):
 
 def download_ytdlp(url, resolved_type, temp_dir, ytdlp_extra_args='', logger=None):
     """
-    Download media using yt-dlp.
+    Download media using yt-dlp, with Apple Podcasts fallback.
 
     Args:
         url: Source URL
@@ -118,6 +118,105 @@ def download_ytdlp(url, resolved_type, temp_dir, ytdlp_extra_args='', logger=Non
     Returns:
         DownloadedFileInfo
     """
+    from media.service.resolve import _is_apple_podcasts_url
+
+    try:
+        return _download_ytdlp_inner(url, resolved_type, temp_dir, ytdlp_extra_args, logger)
+    except Exception:
+        if _is_apple_podcasts_url(url):
+            return _download_apple_podcasts(url, temp_dir, logger)
+        raise
+
+
+def _download_apple_podcasts(url, temp_dir, logger=None):
+    """
+    Fallback downloader for Apple Podcasts when yt-dlp's extractor is broken.
+
+    Fetches the Apple Podcasts page to extract the stream URL, then downloads
+    the audio file directly.
+    """
+    import json
+    import re
+
+    def log(message):
+        if logger:
+            logger(message)
+
+    temp_dir = Path(temp_dir)
+    temp_dir.mkdir(parents=True, exist_ok=True)
+
+    log('yt-dlp Apple Podcasts extractor failed, using fallback downloader')
+
+    # Fetch the page and extract the stream URL
+    resp = requests.get(url, timeout=30)
+    resp.raise_for_status()
+
+    pattern = r'<script [^>]*\bid=["\']serialized-server-data["\'][^>]*>(.*?)</script>'
+    match = re.search(pattern, resp.text, re.DOTALL)
+    if not match:
+        raise Exception('Could not find serialized-server-data in Apple Podcasts page')
+
+    raw = json.loads(match.group(1).strip())
+    inner = raw['data'][0]['data']
+
+    # Find stream URL from headerButtonItems
+    stream_url = None
+    for btn in inner.get('headerButtonItems', []):
+        offer = btn.get('model', {}).get('playAction', {}).get('episodeOffer', {})
+        if offer.get('streamUrl'):
+            stream_url = offer['streamUrl']
+            break
+
+    # Also check episodeOffer in paragraph shelf
+    if not stream_url:
+        for shelf in inner.get('shelves', []):
+            if shelf.get('contentType') == 'paragraph':
+                for item in shelf.get('items', []):
+                    offer = item.get('episodeOffer', {})
+                    if offer.get('streamUrl'):
+                        stream_url = offer['streamUrl']
+                        break
+                if stream_url:
+                    break
+
+    if not stream_url:
+        raise Exception('Could not extract stream URL from Apple Podcasts page')
+
+    log(f'Extracted stream URL: {stream_url[:80]}...')
+
+    # Download the audio file directly
+    out_path = temp_dir / 'download.mp3'
+    download_info = download_direct(stream_url, out_path, logger=logger)
+
+    # Also try to download the thumbnail
+    thumbnail_path = None
+    try:
+        # Extract thumbnail from og:image meta tag
+        og_match = re.search(
+            r'<meta[^>]*property=["\']og:image["\'][^>]*content=["\']([^"\']+)', resp.text
+        )
+        if og_match:
+            thumb_url = og_match.group(1)
+            thumb_path = temp_dir / 'download.jpg'
+            log(f'Downloading thumbnail: {thumb_url[:80]}...')
+            thumb_resp = requests.get(thumb_url, timeout=15)
+            thumb_resp.raise_for_status()
+            with open(thumb_path, 'wb') as f:
+                f.write(thumb_resp.content)
+            thumbnail_path = thumb_path
+    except Exception as e:
+        log(f'Thumbnail download failed (non-fatal): {e}')
+
+    return DownloadedFileInfo(
+        path=download_info.path,
+        file_size=download_info.file_size,
+        extension='.mp3',
+        thumbnail_path=thumbnail_path,
+    )
+
+
+def _download_ytdlp_inner(url, resolved_type, temp_dir, ytdlp_extra_args='', logger=None):
+    """Download media using yt-dlp (inner implementation)."""
 
     def log(message):
         if logger:
