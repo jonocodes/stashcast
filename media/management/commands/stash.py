@@ -149,6 +149,10 @@ class Command(BaseCommand):
                     if e.count > 5:
                         self.stderr.write(f'    ... and {e.count - 5} more')
                 return
+            except Exception:
+                # yt-dlp prefetch failed (network error, extractor error, etc.)
+                # Fall through to _process_single_url which has proper error handling
+                pass
 
         # Single item flow - proceed with original logic
         self._process_single_url(url, requested_type, verbose, json_output)
