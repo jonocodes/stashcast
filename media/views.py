@@ -954,8 +954,6 @@ def preferences_view(request):
     import os
     from pathlib import Path
 
-    from django.db.models import Sum
-
     # Episode counts
     ready_count = MediaItem.objects.filter(status=MediaItem.STATUS_READY).count()
     archived_count = MediaItem.objects.filter(status=MediaItem.STATUS_ARCHIVED).count()
@@ -969,9 +967,7 @@ def preferences_view(request):
 
     # Last download
     last_download = (
-        MediaItem.objects.filter(status=MediaItem.STATUS_READY)
-        .order_by('-downloaded_at')
-        .first()
+        MediaItem.objects.filter(status=MediaItem.STATUS_READY).order_by('-downloaded_at').first()
     )
 
     # Storage used (walk actual disk)

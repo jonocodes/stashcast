@@ -1,6 +1,7 @@
 """Tests for the StashCast TUI."""
 
 import os
+
 os.environ['DJANGO_ALLOW_ASYNC_UNSAFE'] = 'true'
 
 import pytest
@@ -46,7 +47,7 @@ class TuiItemListTest(TransactionTestCase):
         from textual.widgets import DataTable
 
         app = StashCastApp()
-        async with app.run_test() as pilot:
+        async with app.run_test():
             table = app.screen.query_one(DataTable)
             assert table.row_count == 2
 
@@ -58,7 +59,7 @@ class TuiItemListTest(TransactionTestCase):
         from textual.widgets import DataTable
 
         app = StashCastApp()
-        async with app.run_test() as pilot:
+        async with app.run_test():
             screen = app.screen
             screen._status_filter = 'READY'
             screen._load_items()
@@ -73,7 +74,7 @@ class TuiItemListTest(TransactionTestCase):
         from textual.widgets import DataTable
 
         app = StashCastApp()
-        async with app.run_test() as pilot:
+        async with app.run_test():
             screen = app.screen
             screen._text_filter = 'Audio'
             screen._load_items()
@@ -88,7 +89,7 @@ class TuiItemListTest(TransactionTestCase):
         from textual.widgets import DataTable
 
         app = StashCastApp()
-        async with app.run_test() as pilot:
+        async with app.run_test():
             MediaItem.objects.create(
                 source_url='https://example.com/new',
                 requested_type=MediaItem.REQUESTED_TYPE_AUTO,

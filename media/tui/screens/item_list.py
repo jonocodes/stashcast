@@ -99,9 +99,7 @@ class ItemListScreen(Screen):
             return
         from media.tui.screens.item_detail import ItemDetailScreen
 
-        self.app.push_screen(
-            ItemDetailScreen(item.guid), callback=lambda _: self._load_items()
-        )
+        self.app.push_screen(ItemDetailScreen(item.guid), callback=lambda _: self._load_items())
 
     def action_delete_item(self) -> None:
         item = self._get_selected_item()

@@ -5,9 +5,10 @@ Handles prefetching metadata and determining the actual media type.
 """
 
 from dataclasses import dataclass, field
-from typing import Optional, List
-from urllib.parse import urlparse
 from pathlib import Path
+from typing import List, Optional
+from urllib.parse import urlparse
+
 import yt_dlp
 from django.conf import settings
 
@@ -162,7 +163,99 @@ def _prefetch_direct(url, logger=None):
     return result
 
 
+def _is_apple_podcasts_url(url):
+    """Check if the URL is an Apple Podcasts episode URL."""
+    parsed = urlparse(url)
+    return parsed.hostname in ('podcasts.apple.com',) and '?i=' in url
+
+
+def _prefetch_apple_podcasts(url, logger=None):
+    """
+    Fallback extractor for Apple Podcasts when yt-dlp's extractor is broken.
+
+    Fetches the Apple Podcasts page directly and extracts metadata from the
+    serialized-server-data JSON embedded in the HTML.
+    """
+    import json
+    import re
+
+    import requests as req
+
+    if logger:
+        logger('yt-dlp Apple Podcasts extractor failed, using fallback extractor')
+
+    resp = req.get(url, timeout=30)
+    resp.raise_for_status()
+
+    # Extract serialized-server-data JSON from the HTML
+    pattern = r'<script [^>]*\bid=["\']serialized-server-data["\'][^>]*>(.*?)</script>'
+    match = re.search(pattern, resp.text, re.DOTALL)
+    if not match:
+        raise ValueError('Could not find serialized-server-data in Apple Podcasts page')
+
+    raw = json.loads(match.group(1).strip())
+
+    # Navigate Apple's data structure:
+    # {"data": [{"intent": ..., "data": {"shelves": [...], "headerButtonItems": [...]}}]}
+    inner = raw['data'][0]['data']
+
+    # Episode metadata from the first shelf (episodeHeaderRegular)
+    episode = inner['shelves'][0]['items'][0]
+
+    # Stream URL from headerButtonItems
+    stream_url = None
+    for btn in inner.get('headerButtonItems', []):
+        offer = btn.get('model', {}).get('playAction', {}).get('episodeOffer', {})
+        if offer.get('streamUrl'):
+            stream_url = offer['streamUrl']
+            break
+
+    # Description from the paragraph shelf
+    description = ''
+    for shelf in inner.get('shelves', []):
+        if shelf.get('contentType') == 'paragraph':
+            items = shelf.get('items', [])
+            if items:
+                description = items[0].get('text', '')
+            break
+
+    # Extract episode ID from URL
+    parsed = urlparse(url)
+    episode_id = ''
+    if '?i=' in url:
+        episode_id = parsed.query.split('i=')[1].split('&')[0]
+
+    result = PrefetchResult()
+    result.title = episode.get('title', 'Untitled')
+    result.description = description
+    result.author = episode.get('channelName', '')
+    result.duration_seconds = episode.get('duration')
+    result.has_audio_streams = True
+    result.has_video_streams = False
+    result.webpage_url = url
+    result.extractor = 'ApplePodcasts'
+    result.external_id = episode_id
+
+    if logger:
+        logger(f'Apple Podcasts fallback extracted: {result.title}')
+        logger(f'Author: {result.author}')
+        logger(f'Duration: {result.duration_seconds}s')
+        logger(f'Stream URL found: {bool(stream_url)}')
+
+    return result
+
+
 def _prefetch_ytdlp(url, logger=None):
+    """Prefetch metadata using yt-dlp, with Apple Podcasts fallback."""
+    try:
+        return _prefetch_ytdlp_inner(url, logger=logger)
+    except Exception:
+        if _is_apple_podcasts_url(url):
+            return _prefetch_apple_podcasts(url, logger=logger)
+        raise
+
+
+def _prefetch_ytdlp_inner(url, logger=None):
     """Prefetch metadata using yt-dlp"""
     ydl_opts = {
         'quiet': True,
