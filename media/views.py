@@ -954,7 +954,6 @@ def preferences_view(request):
     import os
     from pathlib import Path
 
-
     # Episode counts
     ready_count = MediaItem.objects.filter(status=MediaItem.STATUS_READY).count()
     archived_count = MediaItem.objects.filter(status=MediaItem.STATUS_ARCHIVED).count()
