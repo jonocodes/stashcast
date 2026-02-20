@@ -58,7 +58,7 @@ create-admin-dummy:
     DJANGO_SUPERUSER_PASSWORD=admin ./manage.py createsuperuser --username admin --email "" --noinput
 
 # create or update a test superuser (idempotent, safe to re-run)
-create-test-user username="admin" password="admin":
+create-test-user username="test" password="test":
     ./manage.py create_test_user {{ username }} {{ password }}
 
 # run tests

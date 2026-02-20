@@ -75,4 +75,4 @@ else
 fi
 
 DEMO_USERNAME=demo DEMO_PASSWORD=omed ./manage.py create_demo_user
-TEST_USERNAME=admin TEST_PASSWORD=admin ./manage.py create_test_user
+TEST_USERNAME=test TEST_PASSWORD=test ./manage.py create_test_user

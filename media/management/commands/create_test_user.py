@@ -20,8 +20,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        username = options['username'] or os.getenv('TEST_USERNAME', 'admin')
-        email = os.getenv('TEST_EMAIL', '')
+        username = options['username'] or os.getenv('TEST_USERNAME', 'test')
         password = options['password'] or os.getenv('TEST_PASSWORD')
 
         if not password:
@@ -34,13 +33,10 @@ class Command(BaseCommand):
         user, created = User.objects.get_or_create(
             username=username,
             defaults={
-                'email': email,
                 'is_active': True,
             },
         )
 
-        if email:
-            user.email = email
         user.is_active = True
         user.is_staff = True
         user.is_superuser = True
