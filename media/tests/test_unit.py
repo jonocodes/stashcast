@@ -1126,6 +1126,62 @@ class WorkerTimeoutTest(TestCase):
         self.assertIn('Test error', item.error_message)
 
 
+class SSEWorkerTimeoutTest(TestCase):
+    """Tests for worker-unavailable detection in the SSE stream"""
+
+    def setUp(self):
+        self.client = Client()
+
+    def test_sse_stream_detects_stuck_prefetching(self):
+        """Test that the SSE stream marks items as ERROR when stuck in PREFETCHING"""
+        from datetime import timedelta
+
+        # Create item stuck in PREFETCHING for >30 seconds
+        item = MediaItem.objects.create(
+            source_url='https://example.com/video.mp4',
+            requested_type=MediaItem.REQUESTED_TYPE_AUTO,
+            slug='pending',
+            status=MediaItem.STATUS_PREFETCHING,
+        )
+        old_time = timezone.now() - timedelta(seconds=35)
+        MediaItem.objects.filter(guid=item.guid).update(updated_at=old_time)
+
+        # Request the SSE stream - read first event
+        response = self.client.get(f'/stash/{item.guid}/stream/')
+        content = b''.join(response.streaming_content).decode()
+
+        # Verify the item was marked as ERROR
+        item.refresh_from_db()
+        self.assertEqual(item.status, MediaItem.STATUS_ERROR)
+        self.assertIn('Worker unavailable', item.error_message)
+        self.assertIn('run_huey', item.error_message)
+
+        # Verify the SSE stream sent the error status
+        self.assertIn('"status": "ERROR"', content)
+        self.assertIn('"has_error": true', content)
+        self.assertIn('Worker unavailable', content)
+
+    def test_sse_stream_does_not_timeout_recent_items(self):
+        """Test that recently created items are not timed out by the SSE stream"""
+        # Create a recently-created item, then immediately mark it as READY
+        # so the stream terminates (otherwise it would loop forever)
+        item = MediaItem.objects.create(
+            source_url='https://example.com/video.mp4',
+            requested_type=MediaItem.REQUESTED_TYPE_AUTO,
+            slug='test-item',
+            status=MediaItem.STATUS_READY,
+            title='Test Video',
+        )
+
+        response = self.client.get(f'/stash/{item.guid}/stream/')
+        content = b''.join(response.streaming_content).decode()
+
+        # Should show READY, not an error
+        self.assertIn('"status": "READY"', content)
+        self.assertIn('"is_ready": true', content)
+        self.assertNotIn('Worker unavailable', content)
+
+
 class SummaryGenerationTest(TestCase):
     """Tests for summary generation settings"""
 
