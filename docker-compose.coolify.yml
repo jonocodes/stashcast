@@ -3,7 +3,11 @@ services:
     image: caddy:2-alpine
     volumes:
       - static:/srv/static:ro
-      - ./data_docker/media:/srv/media:ro
+      # - ./data_docker/media:/srv/media:ro
+      - type: bind
+        source: ./data_docker/media
+        target: /srv/media
+        is_directory: true # this is specific to coolify, not compose
     configs:
       - source: caddyfile
         target: /etc/caddy/Caddyfile
@@ -19,8 +23,9 @@ services:
     hostname: web
     volumes:
       - static:/app/staticfiles
-      - .:/app
       - ./data_docker:/app/data_docker
+      # - data_docker:/app/data_docker
+      # - .:/app
 
   worker:
     build: .
@@ -32,8 +37,8 @@ services:
     environment:
       STASHCAST_DATA_DIR: /app/data_docker
     volumes:
-      - .:/app
       - ./data_docker:/app/data_docker
+      # - .:/app
 
 volumes:
   static:
