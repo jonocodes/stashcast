@@ -26,4 +26,15 @@ export STASHCAST_USER_TOKEN="dummy"
 
 ./manage.py migrate
 
+<<<<<<< claude/investigate-static-assets-setup-EY4D2
+=======
+# ./manage.py collectstatic --noinput
+
+# for demo environment, keys off env vars
+./manage.py create_demo_user || echo demo user not created
+
+# for branch preview environment, keys off env vars
+./manage.py create_test_user || echo test user not created
+
+>>>>>>> main
 ./manage.py list_superusers
