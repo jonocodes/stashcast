@@ -26,6 +26,4 @@ export STASHCAST_USER_TOKEN="dummy"
 
 ./manage.py migrate
 
-# ./manage.py collectstatic --noinput
-
 ./manage.py list_superusers
