@@ -240,21 +240,11 @@ def stash_view(request):
                     }
                 )
 
-        except Exception as e:
-            # Create a failed item so we can show progress page with error
-            if redirect_param == 'progress':
-                item = MediaItem.objects.create(
-                    source_url=url,
-                    requested_type=requested_type,
-                    slug='pending',
-                    status=MediaItem.STATUS_ERROR,
-                    error_message=f'Error checking URL: {str(e)}',
-                )
-                progress_url = request.build_absolute_uri(f'/stash/{item.guid}/progress/')
-                if close_tab_after:
-                    progress_url = f'{progress_url}?closeTabAfter={close_tab_after}'
-                return redirect(progress_url)
-            return JsonResponse({'error': f'Error checking URL: {str(e)}'}, status=500)
+        except Exception:
+            # Prefetch failed (e.g. Apple Podcasts extractor broken).
+            # Fall through to single-item flow — the download pipeline
+            # has its own fallback extractors and error handling.
+            pass
 
     # Single item flow
     # Check if item already exists for this URL and requested type combination
@@ -557,9 +547,11 @@ def admin_stash_form_view(request):
                             prefetch_result.playlist_title
                         )
                         return redirect('admin_stash_confirm_multiple')
-                except Exception as e:
-                    messages.error(request, f'Error checking URL: {str(e)}')
-                    return redirect(request.path)
+                except Exception:
+                    # Prefetch failed (e.g. Apple Podcasts extractor broken).
+                    # Fall through to single-item flow — the download pipeline
+                    # has its own fallback extractors and error handling.
+                    pass
 
             # Single item - proceed as before
             # Check if item already exists for this URL and requested type combination
