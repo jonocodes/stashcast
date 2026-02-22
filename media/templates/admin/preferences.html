@@ -231,7 +231,31 @@
         </tr>
         <tr>
             <td>{% trans "Deployed" %}</td>
-            <td>{{ deploy_time|timesince }} {% trans "ago" %} ({{ deploy_time }})</td>
+            <td>
+                <span id="deploy-time" data-utc="{{ deploy_time|date:'c' }}">
+                    {{ deploy_time|timesince }} {% trans "ago" %} ({{ deploy_time }})
+                </span>
+                <script>
+                    (function() {
+                        var el = document.getElementById('deploy-time');
+                        var utc = new Date(el.dataset.utc);
+                        var now = new Date();
+                        var diff = now - utc;
+                        var mins = Math.floor(diff / 60000);
+                        var hours = Math.floor(mins / 60);
+                        var days = Math.floor(hours / 24);
+                        var ago;
+                        if (days > 0) ago = days + (days === 1 ? ' day' : ' days');
+                        else if (hours > 0) ago = hours + (hours === 1 ? ' hour' : ' hours') + ', ' + (mins % 60) + ' minutes';
+                        else ago = mins + (mins === 1 ? ' minute' : ' minutes');
+                        var local = utc.toLocaleString(undefined, {
+                            year: 'numeric', month: 'short', day: 'numeric',
+                            hour: 'numeric', minute: '2-digit', timeZoneName: 'short'
+                        });
+                        el.textContent = ago + ' ago (' + local + ')';
+                    })();
+                </script>
+            </td>
         </tr>
     </table>
 </div>
