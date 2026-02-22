@@ -6,6 +6,7 @@ from django.contrib import admin
 from django.contrib.admin.views.decorators import staff_member_required
 from django.http import JsonResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
@@ -1025,6 +1026,20 @@ def stash_status_stream(request, guid):
             try:
                 # Refresh the item from database
                 item = MediaItem.objects.get(guid=guid)
+
+                # Detect worker unavailable: if stuck in PREFETCHING for >30s,
+                # the Huey worker likely isn't running (task never got picked up)
+                if item.status == MediaItem.STATUS_PREFETCHING:
+                    seconds_waiting = (timezone.now() - item.updated_at).total_seconds()
+                    if seconds_waiting > 30:
+                        item.status = MediaItem.STATUS_ERROR
+                        item.error_message = (
+                            'Worker unavailable: task has not been picked up for '
+                            f'{int(seconds_waiting)} seconds. '
+                            'The Huey worker may not be running. '
+                            'Start it with: python manage.py run_huey'
+                        )
+                        item.save()
 
                 # Only send event if status changed
                 if item.status != last_status:
