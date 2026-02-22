@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-02-13 18:31+0000\n"
+"POT-Creation-Date: 2026-02-22 05:25+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -302,6 +302,7 @@ msgstr ""
 
 #: media/templates/admin/admin_stash_form.html:335
 #: media/templates/admin/preferences.html:173
+#: media/templates/admin/preferences.html:236
 msgid "ago"
 msgstr ""
 
@@ -847,6 +848,10 @@ msgstr ""
 
 #: media/templates/admin/preferences.html:225
 msgid "Project"
+msgstr ""
+
+#: media/templates/admin/preferences.html:233
+msgid "Deployed"
 msgstr ""
 
 #: media/templates/media/home.html:187

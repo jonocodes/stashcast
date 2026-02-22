@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-02-13 18:31+0000\n"
+"POT-Creation-Date: 2026-02-22 05:25+0000\n"
 "PO-Revision-Date: 2026-01-12 22:00+0000\n"
 "Last-Translator: StashCast Team\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -312,6 +312,7 @@ msgstr "Ações"
 
 #: media/templates/admin/admin_stash_form.html:335
 #: media/templates/admin/preferences.html:173
+#: media/templates/admin/preferences.html:236
 msgid "ago"
 msgstr "atrás"
 
@@ -883,6 +884,10 @@ msgstr ""
 #: media/templates/admin/preferences.html:225
 msgid "Project"
 msgstr "Projeto"
+
+#: media/templates/admin/preferences.html:233
+msgid "Deployed"
+msgstr ""
 
 #: media/templates/media/home.html:187
 msgid "StashCast illustration"
