@@ -45,6 +45,7 @@ CSRF_TRUSTED_ORIGINS = env.list('CSRF_TRUSTED_ORIGINS', default=[])
 # Application definition
 
 INSTALLED_APPS = [
+    'unfold',  # Must be before django.contrib.admin
     'media',  # Must be before admin to override templates
     'django.contrib.admin',
     'django.contrib.auth',
@@ -56,6 +57,69 @@ INSTALLED_APPS = [
     'bx_django_utils',
     'huey_monitor',
 ]
+
+UNFOLD = {
+    'SITE_TITLE': 'StashCast',
+    'SITE_HEADER': 'StashCast',
+    'SHOW_HISTORY': True,
+    'SHOW_VIEW_ON_SITE': True,
+    'SIDEBAR': {
+        'show_search': True,
+        'show_all_applications': True,
+        'navigation': [
+            {
+                'title': 'Tools',
+                'items': [
+                    {
+                        'title': 'Add URL',
+                        'link': '/admin/tools/add-url/',
+                        'icon': 'add_link',
+                    },
+                    {
+                        'title': 'Grid View',
+                        'link': '/admin/tools/grid/',
+                        'icon': 'grid_view',
+                    },
+                    {
+                        'title': 'List View',
+                        'link': '/admin/tools/list/',
+                        'icon': 'view_list',
+                    },
+                    {
+                        'title': 'Bookmarklet',
+                        'link': '/admin/tools/bookmarklet/',
+                        'icon': 'bookmark',
+                    },
+                    {
+                        'title': 'Feed Links',
+                        'link': '/admin/tools/feeds/',
+                        'icon': 'rss_feed',
+                    },
+                    {
+                        'title': 'About',
+                        'link': '/admin/tools/preferences/',
+                        'icon': 'info',
+                    },
+                    {
+                        'title': 'Site Home',
+                        'link': '/',
+                        'icon': 'home',
+                    },
+                ],
+            },
+            {
+                'title': 'Administration',
+                'items': [
+                    {
+                        'title': 'Media Items',
+                        'link': '/admin/media/mediaitem/',
+                        'icon': 'play_circle',
+                    },
+                ],
+            },
+        ],
+    },
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

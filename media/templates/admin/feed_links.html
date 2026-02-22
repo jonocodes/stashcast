@@ -14,6 +14,15 @@
         --sc-primary-fg: var(--primary-fg, #ffffff);
         --sc-surface: var(--darkened-bg, rgba(0,0,0,0.02));
     }
+    .dark {
+        --sc-panel-bg: #1e293b;
+        --sc-panel-fg: #e2e8f0;
+        --sc-muted: #94a3b8;
+        --sc-border: #334155;
+        --sc-primary: #60a5fa;
+        --sc-primary-fg: #ffffff;
+        --sc-surface: rgba(255,255,255,0.06);
+    }
     .container {
         background: var(--sc-panel-bg);
         color: var(--sc-panel-fg);
@@ -62,7 +71,7 @@
         flex-shrink: 0;
     }
     code {
-        background: rgba(0, 0, 0, 0.1);
+        background: var(--sc-surface);
         padding: 2px 6px;
         border-radius: 3px;
         font-family: 'Courier New', monospace;

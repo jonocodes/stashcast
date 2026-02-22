@@ -43,9 +43,8 @@ from media.views import (
     stash_view,
 )
 
-admin.site.site_header = 'StashCast Administration'  # default: "Django Administration"
-# admin.site.index_title = "Features area"  # default: "Site administration"
-admin.site.site_title = 'StashCast site admin'  # default: "Django site admin"
+admin.site.site_header = 'StashCast'  # default: "Django Administration"
+admin.site.site_title = 'StashCast'  # default: "Django site admin"
 
 
 urlpatterns = [

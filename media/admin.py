@@ -3,6 +3,7 @@ from django.core.exceptions import PermissionDenied
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import format_html, mark_safe
+from unfold.admin import ModelAdmin as UnfoldModelAdmin
 
 from media.models import MediaItem
 from media.tasks import generate_summary, process_media
@@ -72,7 +73,7 @@ class DemoReadOnlyAdminMixin:
 
 
 @admin.register(MediaItem)
-class MediaItemAdmin(admin.ModelAdmin, DemoReadOnlyAdminMixin):
+class MediaItemAdmin(UnfoldModelAdmin, DemoReadOnlyAdminMixin):
     list_display = [
         'title',
         'action_links',

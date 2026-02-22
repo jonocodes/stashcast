@@ -7,6 +7,25 @@
 {% block extrastyle %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
+    :root {
+        --sc-panel-bg: var(--body-bg, #ffffff);
+        --sc-panel-fg: var(--body-fg, #222222);
+        --sc-muted: var(--body-quiet-color, #6b7280);
+        --sc-border: var(--border-color, #d4d4d4);
+        --sc-primary: var(--primary, #417690);
+        --sc-primary-fg: var(--primary-fg, #ffffff);
+        --sc-surface: var(--darkened-bg, rgba(0,0,0,0.02));
+    }
+    .dark {
+        --sc-panel-bg: #1e293b;
+        --sc-panel-fg: #e2e8f0;
+        --sc-muted: #94a3b8;
+        --sc-border: #334155;
+        --sc-primary: #60a5fa;
+        --sc-primary-fg: #ffffff;
+        --sc-surface: rgba(255,255,255,0.06);
+    }
+
     .grid-container {
         max-width: 1400px;
         margin: 20px auto;
@@ -18,22 +37,22 @@
         gap: 15px;
         margin-bottom: 30px;
         padding: 15px;
-        background: var(--body-bg);
-        border: 1px solid var(--border-color, #ddd);
+        background: var(--sc-panel-bg);
+        border: 1px solid var(--sc-border);
         border-radius: 8px;
     }
 
     .filters select {
         padding: 8px 12px;
-        border: 1px solid var(--border-color, #ddd);
+        border: 1px solid var(--sc-border);
         border-radius: 4px;
         font-size: 14px;
-        background: var(--body-bg);
-        color: var(--body-fg);
+        background: var(--sc-panel-bg);
+        color: var(--sc-panel-fg);
     }
 
     .filters label {
-        color: var(--body-fg);
+        color: var(--sc-panel-fg);
     }
 
     .grid {
@@ -43,8 +62,8 @@
     }
 
     .grid-item {
-        background: var(--body-bg);
-        border: 1px solid var(--border-color, #ddd);
+        background: var(--sc-panel-bg);
+        border: 1px solid var(--sc-border);
         border-radius: 8px;
         overflow: hidden;
         transition: transform 0.2s, box-shadow 0.2s;
@@ -95,7 +114,7 @@
         font-size: 14px;
         font-weight: 500;
         margin: 0 0 8px 0;
-        color: var(--body-fg);
+        color: var(--sc-panel-fg);
         display: -webkit-box;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
@@ -105,7 +124,7 @@
 
     .item-meta {
         font-size: 12px;
-        color: var(--body-quiet-color, #666);
+        color: var(--sc-muted);
         display: flex;
         gap: 8px;
         flex-wrap: wrap;
@@ -124,10 +143,10 @@
     .status-error { background: color-mix(in srgb, #dc3545 25%, transparent); color: #dc3545; }
     .status-processing { background: color-mix(in srgb, #ffc107 25%, transparent); color: #b38600; }
     .status-downloading { background: color-mix(in srgb, #17a2b8 25%, transparent); color: #17a2b8; }
-    .status-prefetching { background: color-mix(in srgb, #6c757d 25%, transparent); color: var(--body-quiet-color, #6c757d); }
+    .status-prefetching { background: color-mix(in srgb, #6c757d 25%, transparent); color: var(--sc-muted); }
 
     .type-badge {
-        color: var(--body-quiet-color, #666);
+        color: var(--sc-muted);
         font-size: 14px;
         display: inline-flex;
         align-items: center;
@@ -137,12 +156,12 @@
     .empty-state {
         text-align: center;
         padding: 60px 20px;
-        color: var(--body-quiet-color, #666);
+        color: var(--sc-muted);
     }
 
     .empty-state h2 {
         margin: 0 0 10px 0;
-        color: var(--body-quiet-color, #999);
+        color: var(--sc-muted);
     }
 
     .view-switcher {
@@ -153,27 +172,27 @@
 
     .view-switcher a {
         padding: 8px 16px;
-        background: var(--darkened-bg);
+        background: var(--sc-surface);
         border-radius: 4px;
         text-decoration: none;
-        color: var(--body-fg);
+        color: var(--sc-panel-fg);
         font-size: 14px;
         transition: background 0.2s;
     }
 
     .view-switcher a:hover {
-        background: var(--border-color, #e0e0e0);
+        background: var(--sc-border);
     }
 
     .view-switcher a.active {
-        background: var(--primary);
-        color: var(--primary-fg);
+        background: var(--sc-primary);
+        color: var(--sc-primary-fg);
     }
 
     .filters .storage-info {
         margin-left: auto;
         font-weight: 500;
-        color: var(--body-fg);
+        color: var(--sc-panel-fg);
     }
 </style>
 {% endblock %}
