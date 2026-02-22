@@ -1,17 +1,9 @@
-# Stage 1: Extract git info (lightweight, only used at build time)
-FROM alpine:3.21 AS git-info
-RUN apk add --no-cache git jq
-WORKDIR /src
-COPY .git .git
-RUN jq -n \
-    --arg sha "$(git rev-parse HEAD 2>/dev/null)" \
-    --arg msg "$(git log -1 --pretty=%s 2>/dev/null)" \
-    '{commit_sha: $sha, commit_message: $msg, branch: ""}' \
-    > /git_info.json 2>/dev/null || \
-    echo '{"commit_sha": "", "commit_message": "", "branch": ""}' > /git_info.json
-
-# Stage 2: Main application image
 FROM python:3.13-slim
+
+# Git info passed as build args (no .git directory needed)
+ARG GIT_COMMIT_SHA=""
+ARG GIT_COMMIT_MSG=""
+ARG GIT_BRANCH=""
 
 # Create the app directory
 RUN mkdir /app
@@ -42,8 +34,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the Django project to the container
 COPY . /app/
 
-# Copy git info from the first stage (outside /app so volume mounts don't hide it)
-COPY --from=git-info /git_info.json /etc/git_info.json
+# Write git info (outside /app so volume mounts don't hide it)
+RUN printf '{"commit_sha": "%s", "commit_message": "%s", "branch": "%s"}\n' \
+    "$GIT_COMMIT_SHA" "$GIT_COMMIT_MSG" "$GIT_BRANCH" > /etc/git_info.json
 
 # Expose the Django port
 EXPOSE 8000

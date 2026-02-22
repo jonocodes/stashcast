@@ -13,7 +13,12 @@ services:
       - web
 
   web:
-    build: .
+    build:
+      context: .
+      args:
+        GIT_COMMIT_SHA: ${GIT_COMMIT_SHA:-}
+        GIT_COMMIT_MSG: ${GIT_COMMIT_MSG:-}
+        GIT_BRANCH: ${GIT_BRANCH:-}
     container_name: stashcast_web
     environment:
       STASHCAST_DATA_DIR: /app/data_docker
@@ -23,7 +28,12 @@ services:
       - ./data_docker:/app/data_docker
 
   worker:
-    build: .
+    build:
+      context: .
+      args:
+        GIT_COMMIT_SHA: ${GIT_COMMIT_SHA:-}
+        GIT_COMMIT_MSG: ${GIT_COMMIT_MSG:-}
+        GIT_BRANCH: ${GIT_BRANCH:-}
     container_name: stashcast_worker
     command: python manage.py run_huey
     depends_on:
