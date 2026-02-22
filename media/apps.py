@@ -1,9 +1,12 @@
 import json
+import logging
 import subprocess
 from pathlib import Path
 
 from django.apps import AppConfig
 from django.utils import timezone
+
+logger = logging.getLogger(__name__)
 
 
 DEPLOY_TIME = timezone.now()
@@ -58,3 +61,12 @@ class MediaConfig(AppConfig):
 
     def ready(self):
         """Import signals when the app is ready"""
+        if GIT_INFO['commit_sha_short']:
+            logger.info(
+                "StashCast commit=%s branch=%s message=%s",
+                GIT_INFO['commit_sha_short'],
+                GIT_INFO.get('branch', ''),
+                GIT_INFO.get('commit_message', ''),
+            )
+        else:
+            logger.info("StashCast git info not available")
