@@ -24,9 +24,7 @@ class Command(BaseCommand):
         password = options['password'] or os.getenv('TEST_PASSWORD')
 
         if not password:
-            raise CommandError(
-                'TEST_PASSWORD is required (set env var or pass as argument).'
-            )
+            raise CommandError('TEST_PASSWORD is required (set env var or pass as argument).')
 
         User = get_user_model()
 
@@ -44,6 +42,4 @@ class Command(BaseCommand):
         user.save()
 
         action = 'Created' if created else 'Updated'
-        self.stdout.write(
-            self.style.SUCCESS(f"{action} test superuser '{username}'.")
-        )
+        self.stdout.write(self.style.SUCCESS(f"{action} test superuser '{username}'."))
