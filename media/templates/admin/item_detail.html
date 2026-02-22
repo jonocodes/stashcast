@@ -7,17 +7,36 @@
 
 {% block extrastyle %}
 <style>
+    :root {
+        --sc-panel-bg: var(--body-bg, #ffffff);
+        --sc-panel-fg: var(--body-fg, #222222);
+        --sc-muted: var(--body-quiet-color, #6b7280);
+        --sc-border: var(--border-color, #d4d4d4);
+        --sc-primary: var(--primary, #417690);
+        --sc-primary-fg: var(--primary-fg, #ffffff);
+        --sc-surface: var(--darkened-bg, rgba(0,0,0,0.02));
+    }
+    .dark {
+        --sc-panel-bg: #1e293b;
+        --sc-panel-fg: #e2e8f0;
+        --sc-muted: #94a3b8;
+        --sc-border: #334155;
+        --sc-primary: #60a5fa;
+        --sc-primary-fg: #ffffff;
+        --sc-surface: rgba(255,255,255,0.06);
+    }
+
     .item-detail-container {
         max-width: 1000px;
         margin: 20px auto;
         padding: 20px;
-        background: var(--body-bg);
-        border: 1px solid var(--border-color, #ddd);
+        background: var(--sc-panel-bg);
+        border: 1px solid var(--sc-border);
         border-radius: 8px;
     }
     h1 {
         margin: 0 0 15px 0;
-        color: var(--body-fg);
+        color: var(--sc-panel-fg);
     }
     .action-bar {
         display: flex;
@@ -25,7 +44,7 @@
         gap: 8px;
         margin-bottom: 20px;
         padding: 12px 16px;
-        background: var(--darkened-bg, #f8f9fa);
+        background: var(--sc-surface);
         border-radius: 6px;
         align-items: center;
     }
@@ -41,16 +60,18 @@
         margin-right: 8px;
         margin-bottom: 20px;
     }
-    .status-ready { background: #d4edda; color: #155724; }
-    .status-archived { background: #e2e3e5; color: #383d41; }
-    .status-error { background: #f8d7da; color: #721c24; }
-    .status-processing { background: #fff3cd; color: #856404; }
-    .status-downloading { background: #d1ecf1; color: #0c5460; }
-    .status-prefetching { background: #e2e3e5; color: #383d41; }
+    .status-ready { background: color-mix(in srgb, #28a745 20%, transparent); color: #28a745; }
+    .status-archived { background: color-mix(in srgb, #6c757d 20%, transparent); color: var(--sc-muted); }
+    .status-error { background: color-mix(in srgb, #dc3545 20%, transparent); color: #dc3545; }
+    .status-processing { background: color-mix(in srgb, #ffc107 20%, transparent); color: #b38600; }
+    .status-downloading { background: color-mix(in srgb, #17a2b8 20%, transparent); color: #17a2b8; }
+    .status-prefetching { background: color-mix(in srgb, #6c757d 20%, transparent); color: var(--sc-muted); }
+    .dark .status-processing { color: #ffc107; }
+    .dark .status-archived { color: #94a3b8; }
     .action-bar .separator {
         width: 1px;
         height: 20px;
-        background: var(--border-color, #dee2e6);
+        background: var(--sc-border);
         margin: 0 4px;
     }
     .action-bar .btn {
@@ -65,12 +86,12 @@
         cursor: pointer;
         border: 1px solid transparent;
         transition: all 0.15s ease;
-        background: var(--body-bg, white);
-        color: var(--body-fg, #212529);
-        border-color: var(--border-color, #dee2e6);
+        background: var(--sc-panel-bg);
+        color: var(--sc-panel-fg);
+        border-color: var(--sc-border);
     }
     .action-bar .btn:hover {
-        background: var(--darkened-bg, #e9ecef);
+        background: var(--sc-surface);
         text-decoration: none;
     }
     .action-bar .btn-danger {
@@ -87,7 +108,7 @@
         display: inline-flex;
     }
     .metadata {
-        color: var(--body-quiet-color, #666);
+        color: var(--sc-muted);
         font-size: 14px;
         margin-bottom: 20px;
     }
@@ -101,25 +122,25 @@
         border-radius: 4px;
     }
     .summary {
-        background: var(--darkened-bg, rgba(0,0,0,0.02));
-        border-left: 4px solid var(--primary, #417690);
+        background: var(--sc-surface);
+        border-left: 4px solid var(--sc-primary);
         padding: 15px;
         margin: 20px 0;
         border-radius: 4px;
     }
     .summary h3 {
         margin: 0 0 10px 0;
-        color: var(--primary, #417690);
+        color: var(--sc-primary);
         font-size: 16px;
     }
     .description {
         line-height: 1.6;
-        color: var(--body-fg);
+        color: var(--sc-panel-fg);
         white-space: pre-wrap;
     }
     .description h3 {
         margin: 0 0 10px 0;
-        color: var(--body-fg);
+        color: var(--sc-panel-fg);
     }
     .player {
         margin: 30px 0;
@@ -130,9 +151,9 @@
         border-radius: 4px;
     }
     .error-message {
-        background: #f8d7da;
-        border: 1px solid #f5c6cb;
-        color: #721c24;
+        background: color-mix(in srgb, #dc3545 15%, transparent);
+        border: 1px solid color-mix(in srgb, #dc3545 30%, transparent);
+        color: #dc3545;
         padding: 15px;
         border-radius: 4px;
         margin: 20px 0;

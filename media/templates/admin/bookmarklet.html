@@ -15,6 +15,15 @@
         --sc-primary-fg: var(--primary-fg, #ffffff);
         --sc-surface: var(--darkened-bg, rgba(0,0,0,0.02));
     }
+    .dark {
+        --sc-panel-bg: #1e293b;
+        --sc-panel-fg: #e2e8f0;
+        --sc-muted: #94a3b8;
+        --sc-border: #334155;
+        --sc-primary: #60a5fa;
+        --sc-primary-fg: #ffffff;
+        --sc-surface: rgba(255,255,255,0.06);
+    }
     .container {
         background: var(--sc-panel-bg);
         color: var(--sc-panel-fg);
@@ -93,8 +102,8 @@
     }
     button {
         padding: 10px 20px;
-        background: #28a745;
-        color: white;
+        background: var(--sc-primary);
+        color: var(--sc-primary-fg);
         border: none;
         border-radius: 4px;
         font-weight: 600;
@@ -105,7 +114,9 @@
         filter: brightness(1.05);
     }
     .copy-button {
-        background: #6c757d;
+        background: var(--sc-surface);
+        color: var(--sc-panel-fg);
+        border: 1px solid var(--sc-border);
     }
     .instruction {
         background: color-mix(in srgb, #ffc107 20%, transparent);
@@ -137,7 +148,7 @@
         flex-shrink: 0;
     }
     code {
-        background: rgba(0, 0, 0, 0.1);
+        background: var(--sc-surface);
         padding: 2px 6px;
         border-radius: 3px;
         font-family: 'Courier New', monospace;
