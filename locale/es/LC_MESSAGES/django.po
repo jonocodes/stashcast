@@ -645,16 +645,12 @@ msgstr "Todo el contenido en una fuente"
 
 #: media/templates/admin/feed_links.html:272
 #: media/templates/media/home.html:215
-#, fuzzy
-#| msgid "Audio feed"
 msgid "Archive feed"
-msgstr "Fuente de audio"
+msgstr "Fuente de archivo"
 
 #: media/templates/admin/feed_links.html:274
-#, fuzzy
-#| msgid "Audio Feed"
 msgid "Archive Feed"
-msgstr "Fuente de Audio"
+msgstr "Fuente de Archivo"
 
 #: media/templates/admin/feed_links.html:275
 msgid "Archived content for reference"
@@ -717,10 +713,8 @@ msgid "Delete"
 msgstr "Eliminar"
 
 #: media/templates/admin/item_detail.html:182
-#, fuzzy
-#| msgid "Prefetching"
 msgid "Refetch"
-msgstr "Preparando"
+msgstr "Recargar"
 
 #: media/templates/admin/item_detail.html:187
 msgid "Regenerate Summary"

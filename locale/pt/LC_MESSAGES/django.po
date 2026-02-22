@@ -642,16 +642,12 @@ msgstr "Todo o conteúdo em um feed"
 
 #: media/templates/admin/feed_links.html:272
 #: media/templates/media/home.html:215
-#, fuzzy
-#| msgid "Audio feed"
 msgid "Archive feed"
-msgstr "Feed de áudio"
+msgstr "Feed de arquivo"
 
 #: media/templates/admin/feed_links.html:274
-#, fuzzy
-#| msgid "Audio Feed"
 msgid "Archive Feed"
-msgstr "Feed de Áudio"
+msgstr "Feed de Arquivo"
 
 #: media/templates/admin/feed_links.html:275
 msgid "Archived content for reference"
@@ -714,10 +710,8 @@ msgid "Delete"
 msgstr "Excluir"
 
 #: media/templates/admin/item_detail.html:182
-#, fuzzy
-#| msgid "Prefetching"
 msgid "Refetch"
-msgstr "Preparando"
+msgstr "Rebaixar"
 
 #: media/templates/admin/item_detail.html:187
 msgid "Regenerate Summary"
