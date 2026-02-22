@@ -24,8 +24,8 @@ services:
     hostname: web
     volumes:
       - static:/app/staticfiles
-      - .:/app
       - ./data_docker:/app/data_docker
+      # - .:/app
 
   worker:
     build:
