@@ -27,8 +27,7 @@ data_docker/
 # Environment
 # .env
 # .env.local
-# .git is needed by the git-info build stage in the Dockerfile
-# .git
+.git
 
 # IDE
 .vscode/
