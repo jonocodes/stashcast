@@ -235,6 +235,15 @@
                 <span id="deploy-time" data-utc="{{ deploy_time|date:'c' }}">
                     {{ deploy_time|timesince }} {% trans "ago" %} ({{ deploy_time }})
                 </span>
+                {% if git_info.commit_sha_short %}
+                &mdash;
+                <a href="https://github.com/jonocodes/stashcast/commit/{{ git_info.commit_sha }}" target="_blank" rel="noopener" title="{{ git_info.commit_message }}">
+                    <code>{{ git_info.commit_sha_short }}</code>
+                </a>
+                {% if git_info.branch %}
+                    on <code>{{ git_info.branch }}</code>
+                {% endif %}
+                {% endif %}
                 <script>
                     (function() {
                         var el = document.getElementById('deploy-time');

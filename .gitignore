@@ -11,6 +11,9 @@ ENV/
 output/
 .coverage
 
+# Build artifacts
+git_info.json
+
 # Django
 *.log
 # db.sqlite3

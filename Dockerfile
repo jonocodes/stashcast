@@ -1,5 +1,9 @@
-# Use the official Python runtime image
 FROM python:3.13-slim
+
+# Git info passed as build args (no .git directory needed)
+ARG GIT_COMMIT_SHA=""
+ARG GIT_COMMIT_MSG=""
+ARG GIT_BRANCH=""
 
 # Create the app directory
 RUN mkdir /app
@@ -7,11 +11,11 @@ RUN mkdir /app
 # Set the working directory inside the container
 WORKDIR /app
 
-# Set environment variables 
+# Set environment variables
 # Prevents Python from writing pyc files to disk
 ENV PYTHONDONTWRITEBYTECODE=1
 #Prevents Python from buffering stdout and stderr
-ENV PYTHONUNBUFFERED=1 
+ENV PYTHONUNBUFFERED=1
 
 # Install system dependencies
 RUN apt-get update && \
@@ -19,16 +23,20 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Upgrade pip
-RUN pip install --upgrade pip 
+RUN pip install --upgrade pip
 
 # Copy the Django project  and install dependencies
 COPY requirements.txt  /app/
 
-# run this command to install all dependencies 
+# run this command to install all dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the Django project to the container
 COPY . /app/
+
+# Write git info (outside /app so volume mounts don't hide it)
+RUN printf '{"commit_sha": "%s", "commit_message": "%s", "branch": "%s"}\n' \
+    "$GIT_COMMIT_SHA" "$GIT_COMMIT_MSG" "$GIT_BRANCH" > /etc/git_info.json
 
 # Expose the Django port
 EXPOSE 8000
