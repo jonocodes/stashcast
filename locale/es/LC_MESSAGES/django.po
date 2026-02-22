@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-02-13 18:31+0000\n"
+"POT-Creation-Date: 2026-02-22 05:25+0000\n"
 "PO-Revision-Date: 2026-01-12 21:30+0000\n"
 "Last-Translator: StashCast Team\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -314,6 +314,7 @@ msgstr "Acciones"
 
 #: media/templates/admin/admin_stash_form.html:335
 #: media/templates/admin/preferences.html:173
+#: media/templates/admin/preferences.html:236
 msgid "ago"
 msgstr "hace"
 
@@ -645,16 +646,12 @@ msgstr "Todo el contenido en una fuente"
 
 #: media/templates/admin/feed_links.html:272
 #: media/templates/media/home.html:215
-#, fuzzy
-#| msgid "Audio feed"
 msgid "Archive feed"
-msgstr "Fuente de audio"
+msgstr "Fuente de archivo"
 
 #: media/templates/admin/feed_links.html:274
-#, fuzzy
-#| msgid "Audio Feed"
 msgid "Archive Feed"
-msgstr "Fuente de Audio"
+msgstr "Fuente de Archivo"
 
 #: media/templates/admin/feed_links.html:275
 msgid "Archived content for reference"
@@ -717,10 +714,8 @@ msgid "Delete"
 msgstr "Eliminar"
 
 #: media/templates/admin/item_detail.html:182
-#, fuzzy
-#| msgid "Prefetching"
 msgid "Refetch"
-msgstr "Preparando"
+msgstr "Recargar"
 
 #: media/templates/admin/item_detail.html:187
 msgid "Regenerate Summary"
@@ -892,6 +887,10 @@ msgstr ""
 #: media/templates/admin/preferences.html:225
 msgid "Project"
 msgstr "Proyecto"
+
+#: media/templates/admin/preferences.html:233
+msgid "Deployed"
+msgstr ""
 
 #: media/templates/media/home.html:187
 msgid "StashCast illustration"

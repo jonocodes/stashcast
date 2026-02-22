@@ -977,6 +977,8 @@ def preferences_view(request):
     # Episode limit
     max_episodes = settings.STASHCAST_MAX_EPISODES
 
+    from media.apps import DEPLOY_TIME
+
     context = {
         **admin.site.each_context(request),
         'title': 'About',
@@ -988,6 +990,7 @@ def preferences_view(request):
         'last_download': last_download,
         'total_storage_bytes': total_storage_bytes,
         'max_episodes': max_episodes,
+        'deploy_time': DEPLOY_TIME,
     }
 
     return render(request, 'admin/preferences.html', context)
