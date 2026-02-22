@@ -229,6 +229,10 @@
                 </a>
             </td>
         </tr>
+        <tr>
+            <td>{% trans "Deployed" %}</td>
+            <td>{{ deploy_time|timesince }} {% trans "ago" %} ({{ deploy_time }})</td>
+        </tr>
     </table>
 </div>
 {% endblock %}

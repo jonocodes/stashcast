@@ -1,4 +1,8 @@
 from django.apps import AppConfig
+from django.utils import timezone
+
+
+DEPLOY_TIME = timezone.now()
 
 
 class MediaConfig(AppConfig):
