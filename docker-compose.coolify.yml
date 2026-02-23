@@ -25,7 +25,7 @@ services:
     volumes:
       - static:/app/staticfiles
       - ./data_docker:/app/data_docker
-      # - .:/app
+      - .:/app
 
   worker:
     build:
