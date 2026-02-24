@@ -23,9 +23,9 @@ services:
     environment:
       STASHCAST_DATA_DIR: /app/data_docker
     volumes:
-      - static:/app/staticfiles
-      - .:/app
+      # - .:/app
       - ./data_docker:/app/data_docker
+      - static:/app/staticfiles
 
   worker:
     build:

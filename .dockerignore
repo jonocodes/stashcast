@@ -11,6 +11,7 @@ ENV/
 output/
 .coverage
 .mypy_cache
+*.egg-info
 
 # Django
 *.log
