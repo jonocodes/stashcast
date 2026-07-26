@@ -12,7 +12,7 @@ from pathlib import Path
 from media.models import MediaItem
 
 
-def stash_url(url, requested_type='auto', wait=False, logger=None):
+def stash_url(url, requested_type='auto', wait=False, logger=None, group=None):
     """
     Stash a URL for download.
 
@@ -26,6 +26,7 @@ def stash_url(url, requested_type='auto', wait=False, logger=None):
         requested_type: 'auto', 'audio', or 'video'
         wait: If True, run synchronously. If False, enqueue background task.
         logger: Optional callable(message) for logging
+        group: Optional MediaGroup to assign the item to
 
     Returns:
         MediaItem: The created or reused MediaItem instance
@@ -62,6 +63,8 @@ def stash_url(url, requested_type='auto', wait=False, logger=None):
         item.requested_type = requested_type_const
         item.status = MediaItem.STATUS_PREFETCHING
         item.error_message = ''
+        if group is not None:
+            item.group = group
         item.save()
         log(f'Reusing existing item: {item.guid}')
     else:
@@ -70,6 +73,7 @@ def stash_url(url, requested_type='auto', wait=False, logger=None):
             source_url=url,
             requested_type=requested_type_const,
             slug='pending',  # Will be set during processing
+            group=group,
         )
         log(f'Created new item: {item.guid}')
 
@@ -188,3 +192,94 @@ def generate_summary_for_item(guid, logger=None):
         log('No summary generated (subtitles missing or summary disabled)')
 
     return item.summary
+
+
+def sync_group_channel(group, max_videos=None, wait=False, logger=None):
+    """
+    Check a group's YouTube channel for new uploads and stash them as audio.
+
+    A video is considered "new" when no MediaItem with its URL is already assigned
+    to this group, so re-running only picks up uploads that appeared since last time.
+    Downloaded items are attached to ``group`` and reuse the normal processing
+    pipeline via ``stash_url``.
+
+    Args:
+        group: MediaGroup instance (must have youtube_channel_url set)
+        max_videos: How many of the most recent uploads to consider. Defaults to
+            settings.STASHCAST_YOUTUBE_SYNC_MAX_VIDEOS.
+        wait: If True, download synchronously (used by CLI); otherwise enqueue.
+        logger: Optional callable(message) for logging
+
+    Returns:
+        list[MediaItem]: The newly stashed items (empty if nothing new).
+    """
+    from django.conf import settings
+    from django.utils import timezone
+
+    from media.service.youtube_channel import list_channel_videos
+
+    def log(message):
+        if logger:
+            logger(message)
+
+    if not group.youtube_channel_url:
+        log(f'Group "{group.name}" has no YouTube channel configured; skipping')
+        return []
+
+    if max_videos is None:
+        max_videos = settings.STASHCAST_YOUTUBE_SYNC_MAX_VIDEOS
+
+    log(f'Syncing group "{group.name}" from {group.youtube_channel_url}')
+    videos = list_channel_videos(group.youtube_channel_url, max_videos=max_videos, logger=logger)
+
+    new_items = []
+    for video in videos:
+        already_present = MediaItem.objects.filter(
+            source_url=video.url, group=group
+        ).exists()
+        if already_present:
+            continue
+        log(f'New upload: {video.title or video.url}')
+        item = stash_url(
+            video.url,
+            requested_type='audio',
+            wait=wait,
+            logger=logger,
+            group=group,
+        )
+        new_items.append(item)
+
+    group.youtube_last_synced_at = timezone.now()
+    group.save(update_fields=['youtube_last_synced_at'])
+
+    log(f'Group "{group.name}": {len(new_items)} new upload(s) stashed')
+    return new_items
+
+
+def sync_all_youtube_channels(wait=False, logger=None):
+    """
+    Sync every group that has a YouTube channel configured.
+
+    Args:
+        wait: If True, download synchronously; otherwise enqueue background tasks.
+        logger: Optional callable(message) for logging
+
+    Returns:
+        list[MediaItem]: All newly stashed items across all groups.
+    """
+    from media.models import MediaGroup
+
+    def log(message):
+        if logger:
+            logger(message)
+
+    groups = MediaGroup.objects.exclude(youtube_channel_url='')
+    log(f'Checking {groups.count()} group(s) with a YouTube channel')
+
+    stashed = []
+    for group in groups:
+        try:
+            stashed.extend(sync_group_channel(group, wait=wait, logger=logger))
+        except Exception as e:
+            log(f'Failed to sync group "{group.name}": {e}')
+    return stashed

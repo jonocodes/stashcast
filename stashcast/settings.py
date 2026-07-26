@@ -339,6 +339,17 @@ STASHCAST_ACCEPT_FIRST_MATCH = os.environ.get('STASHCAST_ACCEPT_FIRST_MATCH', ''
 # 0 or unset = unlimited
 STASHCAST_MAX_EPISODES = int(os.environ.get('STASHCAST_MAX_EPISODES', '0'))
 
+# YouTube channel auto-sync
+# Groups with a youtube_channel_url are periodically checked for new uploads,
+# which are downloaded as audio into that group by the sync_youtube_channels task.
+# Interval in hours between checks (clamped to 1..23). Default: every 3 hours.
+STASHCAST_YOUTUBE_SYNC_HOURS = int(os.environ.get('STASHCAST_YOUTUBE_SYNC_HOURS', '3'))
+# How many of the most recent uploads to consider per check. Bounds the first-run
+# back-catalogue and keeps each check cheap. Default: 5.
+STASHCAST_YOUTUBE_SYNC_MAX_VIDEOS = int(
+    os.environ.get('STASHCAST_YOUTUBE_SYNC_MAX_VIDEOS', '5')
+)
+
 # Ensure media directories exist
 os.makedirs(STASHCAST_MEDIA_DIR, exist_ok=True)
 

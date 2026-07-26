@@ -70,22 +70,63 @@ class DemoReadOnlyAdminMixin:
             actions.pop('regenerate_summaries', None)
             actions.pop('archive_items', None)
             actions.pop('unarchive_items', None)
+            actions.pop('sync_youtube_now', None)
         return actions
 
 
 @admin.register(MediaGroup)
 class MediaGroupAdmin(UnfoldModelAdmin, DemoReadOnlyAdminMixin):
-    list_display = ['image_thumbnail', 'name', 'slug', 'item_count_display', 'created_at']
+    list_display = [
+        'image_thumbnail',
+        'name',
+        'slug',
+        'item_count_display',
+        'youtube_sync_display',
+        'created_at',
+    ]
     list_display_links = ['name']
     search_fields = ['name', 'slug']
     prepopulated_fields = {'slug': ('name',)}
-    readonly_fields = ['created_at', 'image_preview']
-    fields = ['name', 'slug', 'image', 'image_preview', 'created_at']
+    readonly_fields = ['created_at', 'image_preview', 'youtube_last_synced_at']
+    fields = [
+        'name',
+        'slug',
+        'image',
+        'image_preview',
+        'youtube_channel_url',
+        'youtube_last_synced_at',
+        'created_at',
+    ]
+    actions = ['sync_youtube_now']
 
     def item_count_display(self, obj):
         return obj.items.count()
 
     item_count_display.short_description = 'Items'
+
+    def youtube_sync_display(self, obj):
+        if not obj.youtube_channel_url:
+            return '—'
+        last = obj.youtube_last_synced_at
+        return format_html(
+            '<span title="{}">▶ {}</span>',
+            obj.youtube_channel_url,
+            last.strftime('%Y-%m-%d %H:%M') if last else 'never synced',
+        )
+
+    youtube_sync_display.short_description = 'YouTube sync'
+
+    def sync_youtube_now(self, request, queryset):
+        if is_demo_readonly(request.user):
+            raise PermissionDenied('Demo users are not allowed to sync channels.')
+        from media.operations import sync_group_channel
+
+        total = 0
+        for group in queryset.exclude(youtube_channel_url=''):
+            total += len(sync_group_channel(group))
+        self.message_user(request, f'Enqueued {total} new YouTube upload(s) for download.')
+
+    sync_youtube_now.short_description = 'Sync YouTube channel now'
 
     def image_thumbnail(self, obj):
         url = build_group_image_url(obj)

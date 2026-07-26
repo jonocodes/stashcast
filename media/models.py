@@ -27,6 +27,19 @@ class MediaGroup(models.Model):
         null=True,
         help_text='Optional cover image shown as <image> in this group\'s RSS feed.',
     )
+    youtube_channel_url = models.URLField(
+        max_length=2048,
+        blank=True,
+        help_text=(
+            'Optional YouTube channel URL (e.g. https://www.youtube.com/@name). '
+            'New uploads are periodically downloaded as audio into this group.'
+        ),
+    )
+    youtube_last_synced_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='When this group was last checked for new YouTube uploads.',
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

@@ -5,7 +5,8 @@ from typing import List
 
 from django.conf import settings
 from django.utils import timezone
-from huey.contrib.djhuey import db_task
+from huey import crontab
+from huey.contrib.djhuey import db_periodic_task, db_task
 
 from media.models import MediaItem
 from media.processing import (
@@ -612,3 +613,28 @@ def process_media_batch(guids: List[str]):
                 shutil.rmtree(batch_tmp_dir)
         except Exception as e:
             write_log(batch_log_path, f'Failed to clean up: {e}')
+
+
+def _youtube_sync_crontab():
+    """Build the crontab schedule for the channel-sync task from settings.
+
+    Runs at minute 0, every N hours (STASHCAST_YOUTUBE_SYNC_HOURS). N is clamped
+    to 1..23 so the ``*/N`` hour expression stays valid.
+    """
+    hours = getattr(settings, 'STASHCAST_YOUTUBE_SYNC_HOURS', 3)
+    hours = max(1, min(23, int(hours)))
+    return crontab(minute='0', hour=f'*/{hours}')
+
+
+@db_periodic_task(_youtube_sync_crontab())
+def sync_youtube_channels():
+    """
+    Periodic task: check every group's YouTube channel for new uploads.
+
+    New uploads are downloaded as audio and assigned to the group they came from,
+    reusing the standard processing pipeline (each new item enqueues process_media).
+    Scheduled via STASHCAST_YOUTUBE_SYNC_HOURS (default: every 3 hours).
+    """
+    from media.operations import sync_all_youtube_channels
+
+    sync_all_youtube_channels(wait=False)
