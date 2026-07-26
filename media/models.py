@@ -56,6 +56,12 @@ class MediaGroup(models.Model):
     def item_count(self):
         return self.items.filter(status=MediaItem.STATUS_READY).count()
 
+    def get_feed_image_url(self, request=None):
+        """Served URL of this group's cover image, or None when unset."""
+        from media.utils import build_group_image_url
+
+        return build_group_image_url(self, request=request)
+
 
 class MediaItem(models.Model):
     """Media item downloaded via yt-dlp or direct HTTP"""

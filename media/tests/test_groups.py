@@ -186,6 +186,18 @@ class FeedLinksGroupsTest(TestCase):
         response = self.client.get('/admin/tools/feeds/')
         self.assertContains(response, 'No groups yet')
 
+    def test_feed_links_shows_group_cover_image(self):
+        group = MediaGroup.objects.create(name='Kuchnia')
+        group.image = 'group-images/kuchnia.png'
+        group.save(update_fields=['image'])
+        response = self.client.get('/admin/tools/feeds/')
+        self.assertContains(response, 'group-images/kuchnia.png')
+
+    def test_feed_links_falls_back_to_default_image(self):
+        MediaGroup.objects.create(name='Bezobrazkowa')
+        response = self.client.get('/admin/tools/feeds/')
+        self.assertContains(response, 'feed-combined.png')
+
 
 class StashFormGroupTest(TestCase):
     def setUp(self):

@@ -306,7 +306,7 @@
     {% if groups %}
         {% for group in groups %}
         <div class="feed-card">
-            <img src="{% static 'media/feed-combined.png' %}" alt="{% trans 'Group feed' %}">
+            <img src="{% if group.get_feed_image_url %}{{ group.get_feed_image_url }}{% else %}{% static 'media/feed-combined.png' %}{% endif %}" alt="{% trans 'Group feed' %}"{% if group.get_feed_image_url %} style="object-fit: cover;"{% endif %}>
             <div class="feed-card-content">
                 <h3>📁 {{ group.name }}</h3>
                 <p style="margin: 0 0 10px 0; color: var(--sc-muted); font-size: 14px;">
