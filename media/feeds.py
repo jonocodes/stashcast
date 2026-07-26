@@ -7,7 +7,7 @@ from django.utils import timezone
 from django.utils.feedgenerator import Rss201rev2Feed
 
 from media.models import MediaGroup, MediaItem
-from media.utils import build_media_url
+from media.utils import build_group_image_url, build_media_url
 
 
 class StashcastRSSFeed(Rss201rev2Feed):
@@ -309,13 +309,25 @@ class GroupFeed(BaseFeed):
         return get_object_or_404(MediaGroup, slug=slug)
 
     def title(self, obj):
-        return f'StashCast — {obj.name}'
+        # Group feeds use the bare group name (no "StashCast —" prefix).
+        return obj.name
 
     def description(self, obj):
         return f'Downloaded media in the "{obj.name}" group'
 
     def link(self, obj):
         return f'/feeds/group/{obj.slug}.xml'
+
+    def _build_feed_image(self, obj=None):
+        """Prefer the group's own cover image; fall back to the default logo."""
+        image_url = build_group_image_url(obj, absolute_builder=self.absolute_url)
+        if image_url:
+            return {
+                'url': image_url,
+                'title': self._get_dynamic_attr('title', obj),
+                'link': self.feed_url(obj),
+            }
+        return super()._build_feed_image(obj)
 
     def get_queryset(self, obj=None):
         qs = MediaItem.objects.filter(status=MediaItem.STATUS_READY)

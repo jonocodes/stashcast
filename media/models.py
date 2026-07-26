@@ -21,6 +21,12 @@ class MediaGroup(models.Model):
 
     name = models.CharField(max_length=100, unique=True)
     slug = models.SlugField(max_length=120, unique=True, blank=True, db_index=True)
+    image = models.ImageField(
+        upload_to='group-images',
+        blank=True,
+        null=True,
+        help_text='Optional cover image shown as <image> in this group\'s RSS feed.',
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

@@ -111,6 +111,35 @@ def build_media_url(item, filename, request=None, absolute_builder=None):
     return url
 
 
+def build_group_image_url(group, request=None, absolute_builder=None):
+    """
+    Build a served URL for a group's cover image, honoring STASHCAST_MEDIA_BASE_URL.
+
+    Mirrors :func:`build_media_url`: uploaded group images live under MEDIA_ROOT and
+    are served through the same ``/media/files/`` route (or the CDN base URL).
+
+    Returns:
+        str | None
+    """
+    if not group or not getattr(group, 'image', None):
+        return None
+
+    rel_path = group.image.name
+    if not rel_path:
+        return None
+
+    base_url = settings.STASHCAST_MEDIA_BASE_URL
+    if base_url:
+        return f'{base_url.rstrip("/")}/{rel_path}'
+
+    url = f'/media/files/{rel_path}'
+    if absolute_builder:
+        return absolute_builder(url)
+    if request:
+        return request.build_absolute_uri(url)
+    return url
+
+
 def select_existing_item(source_url, webpage_url, media_type, exclude_guid=None):
     """
     Locate an existing MediaItem for slug reuse.

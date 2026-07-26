@@ -8,9 +8,10 @@ RSS feeds, the feed-links listing, and group selection on the stash form.
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
-from django.test import Client, TestCase
+from django.test import Client, TestCase, override_settings
 
 from media.models import MediaGroup, MediaItem
+from media.utils import build_group_image_url
 
 User = get_user_model()
 
@@ -62,6 +63,29 @@ class MediaGroupModelTest(TestCase):
         self.assertIsNone(item.group)
 
 
+class GroupImageUrlTest(TestCase):
+    def test_no_image_returns_none(self):
+        group = MediaGroup.objects.create(name='Lekcje')
+        self.assertIsNone(build_group_image_url(group))
+
+    @override_settings(STASHCAST_MEDIA_BASE_URL=None)
+    def test_local_serving_url(self):
+        group = MediaGroup.objects.create(name='Lekcje')
+        group.image = 'group-images/cover.png'
+        self.assertEqual(
+            build_group_image_url(group), '/media/files/group-images/cover.png'
+        )
+
+    @override_settings(STASHCAST_MEDIA_BASE_URL='https://cdn.example.com/')
+    def test_cdn_base_url(self):
+        group = MediaGroup.objects.create(name='Lekcje')
+        group.image = 'group-images/cover.png'
+        self.assertEqual(
+            build_group_image_url(group),
+            'https://cdn.example.com/group-images/cover.png',
+        )
+
+
 class GroupFilterViewTest(TestCase):
     def setUp(self):
         self.client = Client()
@@ -109,10 +133,28 @@ class GroupFeedTest(TestCase):
         self.assertNotIn('Other Video', body)
         self.assertNotIn('Ungrouped Video', body)
 
-    def test_group_feed_title(self):
+    def test_group_feed_title_has_no_stashcast_prefix(self):
         response = self.client.get('/feeds/group/lekcje.xml')
-        self.assertIn('StashCast', response.content.decode())
-        self.assertIn('Lekcje', response.content.decode())
+        body = response.content.decode()
+        # Channel title is the bare group name, without the "StashCast —" prefix.
+        self.assertIn('<title>Lekcje</title>', body)
+        self.assertNotIn('StashCast — Lekcje', body)
+
+    def test_group_feed_uses_default_image_without_custom_image(self):
+        response = self.client.get('/feeds/group/lekcje.xml')
+        body = response.content.decode()
+        self.assertIn('<image>', body)
+        self.assertIn('feed-combined.png', body)
+
+    def test_group_feed_uses_custom_image_when_set(self):
+        # Assigning a name string sets the file reference without touching storage.
+        self.lekcje.image = 'group-images/lekcje-cover.png'
+        self.lekcje.save(update_fields=['image'])
+        response = self.client.get('/feeds/group/lekcje.xml')
+        body = response.content.decode()
+        self.assertIn('<image>', body)
+        self.assertIn('group-images/lekcje-cover.png', body)
+        self.assertNotIn('feed-combined.png', body)
 
     def test_unknown_group_feed_returns_404(self):
         response = self.client.get('/feeds/group/does-not-exist.xml')

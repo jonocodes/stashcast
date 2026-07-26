@@ -336,7 +336,9 @@ STASHCAST_MAX_EPISODES = int(os.environ.get('STASHCAST_MAX_EPISODES', '0'))
 os.makedirs(STASHCAST_MEDIA_DIR, exist_ok=True)
 
 # Media files configuration
-MEDIA_URL = '/media/'
+# Served (and uploaded files linked) under /media/files/ to match the dev static
+# route below and build_media_url(); overridable via STASHCAST_MEDIA_BASE_URL (CDN).
+MEDIA_URL = '/media/files/'
 MEDIA_ROOT = STASHCAST_MEDIA_DIR
 
 # Huey configuration (SQLite backend)

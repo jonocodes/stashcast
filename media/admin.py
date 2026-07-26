@@ -7,6 +7,7 @@ from unfold.admin import ModelAdmin as UnfoldModelAdmin
 
 from media.models import MediaGroup, MediaItem
 from media.tasks import generate_summary, process_media
+from media.utils import build_group_image_url
 
 DEMO_GROUP = 'DemoReadOnly'
 
@@ -74,15 +75,41 @@ class DemoReadOnlyAdminMixin:
 
 @admin.register(MediaGroup)
 class MediaGroupAdmin(UnfoldModelAdmin, DemoReadOnlyAdminMixin):
-    list_display = ['name', 'slug', 'item_count_display', 'created_at']
+    list_display = ['image_thumbnail', 'name', 'slug', 'item_count_display', 'created_at']
+    list_display_links = ['name']
     search_fields = ['name', 'slug']
     prepopulated_fields = {'slug': ('name',)}
-    readonly_fields = ['created_at']
+    readonly_fields = ['created_at', 'image_preview']
+    fields = ['name', 'slug', 'image', 'image_preview', 'created_at']
 
     def item_count_display(self, obj):
         return obj.items.count()
 
     item_count_display.short_description = 'Items'
+
+    def image_thumbnail(self, obj):
+        url = build_group_image_url(obj)
+        if url:
+            return format_html(
+                '<img src="{}" style="height: 40px; width: 40px; '
+                'object-fit: cover; border-radius: 4px;">',
+                url,
+            )
+        return '—'
+
+    image_thumbnail.short_description = 'Image'
+
+    def image_preview(self, obj):
+        url = build_group_image_url(obj)
+        if url:
+            return format_html(
+                '<img src="{}" style="max-height: 200px; max-width: 100%; '
+                'border-radius: 6px;">',
+                url,
+            )
+        return 'No image uploaded'
+
+    image_preview.short_description = 'Image preview'
 
 
 @admin.register(MediaItem)
