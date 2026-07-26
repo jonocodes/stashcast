@@ -217,6 +217,12 @@ USE_TZ = True
 # This will be used to download subtitles/transcripts in the configured language
 STASHCAST_SUBTITLE_LANGUAGE = LANGUAGE_CODE.split('-')[0]
 
+# Download subtitles for video
+STASHCAST_WRITE_SUBTITLES = env.bool('STASHCAST_WRITE_SUBTITLES', default=True)
+
+# Download automation subtitles for video
+STASHCAST_WRITE_AUTOMATION_SUBTITLES = env.bool('STASHCAST_WRITE_AUTOMATION_SUBTITLES', default=True)
+
 # Validate that the configured language is supported
 SUPPORTED_LANGUAGE_CODES = [code for code, name in LANGUAGES]
 # Allow both primary codes (e.g., 'en') and regional variants (e.g., 'en-us')
@@ -276,12 +282,16 @@ STASHCAST_DEFAULT_YTDLP_ARGS_AUDIO = os.environ.get(
 # Format filter: prefer best video ≤720p + best audio, fallback to combined format ≤720p
 # Metadata is embedded, subtitles converted to VTT and embedded
 # Note: --embed-thumbnail and --convert-thumbnails removed (see audio args comment above)
+STASHCAST_CONVERT_SUBS = ''
+if STASHCAST_WRITE_SUBTITLES or STASHCAST_WRITE_AUTOMATION_SUBTITLES:
+    STASHCAST_CONVERT_SUBS = '--convert-subs vtt --embed-subs '
+
 STASHCAST_DEFAULT_YTDLP_ARGS_VIDEO = os.environ.get(
     'STASHCAST_DEFAULT_YTDLP_ARGS_VIDEO',
     '--format "bv*[height<=720][vcodec^=avc]+ba/b[height<=720]" '
     '--merge-output-format mp4 '
     '--embed-metadata '
-    '--convert-subs vtt --embed-subs',
+    STASHCAST_CONVERT_SUBS
 )
 
 # FFmpeg args for transcoding (if needed)

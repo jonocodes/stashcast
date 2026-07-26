@@ -209,6 +209,12 @@ LOCALE_PATHS = [
 
 # Subtitle language for yt-dlp (derived from LANGUAGE_CODE)
 STASHCAST_SUBTITLE_LANGUAGE = LANGUAGE_CODE.split('-')[0]
+
+# Download subtitles for video
+STASHCAST_WRITE_SUBTITLES = env.bool('STASHCAST_WRITE_SUBTITLES', default=True)
+
+# Download automation subtitles for video
+STASHCAST_WRITE_AUTOMATION_SUBTITLES = env.bool('STASHCAST_WRITE_AUTOMATION_SUBTITLES', default=True)
 ```
 
 ### yt-dlp Integration

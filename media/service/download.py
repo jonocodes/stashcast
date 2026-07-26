@@ -238,8 +238,8 @@ def _download_ytdlp_inner(url, resolved_type, temp_dir, ytdlp_extra_args='', log
         'format': format_spec,
         'outtmpl': str(temp_output),
         'writethumbnail': True,
-        'writesubtitles': True,
-        'writeautomaticsub': True,
+        'writesubtitles': settings.STASHCAST_WRITE_SUBTITLES,
+        'writeautomaticsub': settings.STASHCAST_WRITE_AUTOMATION_SUBTITLES,
         'subtitleslangs': [settings.STASHCAST_SUBTITLE_LANGUAGE],
         # Note: noplaylist removed to allow multi-item downloads
         # Multi-item handling is done at prefetch stage with --allow-multiple flag
@@ -519,8 +519,8 @@ def download_ytdlp_batch(
         'format': format_spec,
         'outtmpl': str(temp_dir / '%(id)s' / 'download.%(ext)s'),
         'writethumbnail': True,
-        'writesubtitles': True,
-        'writeautomaticsub': True,
+        'writesubtitles': settings.STASHCAST_WRITE_SUBTITLES,
+        'writeautomaticsub': settings.STASHCAST_WRITE_AUTOMATION_SUBTITLES,
         'subtitleslangs': [settings.STASHCAST_SUBTITLE_LANGUAGE],
         'quiet': not logger,
         'ignoreerrors': True,
