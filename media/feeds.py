@@ -1,11 +1,12 @@
 from django.conf import settings
 from django.contrib.syndication.views import Feed
 from django.http import HttpResponseForbidden
+from django.shortcuts import get_object_or_404
 from django.templatetags.static import static
 from django.utils import timezone
 from django.utils.feedgenerator import Rss201rev2Feed
 
-from media.models import MediaItem
+from media.models import MediaGroup, MediaItem
 from media.utils import build_media_url
 
 
@@ -90,8 +91,10 @@ class BaseFeed(Feed):
 
         # Store request so we can build absolute URLs everywhere
         self.request = request
-        # Precompute absolute link for the channel
-        self.absolute_link = request.build_absolute_uri(self.link)
+        # Precompute absolute link for the channel. Object-based feeds (e.g. group
+        # feeds) expose ``link`` as a method resolved per-object, so skip here.
+        link = self.link
+        self.absolute_link = None if callable(link) else request.build_absolute_uri(link)
         response = super().__call__(request, *args, **kwargs)
 
         # If ?view=1 is present, force browser to display XML instead of downloading
@@ -110,26 +113,27 @@ class BaseFeed(Feed):
             return self.request.build_absolute_uri(url)
         return url
 
-    def feed_url(self):
-        """Ensure channel link is absolute."""
+    def feed_url(self, obj=None):
+        """Ensure channel link is absolute (works for object-based feeds too)."""
         if self.absolute_link:
             return self.absolute_link
-        return self.absolute_url(self.link)
+        link = self._get_dynamic_attr('link', obj)
+        return self.absolute_url(link)
 
     def feed_pubdate(self):
         """Use current time for lastBuildDate/pubDate."""
         return timezone.now()
 
-    def get_queryset(self):
+    def get_queryset(self, obj=None):
         """Base queryset for feed items; subclasses can further filter."""
         return MediaItem.objects.filter(status=MediaItem.STATUS_READY)
 
     def feed_extra_kwargs(self, obj):
         extra = super().feed_extra_kwargs(obj) or {}
         if self.logo_filename:
-            extra['image'] = self._build_feed_image()
+            extra['image'] = self._build_feed_image(obj)
         # Use the most recent updated_at from all items
-        items = self.get_queryset()
+        items = self.get_queryset(obj)
         latest_item = items.order_by('-updated_at').first()
         if latest_item and latest_item.updated_at:
             extra['lastBuildDate'] = latest_item.updated_at
@@ -153,13 +157,13 @@ class BaseFeed(Feed):
                 return latest
         return timezone.now()
 
-    def _build_feed_image(self):
+    def _build_feed_image(self, obj=None):
         """Return dict for RSS image element with absolute URL."""
         rel_url = static(f'media/{self.logo_filename}')
         return {
             'url': self.absolute_url(rel_url),
-            'title': self.title,
-            'link': self.feed_url(),
+            'title': self._get_dynamic_attr('title', obj),
+            'link': self.feed_url(obj),
         }
 
     def item_extra_kwargs(self, item):
@@ -242,7 +246,7 @@ class AudioFeed(BaseFeed):
     def items(self):
         return self.get_queryset().order_by('-publish_date', '-downloaded_at')[:100]
 
-    def get_queryset(self):
+    def get_queryset(self, obj=None):
         return MediaItem.objects.filter(
             media_type=MediaItem.MEDIA_TYPE_AUDIO, status=MediaItem.STATUS_READY
         )
@@ -259,7 +263,7 @@ class VideoFeed(BaseFeed):
     def items(self):
         return self.get_queryset().order_by('-publish_date', '-downloaded_at')[:100]
 
-    def get_queryset(self):
+    def get_queryset(self, obj=None):
         return MediaItem.objects.filter(
             media_type=MediaItem.MEDIA_TYPE_VIDEO, status=MediaItem.STATUS_READY
         )
@@ -285,8 +289,39 @@ class ArchiveFeed(BaseFeed):
     description = 'Archived audio and video content'
     logo_filename = 'feed-archive.png'
 
-    def get_queryset(self):
+    def get_queryset(self, obj=None):
         return MediaItem.objects.filter(status=MediaItem.STATUS_ARCHIVED)
 
     def items(self):
         return self.get_queryset().order_by('-archived_at', '-publish_date')[:100]
+
+
+class GroupFeed(BaseFeed):
+    """Podcast feed for a single user-defined group.
+
+    Resolved per-request from the group slug so every group gets its own
+    subscribable XML feed at /feeds/group/<slug>.xml.
+    """
+
+    logo_filename = 'feed-combined.png'
+
+    def get_object(self, request, slug):
+        return get_object_or_404(MediaGroup, slug=slug)
+
+    def title(self, obj):
+        return f'StashCast — {obj.name}'
+
+    def description(self, obj):
+        return f'Downloaded media in the "{obj.name}" group'
+
+    def link(self, obj):
+        return f'/feeds/group/{obj.slug}.xml'
+
+    def get_queryset(self, obj=None):
+        qs = MediaItem.objects.filter(status=MediaItem.STATUS_READY)
+        if obj is not None:
+            qs = qs.filter(group=obj)
+        return qs
+
+    def items(self, obj):
+        return self.get_queryset(obj).order_by('-publish_date', '-downloaded_at')[:100]

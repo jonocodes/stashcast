@@ -191,7 +191,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 
-# Language code from environment variable (e.g., 'en', 'en-us', 'es')
+# Language code from environment variable (e.g., 'en', 'en-us', 'es', 'pl')
 # This sets the UI language and the language for video subtitles/transcripts
 LANGUAGE_CODE = os.environ.get('LANGUAGE_CODE', 'en-us')
 
@@ -200,6 +200,7 @@ LANGUAGES = [
     ('en', 'English'),
     ('es', 'Español'),
     ('pt', 'Português'),
+    ('pl', 'Polski'),
 ]
 
 # Path to translation files
@@ -291,7 +292,7 @@ STASHCAST_DEFAULT_YTDLP_ARGS_VIDEO = os.environ.get(
     '--format "bv*[height<=720][vcodec^=avc]+ba/b[height<=720]" '
     '--merge-output-format mp4 '
     '--embed-metadata '
-    STASHCAST_CONVERT_SUBS
+    + STASHCAST_CONVERT_SUBS
 )
 
 # FFmpeg args for transcoding (if needed)

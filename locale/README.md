@@ -14,6 +14,14 @@ locale/
 │   └── LC_MESSAGES/
 │       ├── django.po
 │       └── django.mo
+├── pt/              # Portuguese
+│   └── LC_MESSAGES/
+│       ├── django.po
+│       └── django.mo
+├── pl/              # Polish
+│   └── LC_MESSAGES/
+│       ├── django.po
+│       └── django.mo
 └── ...              # Other languages
 ```
 
@@ -28,6 +36,7 @@ python manage.py makemessages -l <language_code>
 Examples:
 ```bash
 python manage.py makemessages -l es  # Spanish
+python manage.py makemessages -l pl  # Polish
 python manage.py makemessages -l fr  # French
 ```
 

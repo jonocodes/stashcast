@@ -210,14 +210,23 @@
                 <option value="video" {% if media_type_filter == 'video' %}selected{% endif %}>{% trans "Video" %}</option>
             </select>
 
+            <label for="group">{% trans "Group:" %}</label>
+            <select name="group" id="group" onchange="this.form.submit()">
+                <option value="all" {% if group_filter == 'all' %}selected{% endif %}>{% trans "All" %}</option>
+                <option value="none" {% if group_filter == 'none' %}selected{% endif %}>{% trans "Ungrouped" %}</option>
+                {% for group in groups %}
+                    <option value="{{ group.slug }}" {% if group_filter == group.slug %}selected{% endif %}>{{ group.name }}</option>
+                {% endfor %}
+            </select>
+
             <div class="storage-info">
                 {% trans "Total Storage:" %} {{ total_storage_bytes|filesize }}
             </div>
         </form>
 
         <div class="view-switcher">
-            <a href="{% url 'grid_view' %}?type={{ media_type_filter }}" class="active">{% trans "Grid" %}</a>
-            <a href="{% url 'list_view' %}?type={{ media_type_filter }}">{% trans "List" %}</a>
+            <a href="{% url 'grid_view' %}?type={{ media_type_filter }}&group={{ group_filter }}" class="active">{% trans "Grid" %}</a>
+            <a href="{% url 'list_view' %}?type={{ media_type_filter }}&group={{ group_filter }}">{% trans "List" %}</a>
         </div>
     </div>
 
@@ -253,6 +262,9 @@
                     {% endif %}
                     {% if data.item.author %}
                         <span>{{ data.item.author }}</span>
+                    {% endif %}
+                    {% if data.item.group %}
+                        <span title="{% trans 'Group' %}">📁 {{ data.item.group.name }}</span>
                     {% endif %}
                 </div>
             </div>

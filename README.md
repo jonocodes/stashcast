@@ -110,7 +110,7 @@ cp .env.example .env
 # - STASHCAST_DATA_DIR (base path; media is stored in STASHCAST_DATA_DIR/media)
 # - STASHCAST_USER_TOKEN
 # - LANGUAGE_CODE (optional, default: 'en-us'. Sets UI language and video subtitle language)
-#   Supported: 'en' (English), 'es' (Spanish), 'pt' (Portuguese)
+#   Supported: 'en' (English), 'es' (Spanish), 'pt' (Portuguese), 'pl' (Polish)
 ```
 
 ### 3. Download the dependencies and setup the db
@@ -375,6 +375,9 @@ See `.env.example` for all available configuration options.
 - `STASHCAST_DEFAULT_FFMPEG_ARGS_VIDEO`: Default ffmpeg arguments for video
 - `STASHCAST_SLUG_MAX_WORDS`: Max words in slug (default: 6)
 - `STASHCAST_SLUG_MAX_CHARS`: Max characters in slug (default: 40)
+- `STASHCAST_WRITE_SUBTITLES`: Download subtitles for video (default: True)
+- `STASHCAST_WRITE_AUTOMATION_SUBTITLES`: Download automation subtitles for video (default: True)
+
 
 ## Development
 

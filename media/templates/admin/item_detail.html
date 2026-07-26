@@ -234,6 +234,11 @@
             <div><strong>{% trans "Duration:" %}</strong> {{ item.duration_seconds|duration }}</div>
         {% endif %}
         <div><strong>{% trans "Type:" %}</strong> {{ item.media_type|title }}</div>
+        {% if item.group %}
+            <div><strong>{% trans "Group:" %}</strong>
+                <a href="{% url 'list_view' %}?group={{ item.group.slug }}">📁 {{ item.group.name }}</a>
+            </div>
+        {% endif %}
     </div>
 
     {% if item.has_error %}

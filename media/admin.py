@@ -5,7 +5,7 @@ from django.utils import timezone
 from django.utils.html import format_html, mark_safe
 from unfold.admin import ModelAdmin as UnfoldModelAdmin
 
-from media.models import MediaItem
+from media.models import MediaGroup, MediaItem
 from media.tasks import generate_summary, process_media
 
 DEMO_GROUP = 'DemoReadOnly'
@@ -72,12 +72,26 @@ class DemoReadOnlyAdminMixin:
         return actions
 
 
+@admin.register(MediaGroup)
+class MediaGroupAdmin(UnfoldModelAdmin, DemoReadOnlyAdminMixin):
+    list_display = ['name', 'slug', 'item_count_display', 'created_at']
+    search_fields = ['name', 'slug']
+    prepopulated_fields = {'slug': ('name',)}
+    readonly_fields = ['created_at']
+
+    def item_count_display(self, obj):
+        return obj.items.count()
+
+    item_count_display.short_description = 'Items'
+
+
 @admin.register(MediaItem)
 class MediaItemAdmin(UnfoldModelAdmin, DemoReadOnlyAdminMixin):
     list_display = [
         'title',
         'action_links',
         'media_type',
+        'group',
         'status',
         # 'author',
         # 'publish_date',
@@ -88,10 +102,15 @@ class MediaItemAdmin(UnfoldModelAdmin, DemoReadOnlyAdminMixin):
     list_filter = [
         'status',
         'media_type',
+        'group',
         'requested_type',
         'created_at',
         'downloaded_at',
     ]
+
+    list_select_related = ['group']
+
+    autocomplete_fields = ['group']
 
     search_fields = [
         'title',
@@ -113,7 +132,7 @@ class MediaItemAdmin(UnfoldModelAdmin, DemoReadOnlyAdminMixin):
 
     fieldsets = [
         ('Identification', {'fields': ['guid', 'slug', 'source_url']}),
-        ('Status', {'fields': ['status', 'error_message']}),
+        ('Status', {'fields': ['status', 'group', 'error_message']}),
         (
             'Media Info',
             {

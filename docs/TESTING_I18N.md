@@ -35,6 +35,10 @@ LANGUAGE_CODE=en-us python manage.py check
 LANGUAGE_CODE=es python manage.py check
 # Expected: No errors
 
+# Test Polish
+LANGUAGE_CODE=pl python manage.py check
+# Expected: No errors
+
 # Test French
 LANGUAGE_CODE=fr python manage.py check
 # Expected: No errors

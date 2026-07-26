@@ -1,0 +1,1002 @@
+# Polish translations for StashCast
+# Copyright (C) 2026 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-07-26 13:06+0000\n"
+"PO-Revision-Date: 2026-07-26 13:10+0000\n"
+"Last-Translator: StashCast Team\n"
+"Language-Team: Polish <LL@li.org>\n"
+"Language: pl\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=4; plural=(n==1 ? 0 : (n%10>=2 && n%10<=4) && "
+"(n%100<12 || n%100>14) ? 1 : n!=1 && (n%10>=0 && n%10<=1) || (n%10>=5 && "
+"n%10<=9) || (n%100>=12 && n%100<=14) ? 2 : 3);\n"
+
+#: media/models.py:66 media/templates/admin/item_detail.html:178
+msgid "Prefetching"
+msgstr "Pobieranie wstępne"
+
+#: media/models.py:67 media/templates/admin/item_detail.html:176
+msgid "Downloading"
+msgstr "Pobieranie"
+
+#: media/models.py:68 media/templates/admin/admin_stash_progress.html:197
+#: media/templates/admin/item_detail.html:174
+msgid "Processing"
+msgstr "Przetwarzanie"
+
+#: media/models.py:69 media/templates/admin/item_detail.html:168
+msgid "Ready"
+msgstr "Gotowe"
+
+#: media/models.py:70 media/templates/admin/item_detail.html:172
+msgid "Error"
+msgstr "Błąd"
+
+#: media/models.py:71 media/templates/admin/item_detail.html:170
+#: media/templates/admin/preferences.html:169
+msgid "Archived"
+msgstr "Zarchiwizowane"
+
+#: media/models.py:79 media/models.py:90
+#: media/templates/admin/bookmarklet.html:200
+#: media/templates/admin/grid_view.html:209
+#: media/templates/admin/grid_view.html:252
+#: media/templates/admin/list_view.html:250
+#: media/templates/admin/list_view.html:296
+#: media/templates/admin/preferences.html:161
+msgid "Audio"
+msgstr "Audio"
+
+#: media/models.py:80 media/models.py:91
+#: media/templates/admin/admin_stash_form.html:288
+#: media/templates/admin/bookmarklet.html:201
+#: media/templates/admin/grid_view.html:210
+#: media/templates/admin/grid_view.html:254
+#: media/templates/admin/list_view.html:251
+#: media/templates/admin/list_view.html:298
+#: media/templates/admin/preferences.html:165
+msgid "Video"
+msgstr "Wideo"
+
+#: media/models.py:89 media/templates/admin/bookmarklet.html:199
+msgid "Auto"
+msgstr "Automatycznie"
+
+#: media/templates/admin/admin_spotify_confirm.html:5
+msgid "Spotify"
+msgstr "Spotify"
+
+#: media/templates/admin/admin_spotify_confirm.html:5
+#: media/templates/admin/admin_spotify_confirm.html:305
+#: media/templates/admin/admin_spotify_confirm.html:312
+msgid "Select Source"
+msgstr "Wybierz źródło"
+
+#: media/templates/admin/admin_spotify_confirm.html:303
+#: media/templates/admin/admin_stash_confirm_multiple.html:170
+#: media/templates/admin/admin_stash_form.html:243
+#: media/templates/admin/admin_stash_progress.html:195
+#: media/templates/media/stash_progress.html:265
+msgid "Home"
+msgstr "Strona główna"
+
+#: media/templates/admin/admin_spotify_confirm.html:304
+#: media/templates/admin/admin_stash_confirm_multiple.html:171
+#: media/templates/admin/admin_stash_form.html:4
+#: media/templates/admin/admin_stash_form.html:244
+#: media/templates/admin/admin_stash_progress.html:196
+msgid "Add URL"
+msgstr "Dodaj URL"
+
+#: media/templates/admin/admin_spotify_confirm.html:319
+msgid "Spotify content detected"
+msgstr "Wykryto treść ze Spotify"
+
+#: media/templates/admin/admin_spotify_confirm.html:321
+msgid ""
+"Spotify audio is DRM-protected. We've searched multiple platforms for "
+"matching content."
+msgstr ""
+"Dźwięk ze Spotify jest chroniony DRM. Przeszukaliśmy wiele platform w "
+"poszukiwaniu pasujących treści."
+
+#: media/templates/admin/admin_spotify_confirm.html:338
+msgid "Search query:"
+msgstr "Zapytanie wyszukiwania:"
+
+#: media/templates/admin/admin_spotify_confirm.html:379
+msgid "min"
+msgstr "min"
+
+#: media/templates/admin/admin_spotify_confirm.html:382
+msgid "views"
+msgstr "wyświetleń"
+
+#: media/templates/admin/admin_spotify_confirm.html:396
+msgid "Or enter a custom URL"
+msgstr "Lub wprowadź własny URL"
+
+#: media/templates/admin/admin_spotify_confirm.html:403
+#: media/templates/admin/admin_spotify_confirm.html:421
+#: media/templates/admin/admin_stash_confirm_multiple.html:225
+msgid "Cancel"
+msgstr "Anuluj"
+
+#: media/templates/admin/admin_spotify_confirm.html:404
+msgid "Download Selected"
+msgstr "Pobierz wybrane"
+
+#: media/templates/admin/admin_spotify_confirm.html:409
+msgid "No results found on any platform."
+msgstr "Nie znaleziono wyników na żadnej platformie."
+
+#: media/templates/admin/admin_spotify_confirm.html:410
+msgid "You can try entering a custom URL below."
+msgstr "Możesz spróbować wprowadzić własny URL poniżej."
+
+#: media/templates/admin/admin_spotify_confirm.html:414
+msgid "Enter a custom URL"
+msgstr "Wprowadź własny URL"
+
+#: media/templates/admin/admin_spotify_confirm.html:422
+#: media/templates/admin/item_detail.html:214
+msgid "Download"
+msgstr "Pobierz"
+
+#: media/templates/admin/admin_stash_confirm_multiple.html:5
+#: media/templates/admin/admin_stash_confirm_multiple.html:179
+msgid "Confirm Download"
+msgstr "Potwierdź pobieranie"
+
+#: media/templates/admin/admin_stash_confirm_multiple.html:5
+msgid "Items"
+msgstr "Elementy"
+
+#: media/templates/admin/admin_stash_confirm_multiple.html:172
+msgid "Confirm Multiple Items"
+msgstr "Potwierdź wiele elementów"
+
+#: media/templates/admin/admin_stash_confirm_multiple.html:179
+msgid "items"
+msgstr "elementów"
+
+#: media/templates/admin/admin_stash_confirm_multiple.html:182
+msgid "Multiple items detected"
+msgstr "Wykryto wiele elementów"
+
+#: media/templates/admin/admin_stash_confirm_multiple.html:183
+#, python-format
+msgid ""
+"This URL contains multiple videos/audio files. Please confirm you want to "
+"download all %(counter)s items."
+msgstr ""
+"Ten adres URL zawiera wiele plików wideo/audio. Potwierdź, że chcesz pobrać "
+"wszystkie elementy (%(counter)s)."
+
+#: media/templates/admin/admin_stash_confirm_multiple.html:191
+msgid "Media type:"
+msgstr "Typ mediów:"
+
+#: media/templates/admin/admin_stash_confirm_multiple.html:198
+#: media/templates/admin/admin_stash_form.html:345
+#: media/templates/admin/admin_stash_progress.html:223
+#: media/templates/media/stash_progress.html:292
+msgid "Title"
+msgstr "Tytuł"
+
+#: media/templates/admin/admin_stash_confirm_multiple.html:199
+msgid "Duration"
+msgstr "Czas trwania"
+
+#: media/templates/admin/admin_stash_confirm_multiple.html:226
+#, python-format
+msgid "Download All %(counter)s Items"
+msgstr "Pobierz wszystkie elementy (%(counter)s)"
+
+#: media/templates/admin/admin_stash_form.html:251
+msgid "Add URL to StashCast"
+msgstr "Dodaj URL do StashCast"
+
+#: media/templates/admin/admin_stash_form.html:252
+msgid "Download media from any URL supported by yt-dlp or direct media links."
+msgstr ""
+"Pobieraj media z dowolnego adresu URL obsługiwanego przez yt-dlp lub z "
+"bezpośrednich linków."
+
+#: media/templates/admin/admin_stash_form.html:255
+msgid "Example URLs to try:"
+msgstr "Przykładowe adresy URL do wypróbowania:"
+
+#: media/templates/admin/admin_stash_form.html:259
+msgid "Apple Podcast:"
+msgstr "Apple Podcast:"
+
+#: media/templates/admin/admin_stash_form.html:261
+msgid "Test Server (embedded media):"
+msgstr "Serwer testowy (osadzone media):"
+
+#: media/templates/admin/admin_stash_form.html:263
+msgid "Test Server (direct media):"
+msgstr "Serwer testowy (bezpośrednie media):"
+
+#: media/templates/admin/admin_stash_form.html:265
+msgid "Direct media:"
+msgstr "Bezpośrednie media:"
+
+#: media/templates/admin/admin_stash_form.html:265
+msgid "Any URL ending in .mp3, .mp4, .m4a, etc."
+msgstr "Dowolny URL kończący się na .mp3, .mp4, .m4a itp."
+
+#: media/templates/admin/admin_stash_form.html:273
+msgid "URL"
+msgstr "URL"
+
+#: media/templates/admin/admin_stash_form.html:280
+msgid "Enter any URL supported by yt-dlp or a direct media file URL"
+msgstr ""
+"Wprowadź dowolny URL obsługiwany przez yt-dlp lub bezpośredni adres pliku "
+"multimedialnego"
+
+#: media/templates/admin/admin_stash_form.html:284
+#: media/templates/admin/admin_stash_progress.html:228
+#: media/templates/media/stash_progress.html:297
+msgid "Media Type"
+msgstr "Typ mediów"
+
+#: media/templates/admin/admin_stash_form.html:286
+msgid "Auto-detect"
+msgstr "Wykryj automatycznie"
+
+#: media/templates/admin/admin_stash_form.html:287
+msgid "Audio only"
+msgstr "Tylko audio"
+
+#: media/templates/admin/admin_stash_form.html:290
+msgid "Auto-detect will determine if the content is audio or video"
+msgstr "Automatyczne wykrywanie określi, czy treść to audio czy wideo"
+
+#: media/templates/admin/admin_stash_form.html:294
+#: media/templates/admin/grid_view.html:267
+msgid "Group"
+msgstr "Grupa"
+
+#: media/templates/admin/admin_stash_form.html:296
+msgid "— No group —"
+msgstr "— Brak grupy —"
+
+#: media/templates/admin/admin_stash_form.html:301
+msgid "Optional. Assign the download to a group, or create a new one below."
+msgstr "Opcjonalnie. Przypisz pobranie do grupy lub utwórz nową poniżej."
+
+#: media/templates/admin/admin_stash_form.html:305
+msgid "Or type a new group name (e.g. Lessons, Kitchen)"
+msgstr "Lub wpisz nazwę nowej grupy (np. Lekcje, Kuchnia)"
+
+#: media/templates/admin/admin_stash_form.html:307
+msgid ""
+"If filled in, a new group is created (or reused) and the existing selection "
+"above is ignored."
+msgstr ""
+"Jeśli pole zostanie wypełnione, zostanie utworzona (lub użyta ponownie) nowa "
+"grupa, a wybór powyżej zostanie zignorowany."
+
+#: media/templates/admin/admin_stash_form.html:315
+msgid "Advanced Options"
+msgstr "Opcje zaawansowane"
+
+#: media/templates/admin/admin_stash_form.html:316
+msgid "Single URL"
+msgstr "Pojedynczy URL"
+
+#: media/templates/admin/admin_stash_form.html:319
+msgid "Bulk Download (Multiple URLs)"
+msgstr "Pobieranie zbiorcze (wiele adresów URL)"
+
+#: media/templates/admin/admin_stash_form.html:328
+msgid ""
+"Enter one URL per line. When bulk URLs are provided, the single URL field "
+"above is ignored. Each URL will be queued as a separate download."
+msgstr ""
+"Wprowadź jeden URL w każdej linii. Gdy podano adresy zbiorcze, pole "
+"pojedynczego URL powyżej jest ignorowane. Każdy URL zostanie dodany do "
+"kolejki jako osobne pobieranie."
+
+#: media/templates/admin/admin_stash_form.html:334
+msgid "Add to StashCast"
+msgstr "Dodaj do StashCast"
+
+#: media/templates/admin/admin_stash_form.html:341
+msgid "Recent Items"
+msgstr "Ostatnie elementy"
+
+#: media/templates/admin/admin_stash_form.html:346
+msgid "Type"
+msgstr "Typ"
+
+#: media/templates/admin/admin_stash_form.html:347
+#: media/templates/admin/admin_stash_progress.html:209
+#: media/templates/admin/preferences.html:152
+#: media/templates/media/stash_progress.html:278
+msgid "Status"
+msgstr "Status"
+
+#: media/templates/admin/admin_stash_form.html:348
+msgid "Created"
+msgstr "Utworzono"
+
+#: media/templates/admin/admin_stash_form.html:349
+msgid "Actions"
+msgstr "Akcje"
+
+#: media/templates/admin/admin_stash_form.html:362
+#: media/templates/admin/preferences.html:182
+#: media/templates/admin/preferences.html:245
+msgid "ago"
+msgstr "temu"
+
+#: media/templates/admin/admin_stash_form.html:364
+msgid "View"
+msgstr "Zobacz"
+
+#: media/templates/admin/admin_stash_form.html:366
+msgid "Preview"
+msgstr "Podgląd"
+
+#: media/templates/admin/admin_stash_progress.html:5
+msgid "Processing Media - StashCast"
+msgstr "Przetwarzanie mediów - StashCast"
+
+#: media/templates/admin/admin_stash_progress.html:206
+#: media/templates/media/stash_progress.html:269
+msgid "Processing your media..."
+msgstr "Przetwarzanie Twoich mediów..."
+
+#: media/templates/admin/admin_stash_progress.html:212
+#: media/templates/media/stash_progress.html:281
+msgid "Initializing"
+msgstr "Inicjalizacja"
+
+#: media/templates/admin/admin_stash_progress.html:224
+#: media/templates/media/stash_progress.html:293
+msgid "Loading..."
+msgstr "Ładowanie..."
+
+#: media/templates/admin/admin_stash_progress.html:233
+#: media/templates/media/stash_progress.html:302
+msgid "Item ID"
+msgstr "ID elementu"
+
+#: media/templates/admin/admin_stash_progress.html:239
+#: media/templates/media/stash_progress.html:308
+msgid "Your media is ready!"
+msgstr "Twoje media są gotowe!"
+
+#: media/templates/admin/admin_stash_progress.html:242
+#: media/templates/media/stash_progress.html:312
+msgid "View Media"
+msgstr "Zobacz media"
+
+#: media/templates/admin/admin_stash_progress.html:243
+msgid "Add Another URL"
+msgstr "Dodaj kolejny URL"
+
+#: media/templates/admin/bookmarklet.html:5
+msgid "Bookmarklet Tool"
+msgstr "Narzędzie bookmarklet"
+
+#: media/templates/admin/bookmarklet.html:162
+msgid "StashCast Bookmarklet Tool"
+msgstr "Narzędzie bookmarklet StashCast"
+
+#: media/templates/admin/bookmarklet.html:165
+msgid "What is a bookmarklet?"
+msgstr "Czym jest bookmarklet?"
+
+#: media/templates/admin/bookmarklet.html:166
+msgid ""
+"A bookmarklet is a bookmark that runs JavaScript to perform actions on the "
+"current page. Drag the bookmarklet link below to your bookmarks bar, then "
+"click it on any page with media you want to download to StashCast."
+msgstr ""
+"Bookmarklet to zakładka, która uruchamia JavaScript, aby wykonać akcje na "
+"bieżącej stronie. Przeciągnij poniższy link bookmarklet na pasek zakładek, a "
+"następnie kliknij go na dowolnej stronie z mediami, które chcesz pobrać do "
+"StashCast."
+
+#: media/templates/admin/bookmarklet.html:173
+#: media/templates/admin/feed_links.html:201
+msgid "Feed Protection Enabled"
+msgstr "Ochrona kanałów włączona"
+
+#: media/templates/admin/bookmarklet.html:174
+msgid ""
+"Your RSS feeds require a user token. Feed URLs in this instance "
+"automatically include the token for privacy."
+msgstr ""
+"Twoje kanały RSS wymagają tokenu użytkownika. Adresy URL kanałów w tej "
+"instancji automatycznie zawierają token ze względów prywatności."
+
+#: media/templates/admin/bookmarklet.html:181
+msgid "Public Feeds Notice"
+msgstr "Informacja o publicznych kanałach"
+
+#: media/templates/admin/bookmarklet.html:182
+msgid ""
+"RSS feeds are currently publicly accessible. To require user tokens for "
+"feeds, set REQUIRE_USER_TOKEN_FOR_FEEDS=true in your environment "
+"configuration."
+msgstr ""
+"Kanały RSS są obecnie publicznie dostępne. Aby wymagać tokenów użytkownika "
+"dla kanałów, ustaw REQUIRE_USER_TOKEN_FOR_FEEDS=true w konfiguracji "
+"środowiska."
+
+#: media/templates/admin/bookmarklet.html:187
+msgid "1. Configure Bookmarklet"
+msgstr "1. Skonfiguruj bookmarklet"
+
+#: media/templates/admin/bookmarklet.html:191
+msgid "Base URL:"
+msgstr "Bazowy URL:"
+
+#: media/templates/admin/bookmarklet.html:193
+msgid "The base URL of your StashCast instance"
+msgstr "Bazowy adres URL Twojej instancji StashCast"
+
+#: media/templates/admin/bookmarklet.html:197
+msgid "Default Media Type:"
+msgstr "Domyślny typ mediów:"
+
+#: media/templates/admin/bookmarklet.html:203
+msgid "What type of media to download by default"
+msgstr "Jaki typ mediów pobierać domyślnie"
+
+#: media/templates/admin/bookmarklet.html:207
+msgid "Auto-close Progress Tab (seconds):"
+msgstr "Automatyczne zamknięcie karty postępu (sekundy):"
+
+#: media/templates/admin/bookmarklet.html:208
+msgid "Optional"
+msgstr "Opcjonalnie"
+
+#: media/templates/admin/bookmarklet.html:209
+msgid ""
+"Close the progress tab after the job completes; leave blank to keep it open"
+msgstr ""
+"Zamknij kartę postępu po zakończeniu zadania; pozostaw puste, aby "
+"pozostawić ją otwartą"
+
+#: media/templates/admin/bookmarklet.html:215
+msgid "Allow Multiple Items"
+msgstr "Zezwól na wiele elementów"
+
+#: media/templates/admin/bookmarklet.html:217
+msgid ""
+"If enabled, automatically download all items from playlists or pages with "
+"multiple videos. If disabled, you'll get an error prompting you to confirm "
+"in admin."
+msgstr ""
+"Jeśli włączone, automatycznie pobiera wszystkie elementy z playlist lub "
+"stron z wieloma filmami. Jeśli wyłączone, otrzymasz błąd z prośbą o "
+"potwierdzenie w panelu administracyjnym."
+
+#: media/templates/admin/bookmarklet.html:221
+msgid "2. Your Bookmarklet"
+msgstr "2. Twój bookmarklet"
+
+#: media/templates/admin/bookmarklet.html:224
+msgid "Installation:"
+msgstr "Instalacja:"
+
+#: media/templates/admin/bookmarklet.html:224
+msgid ""
+"Drag the button below to your bookmarks bar. If your bookmarks bar is "
+"hidden, enable it in your browser settings first."
+msgstr ""
+"Przeciągnij poniższy przycisk na pasek zakładek. Jeśli pasek zakładek jest "
+"ukryty, najpierw włącz go w ustawieniach przeglądarki."
+
+#: media/templates/admin/bookmarklet.html:228
+msgid "Stash to StashCast"
+msgstr "Zapisz do StashCast"
+
+#: media/templates/admin/bookmarklet.html:231
+msgid "3. JavaScript Code"
+msgstr "3. Kod JavaScript"
+
+#: media/templates/admin/bookmarklet.html:233
+msgid ""
+"You can also copy the JavaScript code below and create a bookmark manually:"
+msgstr ""
+"Możesz również skopiować poniższy kod JavaScript i ręcznie utworzyć zakładkę:"
+
+#: media/templates/admin/bookmarklet.html:238
+msgid "Copy Code"
+msgstr "Kopiuj kod"
+
+#: media/templates/admin/bookmarklet.html:241
+msgid "4. Test It"
+msgstr "4. Przetestuj"
+
+#: media/templates/admin/bookmarklet.html:245
+msgid "Test URL:"
+msgstr "Testowy URL:"
+
+#: media/templates/admin/bookmarklet.html:248
+msgid "Test Bookmarklet"
+msgstr "Przetestuj bookmarklet"
+
+#: media/templates/admin/feed_links.html:4
+msgid "Feed Links"
+msgstr "Linki do kanałów"
+
+#: media/templates/admin/feed_links.html:187
+msgid "RSS Feed Links"
+msgstr "Linki do kanałów RSS"
+
+#: media/templates/admin/feed_links.html:190
+msgid "Subscribe to your feeds"
+msgstr "Subskrybuj swoje kanały"
+
+#: media/templates/admin/feed_links.html:191
+msgid ""
+"Copy these URLs to subscribe in your favorite podcast app (Overcast, Pocket "
+"Casts, Apple Podcasts, etc.)."
+msgstr ""
+"Skopiuj te adresy URL, aby subskrybować w ulubionej aplikacji podcastowej "
+"(Overcast, Pocket Casts, Apple Podcasts itp.)."
+
+#: media/templates/admin/feed_links.html:193
+msgid "The URLs include your private token for secure access."
+msgstr "Adresy URL zawierają Twój prywatny token zapewniający bezpieczny dostęp."
+
+#: media/templates/admin/feed_links.html:201
+msgid ""
+"Your RSS feeds require a user token. Keep these URLs private - they grant "
+"access to your feeds."
+msgstr ""
+"Twoje kanały RSS wymagają tokenu użytkownika. Zachowaj te adresy URL w "
+"tajemnicy - dają one dostęp do Twoich kanałów."
+
+#: media/templates/admin/feed_links.html:209
+msgid "Public Feeds"
+msgstr "Publiczne kanały"
+
+#: media/templates/admin/feed_links.html:210
+msgid ""
+"RSS feeds are currently publicly accessible. To require user tokens for "
+"feeds, set"
+msgstr ""
+"Kanały RSS są obecnie publicznie dostępne. Aby wymagać tokenów użytkownika "
+"dla kanałów, ustaw"
+
+#: media/templates/admin/feed_links.html:210
+msgid "in your environment configuration."
+msgstr "w konfiguracji środowiska."
+
+#: media/templates/admin/feed_links.html:215
+msgid "Available Feeds"
+msgstr "Dostępne kanały"
+
+#: media/templates/admin/feed_links.html:218
+#: media/templates/media/home.html:206
+msgid "Audio feed"
+msgstr "Kanał audio"
+
+#: media/templates/admin/feed_links.html:220
+msgid "Audio Feed"
+msgstr "Kanał audio"
+
+#: media/templates/admin/feed_links.html:221
+msgid "Audio-only content for listening on the go"
+msgstr "Treści wyłącznie dźwiękowe do słuchania w podróży"
+
+#: media/templates/admin/feed_links.html:223
+#: media/templates/admin/feed_links.html:244
+#: media/templates/admin/feed_links.html:265
+#: media/templates/admin/feed_links.html:286
+#: media/templates/admin/feed_links.html:316
+msgid "Subscribe URL:"
+msgstr "URL subskrypcji:"
+
+#: media/templates/admin/feed_links.html:226
+#: media/templates/admin/feed_links.html:247
+#: media/templates/admin/feed_links.html:268
+#: media/templates/admin/feed_links.html:289
+#: media/templates/admin/feed_links.html:319
+msgid "Copy"
+msgstr "Kopiuj"
+
+#: media/templates/admin/feed_links.html:230
+#: media/templates/admin/feed_links.html:251
+#: media/templates/admin/feed_links.html:272
+#: media/templates/admin/feed_links.html:323
+msgid "Grid View"
+msgstr "Widok siatki"
+
+#: media/templates/admin/feed_links.html:231
+#: media/templates/admin/feed_links.html:252
+#: media/templates/admin/feed_links.html:273
+#: media/templates/admin/feed_links.html:324
+msgid "List View"
+msgstr "Widok listy"
+
+#: media/templates/admin/feed_links.html:232
+#: media/templates/admin/feed_links.html:253
+#: media/templates/admin/feed_links.html:274
+#: media/templates/admin/feed_links.html:293
+#: media/templates/admin/feed_links.html:325
+msgid "View XML"
+msgstr "Zobacz XML"
+
+#: media/templates/admin/feed_links.html:233
+#: media/templates/admin/feed_links.html:254
+#: media/templates/admin/feed_links.html:275
+#: media/templates/admin/feed_links.html:294
+#: media/templates/admin/feed_links.html:326
+msgid "Manage"
+msgstr "Zarządzaj"
+
+#: media/templates/admin/feed_links.html:239
+#: media/templates/media/home.html:209
+msgid "Video feed"
+msgstr "Kanał wideo"
+
+#: media/templates/admin/feed_links.html:241
+msgid "Video Feed"
+msgstr "Kanał wideo"
+
+#: media/templates/admin/feed_links.html:242
+msgid "Video content for watching later"
+msgstr "Treści wideo do obejrzenia później"
+
+#: media/templates/admin/feed_links.html:260
+#: media/templates/media/home.html:212
+msgid "Combined feed"
+msgstr "Kanał łączony"
+
+#: media/templates/admin/feed_links.html:262
+msgid "Combined Feed"
+msgstr "Kanał łączony"
+
+#: media/templates/admin/feed_links.html:263
+msgid "All content in one feed"
+msgstr "Wszystkie treści w jednym kanale"
+
+#: media/templates/admin/feed_links.html:281
+#: media/templates/media/home.html:215
+msgid "Archive feed"
+msgstr "Kanał archiwum"
+
+#: media/templates/admin/feed_links.html:283
+msgid "Archive Feed"
+msgstr "Kanał archiwum"
+
+#: media/templates/admin/feed_links.html:284
+msgid "Archived content for reference"
+msgstr "Zarchiwizowane treści do wglądu"
+
+#: media/templates/admin/feed_links.html:299
+msgid "Group Feeds"
+msgstr "Kanały grup"
+
+#: media/templates/admin/feed_links.html:302
+msgid "Subscribe to individual groups"
+msgstr "Subskrybuj poszczególne grupy"
+
+#: media/templates/admin/feed_links.html:303
+msgid ""
+"Each group has its own feed containing only the media assigned to it. "
+"Subscribe to just the groups you want instead of everything at once."
+msgstr ""
+"Każda grupa ma własny kanał zawierający tylko przypisane do niej media. "
+"Subskrybuj tylko wybrane grupy zamiast wszystkiego naraz."
+
+#: media/templates/admin/feed_links.html:309
+msgid "Group feed"
+msgstr "Kanał grupy"
+
+#: media/templates/admin/feed_links.html:313
+#, python-format
+msgid "%(counter)s item in this group"
+msgid_plural "%(counter)s items in this group"
+msgstr[0] "%(counter)s element w tej grupie"
+msgstr[1] "%(counter)s elementy w tej grupie"
+msgstr[2] "%(counter)s elementów w tej grupie"
+msgstr[3] "%(counter)s elementu w tej grupie"
+
+#: media/templates/admin/feed_links.html:335
+msgid "No groups yet"
+msgstr "Brak grup"
+
+#: media/templates/admin/feed_links.html:336
+msgid ""
+"Create a group when adding a URL, or in the admin, and its feed will appear "
+"here."
+msgstr ""
+"Utwórz grupę podczas dodawania adresu URL lub w panelu administracyjnym, a "
+"jej kanał pojawi się tutaj."
+
+#: media/templates/admin/grid_view.html:202
+msgid "Media Grid"
+msgstr "Siatka mediów"
+
+#: media/templates/admin/grid_view.html:206
+#: media/templates/admin/item_detail.html:236
+#: media/templates/admin/list_view.html:247
+msgid "Type:"
+msgstr "Typ:"
+
+#: media/templates/admin/grid_view.html:208
+#: media/templates/admin/grid_view.html:215
+#: media/templates/admin/list_view.html:249
+#: media/templates/admin/list_view.html:256
+msgid "All"
+msgstr "Wszystkie"
+
+#: media/templates/admin/grid_view.html:213
+#: media/templates/admin/item_detail.html:238
+#: media/templates/admin/list_view.html:254
+#: media/templates/admin/list_view.html:324
+msgid "Group:"
+msgstr "Grupa:"
+
+#: media/templates/admin/grid_view.html:216
+#: media/templates/admin/list_view.html:257
+msgid "Ungrouped"
+msgstr "Bez grupy"
+
+#: media/templates/admin/grid_view.html:223
+#: media/templates/admin/list_view.html:264
+msgid "Total Storage:"
+msgstr "Całkowite miejsce:"
+
+#: media/templates/admin/grid_view.html:228
+#: media/templates/admin/list_view.html:269
+msgid "Grid"
+msgstr "Siatka"
+
+#: media/templates/admin/grid_view.html:229
+#: media/templates/admin/list_view.html:270
+msgid "List"
+msgstr "Lista"
+
+#: media/templates/admin/grid_view.html:276
+#: media/templates/admin/list_view.html:335
+msgid "No items found"
+msgstr "Nie znaleziono elementów"
+
+#: media/templates/admin/grid_view.html:277
+#: media/templates/admin/list_view.html:336
+msgid "Try adjusting your filters or add some media items."
+msgstr "Spróbuj zmienić filtry lub dodaj jakieś elementy multimedialne."
+
+#: media/templates/admin/item_detail.html:187
+msgid "Edit"
+msgstr "Edytuj"
+
+#: media/templates/admin/item_detail.html:191
+msgid "Archive"
+msgstr "Archiwizuj"
+
+#: media/templates/admin/item_detail.html:196
+msgid "Unarchive"
+msgstr "Przywróć z archiwum"
+
+#: media/templates/admin/item_detail.html:199
+msgid "Delete"
+msgstr "Usuń"
+
+#: media/templates/admin/item_detail.html:203
+msgid "Refetch"
+msgstr "Pobierz ponownie"
+
+#: media/templates/admin/item_detail.html:208
+msgid "Regenerate Summary"
+msgstr "Wygeneruj podsumowanie ponownie"
+
+#: media/templates/admin/item_detail.html:208
+msgid "Generate Summary"
+msgstr "Wygeneruj podsumowanie"
+
+#: media/templates/admin/item_detail.html:216
+msgid "Download Subtitles"
+msgstr "Pobierz napisy"
+
+#: media/templates/admin/item_detail.html:222
+msgid "Source"
+msgstr "Źródło"
+
+#: media/templates/admin/item_detail.html:228
+msgid "By:"
+msgstr "Autor:"
+
+#: media/templates/admin/item_detail.html:231
+msgid "Published:"
+msgstr "Opublikowano:"
+
+#: media/templates/admin/item_detail.html:234
+msgid "Duration:"
+msgstr "Czas trwania:"
+
+#: media/templates/admin/item_detail.html:246
+msgid "Error:"
+msgstr "Błąd:"
+
+#: media/templates/admin/item_detail.html:256
+msgid "Summary"
+msgstr "Podsumowanie"
+
+#: media/templates/admin/item_detail.html:263
+msgid "Description"
+msgstr "Opis"
+
+#: media/templates/admin/item_detail.html:273
+msgid "Your browser does not support audio element."
+msgstr "Twoja przeglądarka nie obsługuje elementu audio."
+
+#: media/templates/admin/item_detail.html:281
+msgid "Your browser does not support video element."
+msgstr "Twoja przeglądarka nie obsługuje elementu wideo."
+
+#: media/templates/admin/list_view.html:243
+msgid "Media List"
+msgstr "Lista mediów"
+
+#: media/templates/admin/list_view.html:306
+msgid "Size:"
+msgstr "Rozmiar:"
+
+#: media/templates/admin/list_view.html:312
+msgid "Author:"
+msgstr "Autor:"
+
+#: media/templates/admin/list_view.html:318
+msgid "Added:"
+msgstr "Dodano:"
+
+#: media/templates/admin/preferences.html:4
+#: media/templates/admin/preferences.html:150
+#: media/templates/admin/preferences.html:230
+msgid "About"
+msgstr "O aplikacji"
+
+#: media/templates/admin/preferences.html:157
+msgid "Episodes"
+msgstr "Odcinki"
+
+#: media/templates/admin/preferences.html:175
+msgid "Storage Used"
+msgstr "Wykorzystane miejsce"
+
+#: media/templates/admin/preferences.html:179
+msgid "Last Download"
+msgstr "Ostatnie pobranie"
+
+#: media/templates/admin/preferences.html:185
+msgid "No downloads yet"
+msgstr "Brak pobrań"
+
+#: media/templates/admin/preferences.html:191
+msgid "Errors"
+msgstr "Błędy"
+
+#: media/templates/admin/preferences.html:192
+msgid "items with errors"
+msgstr "elementów z błędami"
+
+#: media/templates/admin/preferences.html:197
+msgid "Episode Limit"
+msgstr "Limit odcinków"
+
+#: media/templates/admin/preferences.html:201
+msgid "Max Episodes"
+msgstr "Maksymalna liczba odcinków"
+
+#: media/templates/admin/preferences.html:206
+msgid "At limit"
+msgstr "Limit osiągnięty"
+
+#: media/templates/admin/preferences.html:208
+msgid "Almost full"
+msgstr "Prawie pełny"
+
+#: media/templates/admin/preferences.html:210
+msgid "OK"
+msgstr "OK"
+
+#: media/templates/admin/preferences.html:213
+msgid "Unlimited"
+msgstr "Bez limitu"
+
+#: media/templates/admin/preferences.html:214
+msgid "No limit set"
+msgstr "Nie ustawiono limitu"
+
+#: media/templates/admin/preferences.html:220
+msgid "Current Usage"
+msgstr "Bieżące użycie"
+
+#: media/templates/admin/preferences.html:221
+msgid "episodes"
+msgstr "odcinków"
+
+#: media/templates/admin/preferences.html:227
+msgid "To change the episode limit, set the"
+msgstr "Aby zmienić limit odcinków, ustaw"
+
+#: media/templates/admin/preferences.html:227
+msgid ""
+"environment variable and restart the server. Set to 0 or leave unset for "
+"unlimited episodes."
+msgstr ""
+"zmienną środowiskową i uruchom ponownie serwer. Ustaw 0 lub pozostaw "
+"niezdefiniowaną dla nieograniczonej liczby odcinków."
+
+#: media/templates/admin/preferences.html:234
+msgid "Project"
+msgstr "Projekt"
+
+#: media/templates/admin/preferences.html:242
+msgid "Deployed"
+msgstr "Wdrożono"
+
+#: media/templates/media/home.html:187
+msgid "StashCast illustration"
+msgstr "Ilustracja StashCast"
+
+#: media/templates/media/home.html:192
+msgid "StashCast Console"
+msgstr "Konsola StashCast"
+
+#: media/templates/media/home.html:194
+msgid "Capture, stash, and stream your media."
+msgstr "Przechwytuj, zapisuj i strumieniuj swoje media."
+
+#: media/templates/media/home.html:196
+msgid ""
+"Add any URL supported by yt-dlp and StashCast will download, process, and "
+"publish it to your feeds. Jump straight to the add form to start a new "
+"download."
+msgstr ""
+"Dodaj dowolny URL obsługiwany przez yt-dlp, a StashCast pobierze, przetworzy "
+"i opublikuje go w Twoich kanałach. Przejdź od razu do formularza dodawania, "
+"aby rozpocząć nowe pobieranie."
+
+#: media/templates/media/home.html:199
+msgid "Add"
+msgstr "Dodaj"
+
+#: media/templates/media/home.html:200
+msgid "Requires an admin login."
+msgstr "Wymaga logowania administratora."
+
+#: media/templates/media/home.html:220
+msgid "Subscribe to feeds"
+msgstr "Subskrybuj kanały"
+
+#: media/templates/media/home.html:221
+msgid "Get RSS feed URLs for your podcast app"
+msgstr "Pobierz adresy URL kanałów RSS dla swojej aplikacji podcastowej"
+
+#: media/templates/media/home.html:224
+msgid "Admin dashboard"
+msgstr "Panel administracyjny"
+
+#: media/templates/media/home.html:225
+msgid "Manage media items and jobs"
+msgstr "Zarządzaj elementami multimedialnymi i zadaniami"
+
+#: media/templates/media/stash_progress.html:7
+msgid "StashCast - Processing Media"
+msgstr "StashCast - Przetwarzanie mediów"
+
+#: media/templates/media/stash_progress.html:272
+msgid "items queued"
+msgstr "elementów w kolejce"

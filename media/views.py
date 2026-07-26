@@ -10,7 +10,7 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
-from media.models import MediaItem
+from media.models import MediaGroup, MediaItem
 from media.tasks import generate_summary, process_media, process_media_batch
 from media.utils import build_media_url
 
@@ -18,6 +18,31 @@ from media.utils import build_media_url
 def _build_media_url(item, filename, request=None):
     """Build absolute or relative URL for a media file."""
     return build_media_url(item, filename, request=request)
+
+
+def _resolve_group(request):
+    """Resolve the MediaGroup chosen on a stash form submission.
+
+    Reads ``new_group`` (name to create) first, then ``group`` (existing id).
+    Returns a MediaGroup instance, or None when no group was selected.
+    """
+    new_group_name = (request.POST.get('new_group') or '').strip()
+    if new_group_name:
+        group, _ = MediaGroup.objects.get_or_create(name=new_group_name)
+        return group
+
+    group_id = (request.POST.get('group') or '').strip()
+    if group_id:
+        return MediaGroup.objects.filter(pk=group_id).first()
+
+    return None
+
+
+def _assign_group(item, group):
+    """Assign ``group`` to an existing item, leaving it untouched when None."""
+    if group is not None and item.group_id != group.pk:
+        item.group = group
+        item.save(update_fields=['group'])
 
 
 def home_view(request):
@@ -381,6 +406,7 @@ def feed_links_view(request):
         'base_url': request.build_absolute_uri('/').rstrip('/'),
         'user_token': user_token,
         'require_user_token_for_feeds': settings.REQUIRE_USER_TOKEN_FOR_FEEDS,
+        'groups': MediaGroup.objects.all(),
         'title': 'Feed Links',
     }
 
@@ -417,6 +443,7 @@ def admin_stash_form_view(request):
         url = request.POST.get('url', '').strip()
         media_type = request.POST.get('type', 'auto')
         bulk_urls_raw = request.POST.get('bulk_urls', '').strip()
+        group = _resolve_group(request)
 
         # Check if bulk URLs were provided
         if bulk_urls_raw:
@@ -455,9 +482,13 @@ def admin_stash_form_view(request):
                     item.status = MediaItem.STATUS_PREFETCHING
                     item.error_message = ''
                     item.save()
+                    _assign_group(item, group)
                 else:
                     item = MediaItem.objects.create(
-                        source_url=bulk_url, requested_type=media_type, slug='pending'
+                        source_url=bulk_url,
+                        requested_type=media_type,
+                        slug='pending',
+                        group=group,
                     )
 
                 created_guids.append(item.guid)
@@ -495,6 +526,7 @@ def admin_stash_form_view(request):
                     # Store in session for confirmation page
                     request.session['spotify_url'] = url
                     request.session['spotify_media_type'] = media_type
+                    request.session['spotify_group_id'] = group.pk if group else None
                     request.session['spotify_title'] = resolution.spotify_metadata.title
                     request.session['spotify_author'] = resolution.spotify_metadata.author
                     request.session['spotify_thumbnail'] = resolution.spotify_metadata.thumbnail_url
@@ -536,6 +568,7 @@ def admin_stash_form_view(request):
                         # Redirect to confirmation page
                         request.session['multi_item_url'] = url
                         request.session['multi_item_type'] = media_type
+                        request.session['multi_item_group_id'] = group.pk if group else None
                         request.session['multi_item_entries'] = [
                             {
                                 'url': e.url,
@@ -575,10 +608,11 @@ def admin_stash_form_view(request):
                 item.status = MediaItem.STATUS_PREFETCHING
                 item.error_message = ''
                 item.save()
+                _assign_group(item, group)
                 messages.info(request, f'Re-fetching existing item: {item.guid}')
             else:
                 item = MediaItem.objects.create(
-                    source_url=url, requested_type=media_type, slug='pending'
+                    source_url=url, requested_type=media_type, slug='pending', group=group
                 )
                 messages.success(request, f'Created new item: {item.guid}')
 
@@ -596,6 +630,7 @@ def admin_stash_form_view(request):
     context = {
         **admin.site.each_context(request),
         'recent_items': recent_items,
+        'groups': MediaGroup.objects.all(),
         'title': 'Add URL to StashCast',
     }
 
@@ -629,11 +664,16 @@ def admin_stash_confirm_multiple_view(request):
             messages.error(request, 'Demo users are not allowed to add URLs.')
             return redirect('admin_stash_form')
 
+        # Resolve group chosen on the original form (stored in session)
+        group_id = request.session.get('multi_item_group_id')
+        group = MediaGroup.objects.filter(pk=group_id).first() if group_id else None
+
         # Clear session data
         del request.session['multi_item_url']
         del request.session['multi_item_type']
         del request.session['multi_item_entries']
         del request.session['multi_item_playlist_title']
+        request.session.pop('multi_item_group_id', None)
 
         # Create MediaItem for each entry and queue batch processing
         created_guids = []
@@ -659,9 +699,13 @@ def admin_stash_confirm_multiple_view(request):
                 item.status = MediaItem.STATUS_PREFETCHING
                 item.error_message = ''
                 item.save()
+                _assign_group(item, group)
             else:
                 item = MediaItem.objects.create(
-                    source_url=entry_url, requested_type=media_type, slug='pending'
+                    source_url=entry_url,
+                    requested_type=media_type,
+                    slug='pending',
+                    group=group,
                 )
 
             created_guids.append(item.guid)
@@ -737,10 +781,15 @@ def admin_spotify_confirm_view(request):
             messages.error(request, 'Please select a YouTube result or enter a custom URL.')
             return redirect('admin_spotify_confirm')
 
+        # Resolve group chosen on the original form (stored in session)
+        group_id = request.session.get('spotify_group_id')
+        group = MediaGroup.objects.filter(pk=group_id).first() if group_id else None
+
         # Clear session data
         for key in [
             'spotify_url',
             'spotify_media_type',
+            'spotify_group_id',
             'spotify_title',
             'spotify_author',
             'spotify_thumbnail',
@@ -769,12 +818,14 @@ def admin_spotify_confirm_view(request):
             item.status = MediaItem.STATUS_PREFETCHING
             item.error_message = ''
             item.save()
+            _assign_group(item, group)
             messages.info(request, f'Re-fetching existing item: {item.guid}')
         else:
             item = MediaItem.objects.create(
                 source_url=youtube_url,
                 requested_type=media_type,
                 slug='pending',
+                group=group,
             )
             messages.success(
                 request,
@@ -837,12 +888,23 @@ def grid_view(request):
 
     # Get filter parameters
     media_type = request.GET.get('type', 'all')
+    group_filter = request.GET.get('group', 'all')
 
     # Build queryset - only show READY items
-    items = MediaItem.objects.filter(status=MediaItem.STATUS_READY).order_by('-created_at')
+    items = (
+        MediaItem.objects.filter(status=MediaItem.STATUS_READY)
+        .select_related('group')
+        .order_by('-created_at')
+    )
 
     if media_type != 'all':
         items = items.filter(media_type=media_type)
+
+    if group_filter and group_filter != 'all':
+        if group_filter == 'none':
+            items = items.filter(group__isnull=True)
+        else:
+            items = items.filter(group__slug=group_filter)
 
     # Calculate total storage used by checking media directories
     total_storage_bytes = 0
@@ -875,6 +937,8 @@ def grid_view(request):
         **admin.site.each_context(request),
         'items': items_with_urls,
         'media_type_filter': media_type,
+        'group_filter': group_filter,
+        'groups': MediaGroup.objects.all(),
         'title': 'Media Grid',
         'total_storage_bytes': total_storage_bytes,
     }
@@ -894,12 +958,23 @@ def list_view(request):
 
     # Get filter parameters
     media_type = request.GET.get('type', 'all')
+    group_filter = request.GET.get('group', 'all')
 
     # Build queryset - only show READY items
-    items = MediaItem.objects.filter(status=MediaItem.STATUS_READY).order_by('-created_at')
+    items = (
+        MediaItem.objects.filter(status=MediaItem.STATUS_READY)
+        .select_related('group')
+        .order_by('-created_at')
+    )
 
     if media_type != 'all':
         items = items.filter(media_type=media_type)
+
+    if group_filter and group_filter != 'all':
+        if group_filter == 'none':
+            items = items.filter(group__isnull=True)
+        else:
+            items = items.filter(group__slug=group_filter)
 
     # Calculate total storage used by checking media directories
     total_storage_bytes = 0
@@ -932,6 +1007,8 @@ def list_view(request):
         **admin.site.each_context(request),
         'items': items_with_urls,
         'media_type_filter': media_type,
+        'group_filter': group_filter,
+        'groups': MediaGroup.objects.all(),
         'title': 'Media List',
         'total_storage_bytes': total_storage_bytes,
     }

@@ -21,7 +21,7 @@ from django.contrib import admin
 from django.urls import path, re_path
 from django.views.generic import RedirectView
 
-from media.feeds import ArchiveFeed, AudioFeed, CombinedFeed, VideoFeed
+from media.feeds import ArchiveFeed, AudioFeed, CombinedFeed, GroupFeed, VideoFeed
 from media.views import (
     admin_spotify_confirm_view,
     admin_stash_confirm_multiple_view,
@@ -99,6 +99,7 @@ urlpatterns = [
     path('feeds/video.xml', VideoFeed(), name='video_feed'),
     path('feeds/combined.xml', CombinedFeed(), name='combined_feed'),
     path('feeds/archive.xml', ArchiveFeed(), name='archive_feed'),
+    path('feeds/group/<slug:slug>.xml', GroupFeed(), name='group_feed'),
 ]
 
 # Serve media files in development

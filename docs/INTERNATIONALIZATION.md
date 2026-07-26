@@ -9,8 +9,8 @@ StashCast now supports multiple languages! The UI language and video subtitle la
 Add to your `.env` file:
 
 ```bash
-# Set language code ('en' for English, 'es' for Spanish)
-LANGUAGE_CODE=es
+# Set language code ('en' English, 'es' Spanish, 'pt' Portuguese, 'pl' Polish)
+LANGUAGE_CODE=pl
 ```
 
 ### Supported Languages
@@ -19,6 +19,7 @@ LANGUAGE_CODE=es
 - `en` / `en-us` - English (default)
 - `es` - Español (Spanish)
 - `pt` - Português (Portuguese)
+- `pl` - Polski (Polish)
 
 **Adding more languages:**
 Additional languages can be added by creating translation files (`.po`) and compiling them. See the "Creating Translations" section below for instructions on how to contribute translations for other languages.
@@ -199,6 +200,8 @@ LANGUAGE_CODE = os.environ.get('LANGUAGE_CODE', 'en-us')
 LANGUAGES = [
     ('en', 'English'),
     ('es', 'Español'),
+    ('pt', 'Português'),
+    ('pl', 'Polski'),
     # ... more languages
 ]
 

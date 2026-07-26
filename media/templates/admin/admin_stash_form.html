@@ -291,6 +291,23 @@
             </div>
 
             <div class="form-row">
+                <label for="group">{% trans "Group" %}</label>
+                <select id="group" name="group">
+                    <option value="">{% trans "— No group —" %}</option>
+                    {% for group in groups %}
+                        <option value="{{ group.pk }}">{{ group.name }}</option>
+                    {% endfor %}
+                </select>
+                <small>{% trans "Optional. Assign the download to a group, or create a new one below." %}</small>
+                <input type="text"
+                       id="new_group"
+                       name="new_group"
+                       placeholder="{% trans 'Or type a new group name (e.g. Lessons, Kitchen)' %}"
+                       style="width: 100%; padding: 10px; margin-top: 8px; border: 1px solid var(--sc-border); border-radius: 4px; font-size: 14px; box-sizing: border-box; background: var(--sc-surface); color: var(--sc-panel-fg);">
+                <small>{% trans "If filled in, a new group is created (or reused) and the existing selection above is ignored." %}</small>
+            </div>
+
+            <div class="form-row">
                 <div class="advanced-toggle" id="advancedToggle">
                     <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
                         <path d="M4 2l4 4-4 4z"/>

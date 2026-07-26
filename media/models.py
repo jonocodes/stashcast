@@ -12,6 +12,45 @@ def generate_nanoid():
     return generate(alphabet, size=21)
 
 
+class MediaGroup(models.Model):
+    """User-defined grouping for media items (e.g. Lessons, Kitchen, Other).
+
+    A group may be empty; media items reference a group optionally. Each group
+    also exposes its own RSS feed at /feeds/group/<slug>.xml.
+    """
+
+    name = models.CharField(max_length=100, unique=True)
+    slug = models.SlugField(max_length=120, unique=True, blank=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = self._generate_unique_slug()
+        super().save(*args, **kwargs)
+
+    def _generate_unique_slug(self):
+        """Build a URL-safe, unique slug derived from the group name."""
+        from django.utils.text import slugify
+
+        base = slugify(self.name) or 'group'
+        slug = base
+        counter = 2
+        while MediaGroup.objects.exclude(pk=self.pk).filter(slug=slug).exists():
+            slug = f'{base}-{counter}'
+            counter += 1
+        return slug
+
+    @property
+    def item_count(self):
+        return self.items.filter(status=MediaItem.STATUS_READY).count()
+
+
 class MediaItem(models.Model):
     """Media item downloaded via yt-dlp or direct HTTP"""
 
@@ -64,6 +103,15 @@ class MediaItem(models.Model):
     requested_type = models.CharField(max_length=10, choices=REQUESTED_TYPE_CHOICES)
     status = models.CharField(
         max_length=20, choices=STATUS_CHOICES, default=STATUS_PREFETCHING, db_index=True
+    )
+
+    # Grouping (optional user-defined group, e.g. Lessons, Kitchen)
+    group = models.ForeignKey(
+        MediaGroup,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='items',
     )
 
     # Metadata

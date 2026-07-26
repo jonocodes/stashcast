@@ -295,6 +295,48 @@
             </div>
         </div>
     </div>
+
+    <h2>{% trans "Group Feeds" %}</h2>
+
+    <div class="explainer">
+        <strong>{% trans "Subscribe to individual groups" %}</strong><br>
+        {% trans "Each group has its own feed containing only the media assigned to it. Subscribe to just the groups you want instead of everything at once." %}
+    </div>
+
+    {% if groups %}
+        {% for group in groups %}
+        <div class="feed-card">
+            <img src="{% static 'media/feed-combined.png' %}" alt="{% trans 'Group feed' %}">
+            <div class="feed-card-content">
+                <h3>📁 {{ group.name }}</h3>
+                <p style="margin: 0 0 10px 0; color: var(--sc-muted); font-size: 14px;">
+                    {% blocktrans count counter=group.item_count %}{{ counter }} item in this group{% plural %}{{ counter }} items in this group{% endblocktrans %}
+                </p>
+                <div class="feed-url-group">
+                    <label>{% trans "Subscribe URL:" %}</label>
+                    <div class="feed-url-input">
+                        <input type="text" readonly value="{{ base_url }}/feeds/group/{{ group.slug }}.xml{% if require_user_token_for_feeds %}?token={{ user_token }}{% endif %}" id="group-url-{{ group.slug }}">
+                        <button class="copy-btn" data-target="group-url-{{ group.slug }}">{% trans "Copy" %}</button>
+                    </div>
+                </div>
+                <div class="feed-actions">
+                    <a href="/admin/tools/grid/?type=all&group={{ group.slug }}">{% trans "Grid View" %}</a>
+                    <a href="/admin/tools/list/?type=all&group={{ group.slug }}">{% trans "List View" %}</a>
+                    <a href="/feeds/group/{{ group.slug }}.xml?{% if require_user_token_for_feeds %}token={{ user_token }}&{% endif %}view=1" target="_blank">{% trans "View XML" %}</a>
+                    <a href="/admin/media/mediaitem/?group__id__exact={{ group.pk }}">{% trans "Manage" %}</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="status-info public">
+            <span class="status-info-icon">📂</span>
+            <div>
+                <strong>{% trans "No groups yet" %}</strong><br>
+                {% trans "Create a group when adding a URL, or in the admin, and its feed will appear here." %}
+            </div>
+        </div>
+    {% endif %}
 </div>
 
 <script>
