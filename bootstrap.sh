@@ -20,13 +20,20 @@ if grep -q "Ubuntu 22" /etc/os-release || [[ "$CLAUDE_CODE_REMOTE" == "true" ]];
     # curl -sL "https://downloads.flox.dev/by-env/stable/deb/flox.deb" -o /tmp/flox.deb && apt install -y /tmp/flox.deb
 
     # flox init --auto-setup
-    # flox install ffmpeg just python313Packages.pip python3 ruff yt-dlp
+    # flox install ffmpeg just python313Packages.pip python3 ruff yt-dlp deno
 
-    apt install -y software-properties-common ffmpeg yt-dlp curl gettext python3.12 python3.12-venv python3.12-dev
+    apt install -y software-properties-common ffmpeg yt-dlp curl unzip gettext python3.12 python3.12-venv python3.12-dev
 
     # Install just command runner
     if ! command -v just &> /dev/null; then
         curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
+    fi
+
+    # Install Deno - yt-dlp needs a JavaScript runtime for YouTube player
+    # challenges, otherwise downloads fail with "HTTP Error 403: Forbidden"
+    if ! command -v deno &> /dev/null; then
+        curl --proto '=https' --tlsv1.2 -fsSL https://deno.land/install.sh \
+            | DENO_INSTALL=/usr/local sh -s -- --yes
     fi
 
     # Create virtual environment with Python 3.12
@@ -54,7 +61,7 @@ elif command -v flox &> /dev/null || [[ -d ".flox" ]]; then
 
     echo "Flox detected"
 
-    flox install ffmpeg just python313Packages.pip python3 ruff yt-dlp gettext
+    flox install ffmpeg just python313Packages.pip python3 ruff yt-dlp deno gettext
 
     # check if flox is activated
     if [[ -v FLOX_ENV_PROJECT ]]; then

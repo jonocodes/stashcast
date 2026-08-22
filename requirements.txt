@@ -1,6 +1,10 @@
 django>=6.0
 huey>=2.5.5
-yt-dlp>=2025.12.8
+# yt-dlp needs to stay current: YouTube changes its player regularly and an
+# outdated build fails with 'HTTP Error 403: Forbidden' during download.
+yt-dlp>=2026.8.19
+# Enables yt-dlp's --impersonate (browser TLS fingerprint), another 403 workaround
+curl-cffi>=0.16.1
 pillow>=12.0.0
 python-nanoid>=2.0.0
 sumy>=0.11.0

@@ -8,7 +8,11 @@ export DEBIAN_FRONTEND=noninteractive
 
 apt update -y
 
-apt install -y software-properties-common ffmpeg yt-dlp curl
+apt install -y software-properties-common ffmpeg yt-dlp curl unzip
+
+# Deno provides the JavaScript runtime yt-dlp needs for YouTube player challenges
+curl --proto '=https' --tlsv1.2 -fsSL https://deno.land/install.sh \
+    | DENO_INSTALL=/usr/local sh -s -- --yes
 
 add-apt-repository ppa:deadsnakes/ppa -y
 

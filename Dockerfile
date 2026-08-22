@@ -18,9 +18,27 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 # Install system dependencies
+# Note: the apt yt-dlp package is only a CLI convenience; the app uses the
+# (much newer) pip package from requirements.txt.
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends ffmpeg yt-dlp just sqlite3 && \
+    apt-get install -y --no-install-recommends ffmpeg yt-dlp just sqlite3 curl unzip && \
     rm -rf /var/lib/apt/lists/*
+
+# Install Deno: yt-dlp needs a JavaScript runtime to solve YouTube's player
+# challenges. Without one, extraction falls back to clients whose stream URLs
+# are commonly rejected with "HTTP Error 403: Forbidden".
+ARG DENO_VERSION=v2.9.5
+RUN case "$(dpkg --print-architecture)" in \
+        amd64) DENO_ARCH=x86_64-unknown-linux-gnu ;; \
+        arm64) DENO_ARCH=aarch64-unknown-linux-gnu ;; \
+        *) echo "Unsupported architecture: $(dpkg --print-architecture)" && exit 1 ;; \
+    esac && \
+    curl -fsSL -o /tmp/deno.zip \
+        "https://github.com/denoland/deno/releases/download/${DENO_VERSION}/deno-${DENO_ARCH}.zip" && \
+    unzip -q /tmp/deno.zip -d /usr/local/bin && \
+    rm /tmp/deno.zip && \
+    chmod +x /usr/local/bin/deno && \
+    deno --version
 
 # Upgrade pip
 RUN pip install --upgrade pip

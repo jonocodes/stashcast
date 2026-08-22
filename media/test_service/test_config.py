@@ -11,6 +11,11 @@ from media.service.config import (
     get_acceptable_video_formats,
     get_target_audio_format,
     get_target_video_format,
+    merge_extractor_args,
+    parse_cookies_from_browser,
+    parse_extractor_args,
+    parse_impersonate_target,
+    parse_js_runtimes,
     parse_ytdlp_extra_args,
 )
 
@@ -185,3 +190,126 @@ class ParseYtdlpArgsTest(TestCase):
         )
         self.assertEqual(result['format'], 'bv*[height<=720][vcodec^=avc]+ba/b[height<=720]')
         self.assertEqual(result['merge_output_format'], 'mp4')
+
+
+class ExtractorArgsTest(TestCase):
+    """Tests for --extractor-args parsing (YouTube 403 workarounds)"""
+
+    def test_parse_single_key(self):
+        """Test parsing one key with one value"""
+        result = parse_extractor_args('youtube:player_client=tv')
+        self.assertEqual(result, {'youtube': {'player_client': ['tv']}})
+
+    def test_parse_multiple_values(self):
+        """Test parsing one key with a comma-separated value list"""
+        result = parse_extractor_args('youtube:player_client=tv,web_safari')
+        self.assertEqual(result, {'youtube': {'player_client': ['tv', 'web_safari']}})
+
+    def test_parse_multiple_keys(self):
+        """Test parsing several semicolon-separated keys"""
+        result = parse_extractor_args('youtube:player_client=tv;formats=missing_pot')
+        self.assertEqual(
+            result,
+            {'youtube': {'player_client': ['tv'], 'formats': ['missing_pot']}},
+        )
+
+    def test_merge_keeps_other_extractors(self):
+        """Test that merging does not drop args of a different extractor"""
+        base_opts = {'extractor_args': {'generic': {'impersonate': ['chrome']}}}
+        merge_extractor_args(base_opts, {'youtube': {'player_client': ['tv']}})
+        self.assertEqual(base_opts['extractor_args']['generic'], {'impersonate': ['chrome']})
+        self.assertEqual(base_opts['extractor_args']['youtube'], {'player_client': ['tv']})
+
+    def test_merge_overrides_same_key(self):
+        """Test that merging the same key replaces its value"""
+        base_opts = {'extractor_args': {'youtube': {'player_client': ['web']}}}
+        merge_extractor_args(base_opts, {'youtube': {'player_client': ['tv']}})
+        self.assertEqual(base_opts['extractor_args']['youtube']['player_client'], ['tv'])
+
+    def test_extractor_args_via_extra_args(self):
+        """Test that --extractor-args reaches the yt-dlp options dict"""
+        result = parse_ytdlp_extra_args(
+            '--format bestaudio --extractor-args "youtube:player_client=tv,mweb"',
+            {'quiet': True},
+        )
+        self.assertEqual(result['format'], 'bestaudio')
+        self.assertEqual(result['extractor_args']['youtube']['player_client'], ['tv', 'mweb'])
+
+
+class NetworkArgsTest(TestCase):
+    """Tests for the network-related yt-dlp arguments used against 403 errors"""
+
+    def test_cookies_file(self):
+        """Test that --cookies maps to cookiefile"""
+        result = parse_ytdlp_extra_args('--cookies /data/cookies.txt', {})
+        self.assertEqual(result['cookiefile'], '/data/cookies.txt')
+
+    def test_cookies_from_browser_simple(self):
+        """Test parsing a browser name without a profile"""
+        self.assertEqual(parse_cookies_from_browser('firefox'), ('firefox', None, None, None))
+
+    def test_cookies_from_browser_with_profile(self):
+        """Test parsing a browser name with a profile"""
+        self.assertEqual(
+            parse_cookies_from_browser('chrome:Default'), ('chrome', 'Default', None, None)
+        )
+
+    def test_cookies_from_browser_with_keyring(self):
+        """Test parsing a browser name with a keyring"""
+        self.assertEqual(
+            parse_cookies_from_browser('chrome+gnomekeyring:Profile 1'),
+            ('chrome', 'Profile 1', 'GNOMEKEYRING', None),
+        )
+
+    def test_user_agent_and_referer(self):
+        """Test that header overrides end up in http_headers"""
+        result = parse_ytdlp_extra_args(
+            '--user-agent "Mozilla/5.0" --referer https://www.youtube.com/', {}
+        )
+        self.assertEqual(result['http_headers']['User-Agent'], 'Mozilla/5.0')
+        self.assertEqual(result['http_headers']['Referer'], 'https://www.youtube.com/')
+
+    def test_impersonate(self):
+        """Test that --impersonate becomes an ImpersonateTarget, not a raw string"""
+        from yt_dlp.networking.impersonate import ImpersonateTarget
+
+        result = parse_ytdlp_extra_args('--impersonate chrome', {})
+        self.assertIsInstance(result['impersonate'], ImpersonateTarget)
+        self.assertEqual(result['impersonate'].client, 'chrome')
+
+    def test_impersonate_empty_means_any_target(self):
+        """Test that an empty --impersonate value means 'any available target'"""
+        from yt_dlp.networking.impersonate import ImpersonateTarget
+
+        self.assertEqual(parse_impersonate_target(''), ImpersonateTarget())
+
+    def test_retry_counts(self):
+        """Test retry-related arguments"""
+        result = parse_ytdlp_extra_args('--retries 5 --fragment-retries infinite -N 4', {})
+        self.assertEqual(result['retries'], 5)
+        self.assertEqual(result['fragment_retries'], float('inf'))
+        self.assertEqual(result['concurrent_fragment_downloads'], 4)
+
+    def test_force_ipv4(self):
+        """Test that -4 sets the source address"""
+        result = parse_ytdlp_extra_args('-4', {})
+        self.assertEqual(result['source_address'], '0.0.0.0')
+
+    def test_js_runtimes_name_only(self):
+        """Test parsing a runtime name without an explicit path"""
+        self.assertEqual(parse_js_runtimes('deno'), {'deno': None})
+
+    def test_js_runtimes_with_path(self):
+        """Test parsing a runtime name with an explicit path"""
+        self.assertEqual(
+            parse_js_runtimes('node:/usr/local/bin/node'), {'node': '/usr/local/bin/node'}
+        )
+
+    def test_js_runtimes_multiple(self):
+        """Test parsing several runtimes at once"""
+        self.assertEqual(parse_js_runtimes('deno,node'), {'deno': None, 'node': None})
+
+    def test_js_runtimes_via_extra_args(self):
+        """Test that --js-runtimes reaches the yt-dlp options dict"""
+        result = parse_ytdlp_extra_args('--js-runtimes deno', {})
+        self.assertEqual(result['js_runtimes'], {'deno': None})

@@ -13,7 +13,13 @@ import requests
 import yt_dlp
 from django.conf import settings
 
-from media.service.config import parse_ytdlp_extra_args
+from media.service.config import (
+    merge_extractor_args,
+    parse_cookies_from_browser,
+    parse_impersonate_target,
+    parse_js_runtimes,
+    parse_ytdlp_extra_args,
+)
 
 
 @dataclass
@@ -26,6 +32,143 @@ class DownloadedFileInfo:
     mime_type: Optional[str] = None
     thumbnail_path: Optional[Path] = None
     subtitle_path: Optional[Path] = None
+
+
+def apply_network_opts(ydl_opts, logger=None):
+    """
+    Apply the network-related settings shared by every yt-dlp call.
+
+    Covers proxy, cookies and retry behaviour so that a fix configured once
+    applies to prefetch, single downloads and batch downloads alike.
+
+    Args:
+        ydl_opts: yt-dlp options dict (modified in place)
+        logger: Optional callable(str) for logging
+
+    Returns:
+        dict: The updated options dict
+    """
+
+    def log(message):
+        if logger:
+            logger(message)
+
+    # Proxy (needed for cloud VMs where YouTube blocks datacenter IP ranges)
+    if settings.STASHCAST_YTDLP_PROXY:
+        ydl_opts['proxy'] = settings.STASHCAST_YTDLP_PROXY
+
+    # Cookies from a logged-in session: the most reliable fix for 403 Forbidden
+    cookies_file = settings.STASHCAST_YTDLP_COOKIES_FILE
+    if cookies_file:
+        if Path(cookies_file).is_file():
+            ydl_opts['cookiefile'] = cookies_file
+            log(f'Using cookies file: {cookies_file}')
+        else:
+            log(f'WARNING: cookies file not found, ignoring: {cookies_file}')
+
+    if settings.STASHCAST_YTDLP_COOKIES_FROM_BROWSER:
+        ydl_opts['cookiesfrombrowser'] = parse_cookies_from_browser(
+            settings.STASHCAST_YTDLP_COOKIES_FROM_BROWSER
+        )
+        log(f'Using browser cookies: {settings.STASHCAST_YTDLP_COOKIES_FROM_BROWSER}')
+
+    # JavaScript runtime override (yt-dlp finds 'deno' on PATH on its own)
+    if settings.STASHCAST_YTDLP_JS_RUNTIMES:
+        ydl_opts['js_runtimes'] = parse_js_runtimes(settings.STASHCAST_YTDLP_JS_RUNTIMES)
+
+    # Browser TLS/HTTP fingerprint (requires curl_cffi to be installed)
+    if settings.STASHCAST_YTDLP_IMPERSONATE:
+        ydl_opts['impersonate'] = parse_impersonate_target(settings.STASHCAST_YTDLP_IMPERSONATE)
+
+    # Retries: expiring stream URLs and rate limits often surface as a one-off 403
+    ydl_opts.setdefault('retries', settings.STASHCAST_YTDLP_RETRIES)
+    ydl_opts.setdefault('fragment_retries', settings.STASHCAST_YTDLP_FRAGMENT_RETRIES)
+    ydl_opts.setdefault('extractor_retries', settings.STASHCAST_YTDLP_EXTRACTOR_RETRIES)
+
+    return ydl_opts
+
+
+def _is_forbidden_error(exc):
+    """Return True when the exception looks like an HTTP 403 from the media host."""
+    message = str(exc)
+    return '403' in message or 'Forbidden' in message
+
+
+def _player_client_chain():
+    """
+    Return the YouTube player clients to try, in order.
+
+    The literal 'default' means "leave the choice to yt-dlp"; every other entry is
+    applied as --extractor-args youtube:player_client=<client>.
+    """
+    clients = [
+        client.strip()
+        for client in (settings.STASHCAST_YTDLP_PLAYER_CLIENTS or '').split(',')
+        if client.strip()
+    ]
+    return clients or ['default']
+
+
+def _has_explicit_player_client(ydl_opts):
+    """True when the user already pinned a player_client via extra args."""
+    return bool(ydl_opts.get('extractor_args', {}).get('youtube', {}).get('player_client'))
+
+
+def run_ytdlp_with_fallback(build_opts, run, url_label='', logger=None):
+    """
+    Run a yt-dlp operation, retrying with alternative YouTube player clients on 403.
+
+    YouTube hands out stream URLs that are tied to the player client used during
+    extraction. When the chosen client's URLs require a PO token the extraction
+    still succeeds but the actual media download fails with 403 Forbidden. Retrying
+    with a different client (and a cleared player cache) works around it.
+
+    Args:
+        build_opts: Callable returning a fresh yt-dlp options dict per attempt
+        run: Callable(ydl_opts) performing the work and returning its result
+        url_label: Optional string describing what is being downloaded (for logs)
+        logger: Optional callable(str) for logging
+
+    Returns:
+        Whatever `run` returns.
+    """
+
+    def log(message):
+        if logger:
+            logger(message)
+
+    clients = _player_client_chain()
+    last_error = None
+
+    for attempt, client in enumerate(clients):
+        ydl_opts = build_opts()
+
+        # Never override an explicit player_client coming from the settings
+        if _has_explicit_player_client(ydl_opts):
+            if attempt > 0:
+                break
+        elif client != 'default':
+            merge_extractor_args(ydl_opts, {'youtube': {'player_client': [client]}})
+
+        if attempt > 0:
+            # Stale cached player JS is another source of 403s.
+            # rm_cachedir is a CLI-only flag, so the cache has to be cleared by hand.
+            with yt_dlp.YoutubeDL({'quiet': True}) as cache_ydl:
+                cache_ydl.cache.remove()
+            log(
+                f'Retry {attempt}/{len(clients) - 1} after 403 Forbidden'
+                f' using player_client={client}' + (f' for {url_label}' if url_label else '')
+            )
+
+        try:
+            return run(ydl_opts)
+        except Exception as e:
+            if not _is_forbidden_error(e):
+                raise
+            last_error = e
+            log(f'Attempt {attempt + 1} failed with 403 Forbidden: {e}')
+
+    raise last_error
 
 
 def download_file(file_path, out_path, logger=None):
@@ -234,34 +377,47 @@ def _download_ytdlp_inner(url, resolved_type, temp_dir, ytdlp_extra_args='', log
 
     temp_output = temp_dir / 'download.%(ext)s'
 
-    ydl_opts = {
-        'format': format_spec,
-        'outtmpl': str(temp_output),
-        'writethumbnail': True,
-        'writesubtitles': settings.STASHCAST_WRITE_SUBTITLES,
-        'writeautomaticsub': settings.STASHCAST_WRITE_AUTOMATION_SUBTITLES,
-        'subtitleslangs': [settings.STASHCAST_SUBTITLE_LANGUAGE],
-        # Note: noplaylist removed to allow multi-item downloads
-        # Multi-item handling is done at prefetch stage with --allow-multiple flag
-        'quiet': not logger,  # Show output if logger is provided
-    }
+    def build_opts():
+        ydl_opts = {
+            'format': format_spec,
+            'outtmpl': str(temp_output),
+            'writethumbnail': True,
+            'writesubtitles': settings.STASHCAST_WRITE_SUBTITLES,
+            'writeautomaticsub': settings.STASHCAST_WRITE_AUTOMATION_SUBTITLES,
+            'subtitleslangs': [settings.STASHCAST_SUBTITLE_LANGUAGE],
+            # Note: noplaylist removed to allow multi-item downloads
+            # Multi-item handling is done at prefetch stage with --allow-multiple flag
+            'quiet': not logger,  # Show output if logger is provided
+        }
 
-    # Enable file:// URLs if needed
-    if url.startswith('file://'):
-        ydl_opts['enable_file_urls'] = True
+        # Enable file:// URLs if needed
+        if url.startswith('file://'):
+            ydl_opts['enable_file_urls'] = True
 
-    # Add proxy if configured (needed for cloud VMs where YouTube blocks requests)
-    if settings.STASHCAST_YTDLP_PROXY:
-        ydl_opts['proxy'] = settings.STASHCAST_YTDLP_PROXY
+        # Proxy, cookies and retry settings shared by all yt-dlp calls
+        apply_network_opts(ydl_opts, logger=logger)
 
-    # Parse and apply extra args from settings
-    ydl_opts = parse_ytdlp_extra_args(ytdlp_extra_args, ydl_opts)
+        # Parse and apply extra args from settings
+        return parse_ytdlp_extra_args(ytdlp_extra_args, ydl_opts)
 
-    log(f'Downloading with yt-dlp: {url}')
-    log(f'Format: {ydl_opts.get("format")}')
+    log(f'Downloading with yt-dlp {yt_dlp.version.__version__}: {url}')
+    log(f'Format: {build_opts().get("format")}')
 
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        ydl.download([url])
+    # temp_dir is shared with the caller (it holds download.log and any prefetch
+    # artefacts), so only files this function creates may be cleaned up on a retry
+    preexisting = {f.name for f in temp_dir.iterdir()}
+
+    def run(ydl_opts):
+        # Drop leftovers from a failed attempt so a retry cannot resume a
+        # partial file that belongs to a different format
+        for leftover in temp_dir.iterdir():
+            if leftover.name not in preexisting and leftover.is_file():
+                leftover.unlink()
+
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([url])
+
+    run_ytdlp_with_fallback(build_opts, run, url_label=url, logger=logger)
 
     # Find downloaded files
     files = list(temp_dir.iterdir())
@@ -365,11 +521,10 @@ def prefetch_ytdlp_batch(
         'ignoreerrors': True,
     }
 
-    # Add proxy if configured (needed for cloud VMs where YouTube blocks requests)
-    if settings.STASHCAST_YTDLP_PROXY:
-        ydl_opts['proxy'] = settings.STASHCAST_YTDLP_PROXY
+    # Proxy, cookies and retry settings shared by all yt-dlp calls
+    apply_network_opts(ydl_opts, logger=logger)
 
-    log(f'Batch prefetching {len(urls)} URLs with yt-dlp')
+    log(f'Batch prefetching {len(urls)} URLs with yt-dlp {yt_dlp.version.__version__}')
 
     # Single yt-dlp context for all prefetch operations
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -527,9 +682,8 @@ def download_ytdlp_batch(
         'noplaylist': True,
     }
 
-    # Add proxy if configured (needed for cloud VMs where YouTube blocks requests)
-    if settings.STASHCAST_YTDLP_PROXY:
-        ydl_opts['proxy'] = settings.STASHCAST_YTDLP_PROXY
+    # Proxy, cookies and retry settings shared by all yt-dlp calls
+    apply_network_opts(ydl_opts, logger=logger)
 
     # Parse and apply extra args from settings
     ydl_opts = parse_ytdlp_extra_args(ytdlp_extra_args, ydl_opts)
@@ -550,11 +704,48 @@ def download_ytdlp_batch(
 
     ydl_opts['progress_hooks'] = [progress_hook]
 
-    # Single download call for all URLs
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+    # Single download call for all URLs.
+    # ignoreerrors keeps one broken URL from aborting the batch, so a 403 shows up
+    # as a missing output folder rather than an exception. Failed URLs are retried
+    # below with the alternative player clients.
+    with yt_dlp.YoutubeDL(dict(ydl_opts)) as ydl:
         ydl.download(urls)
 
     log(f'Download complete, processing {len(url_to_id)} results')
+
+    def has_media(url):
+        """True when the URL produced a usable media file on disk."""
+        video_id = url_to_id.get(url)
+        if not video_id:
+            return False
+        folder = temp_dir / video_id
+        if not folder.exists():
+            return False
+        return any(
+            f.suffix in ['.mp4', '.mkv', '.webm', '.mp3', '.m4a', '.ogg', '.opus']
+            for f in folder.iterdir()
+        )
+
+    # Retry whatever did not produce a file, one alternative player client per round.
+    # Skipped when the settings already pin a player_client explicitly.
+    fallback_clients = [] if _has_explicit_player_client(ydl_opts) else _player_client_chain()[1:]
+    for client in fallback_clients:
+        failed = [url for url in urls if not has_media(url)]
+        if not failed:
+            break
+
+        log(f'Retrying {len(failed)} failed URLs with player_client={client}')
+        retry_opts = dict(ydl_opts)
+        retry_opts['extractor_args'] = {}
+        merge_extractor_args(retry_opts, ydl_opts.get('extractor_args', {}))
+        merge_extractor_args(retry_opts, {'youtube': {'player_client': [client]}})
+
+        # rm_cachedir is a CLI-only flag, so the cache has to be cleared by hand
+        with yt_dlp.YoutubeDL({'quiet': True}) as cache_ydl:
+            cache_ydl.cache.remove()
+
+        with yt_dlp.YoutubeDL(retry_opts) as ydl:
+            ydl.download(failed)
 
     # Process downloaded files - map URLs to their downloaded content
     for url in urls:

@@ -322,6 +322,45 @@ STASHCAST_SUMMARY_SENTENCES = int(os.environ.get('STASHCAST_SUMMARY_SENTENCES', 
 # See docs/YOUTUBE_AUTH.md for setup instructions
 STASHCAST_YTDLP_PROXY = os.environ.get('STASHCAST_YTDLP_PROXY', None)
 
+# Optional: path to a Netscape-format cookies.txt file used for every yt-dlp call.
+# Cookies from a logged-in session are the most reliable cure for "HTTP Error 403:
+# Forbidden" and "Sign in to confirm you're not a bot" on YouTube.
+# See docs/YOUTUBE_AUTH.md
+STASHCAST_YTDLP_COOKIES_FILE = os.environ.get('STASHCAST_YTDLP_COOKIES_FILE', None)
+
+# Optional: read cookies directly from a local browser profile instead of a file.
+# Format: BROWSER[+KEYRING][:PROFILE][::CONTAINER], e.g. 'firefox' or 'chrome:Default'.
+# Only works when the browser profile is reachable from the app (not in a container).
+STASHCAST_YTDLP_COOKIES_FROM_BROWSER = os.environ.get(
+    'STASHCAST_YTDLP_COOKIES_FROM_BROWSER', None
+)
+
+# YouTube player clients tried in order when a download fails with 403 Forbidden.
+# The first entry 'default' means "whatever yt-dlp picks on its own"; the remaining
+# ones are retried with an explicit --extractor-args youtube:player_client=...
+# Set to a single value to disable the fallback chain.
+STASHCAST_YTDLP_PLAYER_CLIENTS = os.environ.get(
+    'STASHCAST_YTDLP_PLAYER_CLIENTS', 'default,tv,web_safari,mweb,tv_embedded'
+)
+
+# Optional: impersonate a browser TLS/HTTP fingerprint (requires curl_cffi).
+# Useful when the media CDN rejects the plain python-requests fingerprint.
+# Examples: 'chrome', 'safari', 'chrome-110'. Empty = disabled.
+STASHCAST_YTDLP_IMPERSONATE = os.environ.get('STASHCAST_YTDLP_IMPERSONATE', None)
+
+# Optional: JavaScript runtimes yt-dlp may use to solve YouTube player challenges.
+# yt-dlp looks for 'deno' on PATH by default (the Docker image ships it), so this is
+# only needed for bare-metal installs that have a different runtime available.
+# Format: comma-separated NAME[:PATH], e.g. 'node' or 'node:/usr/local/bin/node'.
+# Supported names: deno, node, bun, quickjs.
+STASHCAST_YTDLP_JS_RUNTIMES = os.environ.get('STASHCAST_YTDLP_JS_RUNTIMES', None)
+
+# Retry counts for yt-dlp downloads (fragments of a DASH stream expire quickly,
+# so a few retries turn a transient 403 into a successful download).
+STASHCAST_YTDLP_RETRIES = int(os.environ.get('STASHCAST_YTDLP_RETRIES', '10'))
+STASHCAST_YTDLP_FRAGMENT_RETRIES = int(os.environ.get('STASHCAST_YTDLP_FRAGMENT_RETRIES', '10'))
+STASHCAST_YTDLP_EXTRACTOR_RETRIES = int(os.environ.get('STASHCAST_YTDLP_EXTRACTOR_RETRIES', '3'))
+
 # Podcast Index API credentials (optional, for podcast RSS feed discovery)
 # Get free API keys at: https://podcastindex.org/
 PODCAST_INDEX_API_KEY = os.environ.get('PODCAST_INDEX_API_KEY', None)
