@@ -81,6 +81,34 @@ def get_target_video_format():
     return '.mp4'
 
 
+def _parse_extractor_args_value(spec):
+    """
+    Parse a yt-dlp --extractor-args value, e.g. 'youtube:player_client=mweb,tv;formats=missing_pot'.
+
+    Mirrors yt-dlp's own IE_KEY:ARG1=VAL1,VAL2;ARG2=VAL3 grammar.
+
+    Returns:
+        dict: {ie_key: {arg_name: [values]}}
+    """
+    import re
+
+    match = re.match(r'(?is)(?P<keys>[\w-]+(?:,[\w-]+)*):(?P<val>.*)$', spec)
+    if not match:
+        return {}
+
+    keys = [k.strip().lower() for k in match.group('keys').split(',')]
+    args = {}
+    for part in match.group('val').split(';'):
+        if '=' not in part:
+            continue
+        arg_name, arg_vals = part.split('=', 1)
+        args[arg_name.strip().lower().replace('-', '_')] = [
+            v.replace('\\,', ',').strip() for v in re.split(r'(?<!\\),', arg_vals)
+        ]
+
+    return {key: args for key in keys}
+
+
 def parse_ytdlp_extra_args(args_string, base_opts):
     """
     Parse yt-dlp extra arguments string and apply to base options dict.
@@ -169,6 +197,15 @@ def parse_ytdlp_extra_args(args_string, base_opts):
                 {'key': 'FFmpegEmbedSubtitle'}
             ]
             i += 1
+        elif arg == '--extractor-args':
+            if i + 1 < len(args_list):
+                parsed = _parse_extractor_args_value(args_list[i + 1])
+                extractor_args = base_opts.setdefault('extractor_args', {})
+                for ie_key, ie_args in parsed.items():
+                    extractor_args.setdefault(ie_key, {}).update(ie_args)
+                i += 2
+            else:
+                i += 1
         elif arg == '--proxy':
             if i + 1 < len(args_list):
                 base_opts['proxy'] = args_list[i + 1]

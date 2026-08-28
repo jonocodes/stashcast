@@ -15,6 +15,53 @@ from django.conf import settings
 
 from media.service.config import parse_ytdlp_extra_args
 
+# YouTube's SABR throttling can reject the default player client mid-download
+# with a plain HTTP 403, even though metadata extraction succeeded. Retrying
+# with these clients works around it in most cases as of early 2026.
+# See docs/YOUTUBE_AUTH.md for background.
+YOUTUBE_403_FALLBACK_PLAYER_CLIENTS = ['mweb', 'tv']
+
+
+def _is_http_403_download_error(exc):
+    return isinstance(exc, yt_dlp.utils.DownloadError) and '403' in str(exc)
+
+
+def _download_with_403_fallback(ydl_opts, urls, logger=None):
+    """
+    Run a yt-dlp download, retrying once with an alternate YouTube player
+    client if the first attempt fails with an HTTP 403.
+
+    Args:
+        ydl_opts: yt-dlp options dict
+        urls: list of URLs to download
+        logger: Optional callable(str) for logging
+    """
+
+    def log(message):
+        if logger:
+            logger(message)
+
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.download(urls)
+        return
+    except yt_dlp.utils.DownloadError as e:
+        if not _is_http_403_download_error(e):
+            raise
+
+    log(
+        'Download failed with HTTP 403 (likely YouTube SABR throttling) - '
+        f'retrying with player_client={YOUTUBE_403_FALLBACK_PLAYER_CLIENTS}'
+    )
+
+    fallback_opts = dict(ydl_opts)
+    extractor_args = {k: dict(v) for k, v in fallback_opts.get('extractor_args', {}).items()}
+    extractor_args.setdefault('youtube', {})['player_client'] = YOUTUBE_403_FALLBACK_PLAYER_CLIENTS
+    fallback_opts['extractor_args'] = extractor_args
+
+    with yt_dlp.YoutubeDL(fallback_opts) as ydl:
+        ydl.download(urls)
+
 
 @dataclass
 class DownloadedFileInfo:
@@ -260,8 +307,7 @@ def _download_ytdlp_inner(url, resolved_type, temp_dir, ytdlp_extra_args='', log
     log(f'Downloading with yt-dlp: {url}')
     log(f'Format: {ydl_opts.get("format")}')
 
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        ydl.download([url])
+    _download_with_403_fallback(ydl_opts, [url], logger=logger)
 
     # Find downloaded files
     files = list(temp_dir.iterdir())
@@ -551,8 +597,7 @@ def download_ytdlp_batch(
     ydl_opts['progress_hooks'] = [progress_hook]
 
     # Single download call for all URLs
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        ydl.download(urls)
+    _download_with_403_fallback(ydl_opts, urls, logger=logger)
 
     log(f'Download complete, processing {len(url_to_id)} results')
 

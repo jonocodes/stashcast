@@ -176,6 +176,29 @@ class ParseYtdlpArgsTest(TestCase):
         # Should keep original format since no value provided
         self.assertEqual(result['format'], 'best')
 
+    def test_parse_extractor_args(self):
+        """Test parsing --extractor-args argument (e.g. YouTube player client workaround)"""
+        base_opts = {}
+        result = parse_ytdlp_extra_args(
+            '--extractor-args "youtube:player_client=mweb,tv;formats=missing_pot"', base_opts
+        )
+        self.assertEqual(
+            result['extractor_args'],
+            {'youtube': {'player_client': ['mweb', 'tv'], 'formats': ['missing_pot']}},
+        )
+
+    def test_parse_extractor_args_multiple_extractors(self):
+        """Test that repeated --extractor-args merge rather than overwrite"""
+        base_opts = {}
+        result = parse_ytdlp_extra_args(
+            '--extractor-args "youtube:player_client=mweb" --extractor-args "youtube:formats=missing_pot"',
+            base_opts,
+        )
+        self.assertEqual(
+            result['extractor_args'],
+            {'youtube': {'player_client': ['mweb'], 'formats': ['missing_pot']}},
+        )
+
     def test_real_world_720p_format(self):
         """Test with actual 720p format string from settings"""
         base_opts = {'quiet': True}

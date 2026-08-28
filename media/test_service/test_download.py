@@ -7,6 +7,8 @@ from unittest.mock import patch, MagicMock
 from pathlib import Path
 import tempfile
 
+import yt_dlp
+
 from media.service.download import (
     download_direct,
     download_ytdlp,
@@ -582,3 +584,85 @@ class BatchDownloadTest(TestCase):
             self.assertEqual(len(result.downloads), 1)
             self.assertEqual(len(result.errors), 1)
             self.assertIn('bad', list(result.errors.keys())[0])
+
+
+class Download403FallbackTest(TestCase):
+    """Tests for _download_with_403_fallback (YouTube SABR throttling workaround)"""
+
+    @patch('media.service.download.yt_dlp.YoutubeDL')
+    def test_succeeds_without_retry(self, mock_ytdlp_class):
+        """No fallback attempt when the first download succeeds"""
+        from media.service.download import _download_with_403_fallback
+
+        mock_ydl = MagicMock()
+        mock_ytdlp_class.return_value.__enter__.return_value = mock_ydl
+
+        _download_with_403_fallback({'format': 'best'}, ['https://youtube.com/watch?v=abc'])
+
+        self.assertEqual(mock_ytdlp_class.call_count, 1)
+        mock_ydl.download.assert_called_once_with(['https://youtube.com/watch?v=abc'])
+
+    @patch('media.service.download.yt_dlp.YoutubeDL')
+    def test_retries_with_alternate_client_on_403(self, mock_ytdlp_class):
+        """A 403 DownloadError triggers one retry with player_client=mweb,tv"""
+        from media.service.download import _download_with_403_fallback
+
+        mock_ydl = MagicMock()
+        mock_ydl.download.side_effect = [
+            yt_dlp.utils.DownloadError(
+                'ERROR: unable to download video data: HTTP Error 403: Forbidden'
+            ),
+            None,
+        ]
+        mock_ytdlp_class.return_value.__enter__.return_value = mock_ydl
+
+        logs = []
+        _download_with_403_fallback(
+            {'format': 'best'}, ['https://youtube.com/watch?v=abc'], logger=logs.append
+        )
+
+        self.assertEqual(mock_ytdlp_class.call_count, 2)
+        first_opts = mock_ytdlp_class.call_args_list[0][0][0]
+        retry_opts = mock_ytdlp_class.call_args_list[1][0][0]
+        self.assertNotIn('extractor_args', first_opts)
+        self.assertEqual(
+            retry_opts['extractor_args'], {'youtube': {'player_client': ['mweb', 'tv']}}
+        )
+        self.assertTrue(any('403' in log for log in logs))
+
+    @patch('media.service.download.yt_dlp.YoutubeDL')
+    def test_preserves_existing_extractor_args_on_retry(self, mock_ytdlp_class):
+        """Retry merges the fallback player_client into existing extractor_args"""
+        from media.service.download import _download_with_403_fallback
+
+        mock_ydl = MagicMock()
+        mock_ydl.download.side_effect = [
+            yt_dlp.utils.DownloadError('HTTP Error 403: Forbidden'),
+            None,
+        ]
+        mock_ytdlp_class.return_value.__enter__.return_value = mock_ydl
+
+        base_opts = {'format': 'best', 'extractor_args': {'youtube': {'formats': ['missing_pot']}}}
+        _download_with_403_fallback(base_opts, ['https://youtube.com/watch?v=abc'])
+
+        retry_opts = mock_ytdlp_class.call_args_list[1][0][0]
+        self.assertEqual(
+            retry_opts['extractor_args'],
+            {'youtube': {'formats': ['missing_pot'], 'player_client': ['mweb', 'tv']}},
+        )
+        # Original opts dict must not be mutated
+        self.assertEqual(base_opts['extractor_args'], {'youtube': {'formats': ['missing_pot']}})
+
+    @patch('media.service.download.yt_dlp.YoutubeDL')
+    def test_non_403_error_propagates_without_retry(self, mock_ytdlp_class):
+        """Non-403 errors are not retried"""
+        from media.service.download import _download_with_403_fallback
+
+        mock_ydl = MagicMock()
+        mock_ydl.download.side_effect = yt_dlp.utils.DownloadError('ERROR: Video unavailable')
+        mock_ytdlp_class.return_value.__enter__.return_value = mock_ydl
+
+        with self.assertRaises(yt_dlp.utils.DownloadError):
+            _download_with_403_fallback({'format': 'best'}, ['https://youtube.com/watch?v=abc'])
+
+        self.assertEqual(mock_ytdlp_class.call_count, 1)

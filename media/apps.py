@@ -23,7 +23,10 @@ def _get_git_info():
 
     # Try reading from the build-time JSON file (Docker deployments)
     # Check /etc first (survives volume mounts), then app dir (local builds)
-    for json_path in [Path('/etc/git_info.json'), Path(__file__).resolve().parent.parent / 'git_info.json']:
+    for json_path in [
+        Path('/etc/git_info.json'),
+        Path(__file__).resolve().parent.parent / 'git_info.json',
+    ]:
         try:
             data = json.loads(json_path.read_text())
             if data.get('commit_sha'):
@@ -63,10 +66,10 @@ class MediaConfig(AppConfig):
         """Import signals when the app is ready"""
         if GIT_INFO['commit_sha_short']:
             logger.info(
-                "StashCast commit=%s branch=%s message=%s",
+                'StashCast commit=%s branch=%s message=%s',
                 GIT_INFO['commit_sha_short'],
                 GIT_INFO.get('branch', ''),
                 GIT_INFO.get('commit_message', ''),
             )
         else:
-            logger.info("StashCast git info not available")
+            logger.info('StashCast git info not available')
