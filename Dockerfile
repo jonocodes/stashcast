@@ -51,4 +51,4 @@ RUN SECRET_KEY="dummy" ALLOWED_HOSTS="dummy" STASHCAST_USER_TOKEN="dummy" python
 RUN chmod +x setup.sh
 
 # Run setup (migrations, NLTK) and start Django server
-CMD ["bash", "-c", "pwd && ls -la && ./setup.sh && python manage.py runserver 0.0.0.0:8000"]
+CMD ["bash", "-c", "pwd && ls -la && ./setup.sh && python manage.py collectstatic --noinput --clear && python manage.py runserver 0.0.0.0:8000"]
