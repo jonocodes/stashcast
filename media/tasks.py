@@ -9,6 +9,7 @@ from huey.contrib.djhuey import db_task
 
 from media.models import MediaItem
 from media.processing import (
+    finalize_item,
     download_direct,
     download_ytdlp,
     prefetch_file,
@@ -152,30 +153,9 @@ def process_media(guid):
 
         process_files(item, tmp_dir, log_path)
 
-        # Move from tmp directory to final slug-based directory
-        write_log(log_path, '=== MOVING TO FINAL DIRECTORY ===')
-        final_dir = item.get_base_dir()
-        final_dir.parent.mkdir(parents=True, exist_ok=True)
-
-        # If final directory exists, remove it (overwrite behavior)
-        if final_dir.exists():
-            write_log(log_path, f'Removing existing directory: {final_dir}')
-            shutil.rmtree(final_dir)
-
-        # Move tmp directory to final location
-        shutil.move(str(tmp_dir), str(final_dir))
-
-        # IMPORTANT: Update log_path BEFORE writing more logs to prevent creating
-        # files in the old tmp directory, which would leave it behind after the move
+        # Move to final slug directory, publish to long-term storage, mark READY
+        final_dir = finalize_item(item, tmp_dir)
         log_path = final_dir / 'download.log'
-        write_log(log_path, f'Moved to: {final_dir}')
-
-        # READY
-        item.status = MediaItem.STATUS_READY
-        item.downloaded_at = timezone.now()
-        item.save()
-        write_log(log_path, '=== READY ===')
-        write_log(log_path, f'Completed successfully: {item.title}')
         update_progress(item.guid, MediaItem.STATUS_READY, 100)
 
         # Clean up progress tracker
@@ -570,22 +550,8 @@ def process_media_batch(guids: List[str]):
 
                 process_files(item, tmp_dir, log_path)
 
-                # Move to final directory
-                write_log(log_path, '=== MOVING TO FINAL DIRECTORY ===')
-                final_dir = item.get_base_dir()
-                final_dir.parent.mkdir(parents=True, exist_ok=True)
-
-                if final_dir.exists():
-                    shutil.rmtree(final_dir)
-
-                shutil.move(str(tmp_dir), str(final_dir))
+                final_dir = finalize_item(item, tmp_dir)
                 log_path = final_dir / 'download.log'
-                write_log(log_path, f'Moved to: {final_dir}')
-
-                item.status = MediaItem.STATUS_READY
-                item.downloaded_at = timezone.now()
-                item.save()
-                write_log(log_path, '=== READY ===')
                 update_progress(guid, MediaItem.STATUS_READY, 100)
 
                 from media.progress_tracker import clear_progress

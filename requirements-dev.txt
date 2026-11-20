@@ -1,2 +1,3 @@
 -r requirements.txt
 coverage
+moto[s3]>=5.0

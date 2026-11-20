@@ -115,15 +115,11 @@ class ItemListScreen(Screen):
 
     @work(thread=True)
     def _do_delete(self, guid: str) -> None:
-        import shutil
         from media.models import MediaItem
 
         try:
             item = MediaItem.objects.get(guid=guid)
-            base_dir = item.get_base_dir()
-            if base_dir and base_dir.exists():
-                shutil.rmtree(base_dir)
-            item.delete()
+            item.delete()  # pre_delete signal removes local and published files
         except MediaItem.DoesNotExist:
             pass
         self.app.call_from_thread(self._load_items)
