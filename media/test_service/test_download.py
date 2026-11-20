@@ -666,3 +666,89 @@ class Download403FallbackTest(TestCase):
             _download_with_403_fallback({'format': 'best'}, ['https://youtube.com/watch?v=abc'])
 
         self.assertEqual(mock_ytdlp_class.call_count, 1)
+
+
+class DownloadSubtitleFallbackTest(TestCase):
+    """Subtitle failures (e.g. YouTube 429 on timedtext) must not fail the whole download"""
+
+    SUB_429 = (
+        "ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests"
+    )
+    SUB_403 = "ERROR: Unable to download video subtitles for 'en': HTTP Error 403: Forbidden"
+
+    @patch('media.service.download.yt_dlp.YoutubeDL')
+    def test_retries_without_subtitles_on_subtitle_error(self, mock_ytdlp_class):
+        from media.service.download import _download_with_fallbacks
+
+        mock_ydl = MagicMock()
+        mock_ydl.download.side_effect = [yt_dlp.utils.DownloadError(self.SUB_429), None]
+        mock_ytdlp_class.return_value.__enter__.return_value = mock_ydl
+
+        base_opts = {'format': 'best', 'writesubtitles': True, 'writeautomaticsub': True}
+        logs = []
+        _download_with_fallbacks(base_opts, ['https://youtube.com/watch?v=abc'], logger=logs.append)
+
+        self.assertEqual(mock_ytdlp_class.call_count, 2)
+        retry_opts = mock_ytdlp_class.call_args_list[1][0][0]
+        self.assertFalse(retry_opts['writesubtitles'])
+        self.assertFalse(retry_opts['writeautomaticsub'])
+        self.assertTrue(any('without subtitles' in log for log in logs))
+        # Original opts dict must not be mutated
+        self.assertTrue(base_opts['writesubtitles'])
+        self.assertTrue(base_opts['writeautomaticsub'])
+
+    @patch('media.service.download.yt_dlp.YoutubeDL')
+    def test_subtitle_403_skips_subtitles_instead_of_switching_client(self, mock_ytdlp_class):
+        """A 403 on subtitles is a subtitle problem, not SABR throttling of the media"""
+        from media.service.download import _download_with_fallbacks
+
+        mock_ydl = MagicMock()
+        mock_ydl.download.side_effect = [yt_dlp.utils.DownloadError(self.SUB_403), None]
+        mock_ytdlp_class.return_value.__enter__.return_value = mock_ydl
+
+        _download_with_fallbacks(
+            {'format': 'best', 'writesubtitles': True}, ['https://youtube.com/watch?v=abc']
+        )
+
+        self.assertEqual(mock_ytdlp_class.call_count, 2)
+        retry_opts = mock_ytdlp_class.call_args_list[1][0][0]
+        self.assertFalse(retry_opts['writesubtitles'])
+        self.assertNotIn('extractor_args', retry_opts)
+
+    @patch('media.service.download.yt_dlp.YoutubeDL')
+    def test_media_error_after_skipping_subtitles_propagates(self, mock_ytdlp_class):
+        from media.service.download import _download_with_fallbacks
+
+        mock_ydl = MagicMock()
+        mock_ydl.download.side_effect = [
+            yt_dlp.utils.DownloadError(self.SUB_429),
+            yt_dlp.utils.DownloadError('ERROR: Video unavailable'),
+        ]
+        mock_ytdlp_class.return_value.__enter__.return_value = mock_ydl
+
+        with self.assertRaisesRegex(yt_dlp.utils.DownloadError, 'Video unavailable'):
+            _download_with_fallbacks({'format': 'best'}, ['https://youtube.com/watch?v=abc'])
+
+        self.assertEqual(mock_ytdlp_class.call_count, 2)
+
+    @patch('media.service.download.yt_dlp.YoutubeDL')
+    def test_download_ytdlp_succeeds_without_subtitles(self, mock_ytdlp_class):
+        """End-to-end through download_ytdlp: media is kept, subtitle_path is None"""
+        from media.service.download import download_ytdlp
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+
+            def fake_download(urls):
+                if mock_ydl.download.call_count == 1:
+                    raise yt_dlp.utils.DownloadError(self.SUB_429)
+                (tmp / 'download.mp4').write_bytes(b'video')
+
+            mock_ydl = MagicMock()
+            mock_ydl.download.side_effect = fake_download
+            mock_ytdlp_class.return_value.__enter__.return_value = mock_ydl
+
+            result = download_ytdlp('https://youtube.com/watch?v=abc', 'video', tmp)
+
+            self.assertEqual(result.path.name, 'download.mp4')
+            self.assertIsNone(result.subtitle_path)

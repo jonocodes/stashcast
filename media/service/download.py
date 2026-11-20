@@ -22,8 +22,23 @@ from media.service.config import parse_ytdlp_extra_args
 YOUTUBE_403_FALLBACK_PLAYER_CLIENTS = ['mweb', 'tv']
 
 
+# yt-dlp writes subtitles before the media and, unless ignoreerrors=True, raises
+# a DownloadError with this prefix if any subtitle fails (e.g. YouTube answering
+# the timedtext request with HTTP 429). Subtitles are optional, so we retry
+# without them rather than failing the whole download.
+SUBTITLE_ERROR_MARKER = 'Unable to download video subtitles'
+
+
+def _is_subtitle_download_error(exc):
+    return isinstance(exc, yt_dlp.utils.DownloadError) and SUBTITLE_ERROR_MARKER in str(exc)
+
+
 def _is_http_403_download_error(exc):
-    return isinstance(exc, yt_dlp.utils.DownloadError) and '403' in str(exc)
+    return (
+        isinstance(exc, yt_dlp.utils.DownloadError)
+        and '403' in str(exc)
+        and not _is_subtitle_download_error(exc)
+    )
 
 
 def _download_with_403_fallback(ydl_opts, urls, logger=None):
@@ -61,6 +76,32 @@ def _download_with_403_fallback(ydl_opts, urls, logger=None):
 
     with yt_dlp.YoutubeDL(fallback_opts) as ydl:
         ydl.download(urls)
+
+
+def _download_with_fallbacks(ydl_opts, urls, logger=None):
+    """
+    Run a yt-dlp download with all fallbacks applied:
+
+    - HTTP 403 on media: retry with an alternate YouTube player client.
+    - Subtitle download failure: retry once without subtitles, so a missing or
+      rate-limited transcript never costs us the media itself.
+
+    Args:
+        ydl_opts: yt-dlp options dict (not mutated)
+        urls: list of URLs to download
+        logger: Optional callable(str) for logging
+    """
+    try:
+        _download_with_403_fallback(ydl_opts, urls, logger=logger)
+        return
+    except yt_dlp.utils.DownloadError as e:
+        if not _is_subtitle_download_error(e):
+            raise
+        if logger:
+            logger(f'Subtitle download failed ({e}) - retrying without subtitles')
+
+    no_subs_opts = {**ydl_opts, 'writesubtitles': False, 'writeautomaticsub': False}
+    _download_with_403_fallback(no_subs_opts, urls, logger=logger)
 
 
 @dataclass
@@ -307,7 +348,7 @@ def _download_ytdlp_inner(url, resolved_type, temp_dir, ytdlp_extra_args='', log
     log(f'Downloading with yt-dlp: {url}')
     log(f'Format: {ydl_opts.get("format")}')
 
-    _download_with_403_fallback(ydl_opts, [url], logger=logger)
+    _download_with_fallbacks(ydl_opts, [url], logger=logger)
 
     # Find downloaded files
     files = list(temp_dir.iterdir())
@@ -597,7 +638,7 @@ def download_ytdlp_batch(
     ydl_opts['progress_hooks'] = [progress_hook]
 
     # Single download call for all URLs
-    _download_with_403_fallback(ydl_opts, urls, logger=logger)
+    _download_with_fallbacks(ydl_opts, urls, logger=logger)
 
     log(f'Download complete, processing {len(url_to_id)} results')
 
