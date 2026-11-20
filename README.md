@@ -334,7 +334,7 @@ STASHCAST downloads media from URLs and makes it available through podcast feeds
 
 1. Metadata is extracted (title, duration, etc.)
 2. Media is downloaded in the background
-3. Files are processed (thumbnails converted to WebP, subtitles to VTT)
+3. Files are processed (thumbnails converted to WebP, subtitles to VTT). Subtitles are best-effort: if they fail to download (e.g. YouTube rate-limits them with HTTP 429), the media is downloaded without them
 4. Optional summaries are generated from subtitles
 5. Media becomes available in your podcast feed
 
