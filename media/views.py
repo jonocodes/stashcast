@@ -12,6 +12,7 @@ from django.views.decorators.http import require_http_methods
 
 from media.models import MediaItem
 from media.tasks import generate_summary, process_media, process_media_batch
+from media.storage import storage_usage_bytes
 from media.utils import build_media_url
 
 
@@ -832,8 +833,6 @@ def grid_view(request):
 
     Shows thumbnails in a responsive grid with filtering options.
     """
-    import os
-    from pathlib import Path
 
     # Get filter parameters
     media_type = request.GET.get('type', 'all')
@@ -844,18 +843,7 @@ def grid_view(request):
     if media_type != 'all':
         items = items.filter(media_type=media_type)
 
-    # Calculate total storage used by checking media directories
-    total_storage_bytes = 0
-    media_root = Path(settings.MEDIA_ROOT)
-
-    if media_root.exists():
-        for dirpath, dirnames, filenames in os.walk(media_root):
-            for filename in filenames:
-                filepath = Path(dirpath) / filename
-                try:
-                    total_storage_bytes += filepath.stat().st_size
-                except (OSError, FileNotFoundError):
-                    pass
+    total_storage_bytes = storage_usage_bytes()
 
     # Build thumbnail URLs for each item
     items_with_urls = []
@@ -889,8 +877,6 @@ def list_view(request):
 
     Shows items in a list format with thumbnails, descriptions, and metadata.
     """
-    import os
-    from pathlib import Path
 
     # Get filter parameters
     media_type = request.GET.get('type', 'all')
@@ -901,18 +887,7 @@ def list_view(request):
     if media_type != 'all':
         items = items.filter(media_type=media_type)
 
-    # Calculate total storage used by checking media directories
-    total_storage_bytes = 0
-    media_root = Path(settings.MEDIA_ROOT)
-
-    if media_root.exists():
-        for dirpath, dirnames, filenames in os.walk(media_root):
-            for filename in filenames:
-                filepath = Path(dirpath) / filename
-                try:
-                    total_storage_bytes += filepath.stat().st_size
-                except (OSError, FileNotFoundError):
-                    pass
+    total_storage_bytes = storage_usage_bytes()
 
     # Build thumbnail URLs for each item
     items_with_urls = []
@@ -944,8 +919,6 @@ def preferences_view(request):
     """
     Status/preferences page showing system info and current configuration.
     """
-    import os
-    from pathlib import Path
 
     # Episode counts
     ready_count = MediaItem.objects.filter(status=MediaItem.STATUS_READY).count()
@@ -963,17 +936,8 @@ def preferences_view(request):
         MediaItem.objects.filter(status=MediaItem.STATUS_READY).order_by('-downloaded_at').first()
     )
 
-    # Storage used (walk actual disk)
-    total_storage_bytes = 0
-    media_root = Path(settings.MEDIA_ROOT)
-    if media_root.exists():
-        for dirpath, dirnames, filenames in os.walk(media_root):
-            for filename in filenames:
-                filepath = Path(dirpath) / filename
-                try:
-                    total_storage_bytes += filepath.stat().st_size
-                except (OSError, FileNotFoundError):
-                    pass
+    # Storage used (bucket when publishing remotely, otherwise local disk)
+    total_storage_bytes = storage_usage_bytes()
 
     # Episode limit
     max_episodes = settings.STASHCAST_MAX_EPISODES

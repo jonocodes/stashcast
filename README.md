@@ -368,13 +368,62 @@ See `.env.example` for all available configuration options.
 
 #### Optional
 
-- `STASHCAST_MEDIA_BASE_URL`: External CDN URL for media files
+- `STASHCAST_MEDIA_BASE_URL`: External CDN URL for media files (required when using S3 storage: the bucket's public URL)
+- `STASHCAST_S3_*`: Long-term media storage in an S3-compatible bucket, see [Long-term storage in S3 / R2](#long-term-storage-in-s3--r2)
 - `STASHCAST_DEFAULT_YTDLP_ARGS_AUDIO`: Default yt-dlp arguments for audio
 - `STASHCAST_DEFAULT_YTDLP_ARGS_VIDEO`: Default yt-dlp arguments for video
 - `STASHCAST_DEFAULT_FFMPEG_ARGS_AUDIO`: Default ffmpeg arguments for audio
 - `STASHCAST_DEFAULT_FFMPEG_ARGS_VIDEO`: Default ffmpeg arguments for video
 - `STASHCAST_SLUG_MAX_WORDS`: Max words in slug (default: 6)
 - `STASHCAST_SLUG_MAX_CHARS`: Max characters in slug (default: 40)
+
+### Long-term storage in S3 / R2
+
+By default media lives on local disk under `STASHCAST_DATA_DIR/media`. Optionally, finished media can be stored in any S3-compatible bucket (Cloudflare R2, MinIO, Backblaze B2, AWS S3) and served to podcast apps straight from there. With R2, egress is free, so large video downloads never touch your server.
+
+Downloading and transcoding still happen on local disk (yt-dlp and ffmpeg need real files). When an item is ready its files are **published** to the bucket, and the local copy of the (large) content file is removed. Logs and subtitles stay local; logs are never uploaded. Deleting an item removes it from the bucket too.
+
+| Variable | Description |
+|---|---|
+| `STASHCAST_S3_BUCKET` | Bucket name. Setting this enables S3 storage. |
+| `STASHCAST_S3_ENDPOINT_URL` | Endpoint for non-AWS providers, e.g. `https://<account_id>.r2.cloudflarestorage.com` |
+| `STASHCAST_S3_REGION` | Region (`auto` for R2) |
+| `STASHCAST_S3_ACCESS_KEY_ID` / `STASHCAST_S3_SECRET_ACCESS_KEY` | API credentials with read/write access to the bucket |
+| `STASHCAST_S3_PREFIX` | Optional key prefix inside the bucket, e.g. `stashcast` |
+| `STASHCAST_S3_KEEP_LOCAL` | `true` to also keep the content file on local disk (default `false`) |
+| `STASHCAST_MEDIA_BASE_URL` | **Required.** The bucket's public URL, including the prefix if set. Feeds link here. |
+
+**The bucket must be publicly readable.** Podcast apps fetch episode files without credentials, and signed URLs expire (which breaks cached feeds), so objects are served publicly. This is the same exposure as the default setup, where `/media/files/` is unauthenticated. Allow reading objects but not listing the bucket.
+
+Cloudflare R2 setup:
+
+1. Create a bucket and an R2 API token with *Object Read & Write* on it.
+2. In the bucket's settings, connect a **custom domain** (e.g. `media.example.com`). Avoid the `r2.dev` URL; it is rate-limited and not meant for production. Public access through a custom domain does not allow listing.
+3. Configure:
+
+   ```bash
+   STASHCAST_S3_BUCKET=stashcast
+   STASHCAST_S3_ENDPOINT_URL=https://<account_id>.r2.cloudflarestorage.com
+   STASHCAST_S3_REGION=auto
+   STASHCAST_S3_ACCESS_KEY_ID=...
+   STASHCAST_S3_SECRET_ACCESS_KEY=...
+   STASHCAST_MEDIA_BASE_URL=https://media.example.com
+   ```
+
+4. Publish media downloaded before S3 was enabled (also retries failed publishes):
+
+   ```bash
+   ./manage.py publish_media --dry-run
+   ./manage.py publish_media
+   ```
+
+For other providers, `scripts/s3_dev_init.py` creates a bucket with a public-read, no-listing policy. To try it all locally with MinIO:
+
+```bash
+just dev-docker-s3   # MinIO console: http://localhost:9001 (stashcast / stashcast-dev)
+```
+
+`./manage.py check` reports an error if a bucket is configured without `STASHCAST_MEDIA_BASE_URL`.
 
 ## Development
 

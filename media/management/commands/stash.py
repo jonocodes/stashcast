@@ -10,7 +10,6 @@ import shutil
 from pathlib import Path
 from django.core.management.base import BaseCommand
 from django.conf import settings
-from django.utils import timezone
 
 from media.models import MediaItem
 from media.processing import (
@@ -21,6 +20,7 @@ from media.processing import (
     download_direct,
     download_ytdlp,
     process_files,
+    finalize_item,
 )
 from media.service.strategy import choose_download_strategy
 from media.service.resolve import (
@@ -29,6 +29,7 @@ from media.service.resolve import (
     check_multiple_items,
 )
 from media.tasks import check_episode_limit
+from media.utils import build_media_url
 
 
 class Command(BaseCommand):
@@ -256,29 +257,14 @@ class Command(BaseCommand):
 
             process_files(item, tmp_dir, log_path)
 
-            # Move from tmp directory to final slug-based directory
-            log('=== MOVING TO FINAL DIRECTORY ===')
-            final_dir = item.get_base_dir()
-            final_dir.parent.mkdir(parents=True, exist_ok=True)
-
-            # If final directory exists, remove it (overwrite behavior)
-            if final_dir.exists():
-                log(f'Removing existing directory: {final_dir}')
-                shutil.rmtree(final_dir)
-
-            # Move tmp directory to final location
-            shutil.move(str(tmp_dir), str(final_dir))
-            log(f'Moved to: {final_dir}')
-
-            # Update log_path to new location
+            # Move to final slug directory, publish to long-term storage, mark READY
+            final_dir = finalize_item(item, tmp_dir, echo=self.stdout.write if verbose else None)
             log_path = final_dir / 'download.log'
 
-            # READY
-            item.status = MediaItem.STATUS_READY
-            item.downloaded_at = timezone.now()
-            item.save()
-            log('=== READY ===')
-            log(f'Completed successfully: {item.title}')
+            # Local content is gone once published to remote storage (unless kept)
+            local_content = item.get_absolute_content_path()
+            if local_content and not local_content.exists():
+                local_content = None
 
             # Build result dict (used for both JSON output and multi-item mode)
             result = {
@@ -288,9 +274,8 @@ class Command(BaseCommand):
                 'title': item.title,
                 'media_type': item.media_type,
                 'directory': str(final_dir),
-                'content_path': str(item.get_absolute_content_path())
-                if item.content_path
-                else None,
+                'content_path': str(local_content) if local_content else None,
+                'content_url': build_media_url(item, item.content_path),
                 'file_size': item.file_size,
                 'duration_seconds': item.duration_seconds,
             }
@@ -305,8 +290,11 @@ class Command(BaseCommand):
                 self.stdout.write(f'  Slug: {item.slug}')
                 self.stdout.write(f'  Type: {item.media_type}')
                 self.stdout.write(f'  GUID: {item.guid}')
-                if item.content_path:
-                    self.stdout.write(f'  Output: {item.get_absolute_content_path()}')
+                if local_content:
+                    self.stdout.write(f'  Output: {local_content}')
+                elif item.content_path:
+                    # Published to remote storage and removed locally
+                    self.stdout.write(f'  Output: {build_media_url(item, item.content_path)}')
                 if item.file_size:
                     self.stdout.write(f'  Size: {item.file_size:,} bytes')
                 if item.duration_seconds:

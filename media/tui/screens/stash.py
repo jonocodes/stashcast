@@ -110,7 +110,6 @@ class StashScreen(Screen):
     def _run_stash(self, url: str, requested_type: str) -> None:
         """Run the stash pipeline synchronously in a worker thread."""
         from django.conf import settings
-        from django.utils import timezone
 
         from media.models import MediaItem
         from media.processing import (
@@ -121,6 +120,7 @@ class StashScreen(Screen):
             download_direct,
             download_ytdlp,
             process_files,
+            finalize_item,
         )
         from media.service.strategy import choose_download_strategy
         from media.tasks import check_episode_limit
@@ -200,16 +200,7 @@ class StashScreen(Screen):
 
             # MOVE TO FINAL DIR
             self._update_progress(85, 'Finalizing...')
-            final_dir = item.get_base_dir()
-            final_dir.parent.mkdir(parents=True, exist_ok=True)
-            if final_dir.exists():
-                shutil.rmtree(final_dir)
-            shutil.move(str(tmp_dir), str(final_dir))
-
-            # READY
-            item.status = MediaItem.STATUS_READY
-            item.downloaded_at = timezone.now()
-            item.save()
+            finalize_item(item, tmp_dir)
 
             self._update_progress(100, f'Done: {item.title}')
 

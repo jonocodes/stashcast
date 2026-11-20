@@ -328,6 +328,43 @@ os.makedirs(STASHCAST_MEDIA_DIR, exist_ok=True)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = STASHCAST_MEDIA_DIR
 
+# Long-term media storage in an S3-compatible bucket (Cloudflare R2, MinIO, B2, AWS S3).
+# Downloads and transcodes always happen on local disk; once an item is READY its files
+# are published to the bucket. Feeds then link to STASHCAST_MEDIA_BASE_URL, which must be
+# the bucket's public URL (including STASHCAST_S3_PREFIX, if set).
+STASHCAST_S3_BUCKET = os.environ.get('STASHCAST_S3_BUCKET', '')
+STASHCAST_S3_PREFIX = os.environ.get('STASHCAST_S3_PREFIX', '').strip('/')
+# Keep the (large) content file on local disk after publishing. Logs and subtitles
+# always stay local; logs are never uploaded.
+STASHCAST_S3_KEEP_LOCAL = os.environ.get('STASHCAST_S3_KEEP_LOCAL', 'false').lower() == 'true'
+
+# Storage alias used for published media (see media/storage.py)
+STASHCAST_MEDIA_STORAGE_ALIAS = 'stashcast_media'
+
+STORAGES = {
+    'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+    'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'},
+}
+
+if STASHCAST_S3_BUCKET:
+    STORAGES[STASHCAST_MEDIA_STORAGE_ALIAS] = {
+        'BACKEND': 'storages.backends.s3.S3Storage',
+        'OPTIONS': {
+            'bucket_name': STASHCAST_S3_BUCKET,
+            'location': STASHCAST_S3_PREFIX,
+            'endpoint_url': os.environ.get('STASHCAST_S3_ENDPOINT_URL') or None,
+            'region_name': os.environ.get('STASHCAST_S3_REGION') or None,
+            'access_key': os.environ.get('STASHCAST_S3_ACCESS_KEY_ID') or None,
+            'secret_key': os.environ.get('STASHCAST_S3_SECRET_ACCESS_KEY') or None,
+            # Public bucket: podcast apps fetch enclosures without credentials, and
+            # presigned URLs expire, so never sign URLs. Public read is configured on the
+            # bucket itself (e.g. an R2 custom domain), not with per-object ACLs.
+            'querystring_auth': False,
+            'default_acl': None,
+            'file_overwrite': True,
+        },
+    }
+
 # Huey configuration (SQLite backend)
 
 HUEY = {

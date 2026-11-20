@@ -432,3 +432,57 @@ def process_files(item, tmp_dir, log_path):
 
     item.save()
     write_log(log_path, 'Processing complete')
+
+
+def finalize_item(item, tmp_dir, echo=None):
+    """
+    Move a fully processed item from its tmp directory into its final slug directory,
+    publish it to long-term storage (if configured) and mark it READY.
+
+    Shared by the Huey tasks, the stash management command and the TUI.
+
+    Args:
+        item: MediaItem whose files are fully processed in tmp_dir
+        tmp_dir: Path to the tmp directory holding the item's files
+        echo: Optional callable(message) to mirror log lines (e.g. CLI stdout)
+
+    Returns:
+        Path: the final directory
+    """
+    from django.utils import timezone
+
+    from media.storage import publish_item
+
+    final_dir = item.get_base_dir()
+    # Switch the log to the final directory right after the move; writing to the old
+    # path would recreate the tmp directory and leave it behind.
+    current_log = [tmp_dir / 'download.log']
+
+    def log(message):
+        write_log(current_log[0], message)
+        if echo:
+            echo(message)
+
+    log('=== MOVING TO FINAL DIRECTORY ===')
+    final_dir.parent.mkdir(parents=True, exist_ok=True)
+    if final_dir.exists():
+        log(f'Removing existing directory: {final_dir}')
+        shutil.rmtree(final_dir)
+    shutil.move(str(tmp_dir), str(final_dir))
+    current_log[0] = final_dir / 'download.log'
+    log(f'Moved to: {final_dir}')
+
+    try:
+        if publish_item(item, log=log):
+            log('=== PUBLISHED TO REMOTE STORAGE ===')
+    except Exception as e:
+        # Files stay in final_dir; a refetch (or `manage.py publish_media`) can retry.
+        log(f'Publishing to remote storage failed: {e}')
+        raise
+
+    item.status = MediaItem.STATUS_READY
+    item.downloaded_at = timezone.now()
+    item.save()
+    log('=== READY ===')
+    log(f'Completed successfully: {item.title}')
+    return final_dir

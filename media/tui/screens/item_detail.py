@@ -91,15 +91,11 @@ class ItemDetailScreen(Screen):
     def _on_delete_confirm(self, confirmed: bool) -> None:
         if not confirmed:
             return
-        import shutil
         from media.models import MediaItem
 
         try:
             item = MediaItem.objects.get(guid=self._guid)
-            base_dir = item.get_base_dir()
-            if base_dir and base_dir.exists():
-                shutil.rmtree(base_dir)
-            item.delete()
+            item.delete()  # pre_delete signal removes local and published files
         except MediaItem.DoesNotExist:
             pass
         self.dismiss('deleted')

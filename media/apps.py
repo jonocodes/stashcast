@@ -63,7 +63,16 @@ class MediaConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
 
     def ready(self):
-        """Import signals when the app is ready"""
+        """Import signals and register system checks when the app is ready"""
+        from django.core.checks import register
+
+        # Side-effect import: connects the pre_delete file cleanup. The noqa stops
+        # `ruff --fix` from deleting it as "unused" (that happened once, in ba94549).
+        import media.signals  # noqa: F401
+        from media.storage import check_remote_storage_config
+
+        register(check_remote_storage_config)
+
         if GIT_INFO['commit_sha_short']:
             logger.info(
                 'StashCast commit=%s branch=%s message=%s',
