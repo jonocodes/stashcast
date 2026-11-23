@@ -1,0 +1,9 @@
+{
+  "name": "stashcast-site",
+  "private": true,
+  "type": "module",
+  "description": "Tooling for the StashCast marketing site (screenshots, covers). The site itself is static HTML in public/.",
+  "devDependencies": {
+    "playwright-core": "^1.49.0"
+  }
+}

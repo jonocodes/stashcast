@@ -43,3 +43,7 @@ Thumbs.db
 
 # Flox
 .flox
+.shots/
+
+# Marketing site tooling
+node_modules/
