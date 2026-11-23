@@ -1,3 +1,14 @@
+# Production setup: runs the published image.
+# Pin a release with STASHCAST_VERSION (e.g. 0.2.0, 0.2 or stable) in .env.
+# For local development use docker-compose.dev.yml on top of this file.
+
+x-stashcast: &stashcast
+  image: ghcr.io/jonocodes/stashcast:${STASHCAST_VERSION:-latest}
+  env_file: .env
+  environment:
+    STASHCAST_DATA_DIR: /app/data_docker
+  restart: unless-stopped
+
 services:
   caddy:
     image: caddy:2-alpine
@@ -11,37 +22,30 @@ services:
         target: /etc/caddy/Caddyfile
     depends_on:
       - web
+    restart: unless-stopped
 
   web:
-    build:
-      context: .
-      args:
-        GIT_COMMIT_SHA: ${GIT_COMMIT_SHA:-}
-        GIT_COMMIT_MSG: ${GIT_COMMIT_MSG:-}
-        GIT_BRANCH: ${GIT_BRANCH:-}
+    <<: *stashcast
     container_name: stashcast_web
-    environment:
-      STASHCAST_DATA_DIR: /app/data_docker
     volumes:
-      # - .:/app
       - ./data_docker:/app/data_docker
       - static:/app/staticfiles
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=4)"]
+      interval: 30s
+      timeout: 5s
+      start_period: 60s
+      retries: 3
 
   worker:
-    build:
-      context: .
-      args:
-        GIT_COMMIT_SHA: ${GIT_COMMIT_SHA:-}
-        GIT_COMMIT_MSG: ${GIT_COMMIT_MSG:-}
-        GIT_BRANCH: ${GIT_BRANCH:-}
+    <<: *stashcast
     container_name: stashcast_worker
     command: python manage.py run_huey
     depends_on:
-      - web
-    environment:
-      STASHCAST_DATA_DIR: /app/data_docker
+      web:
+        # web runs the database migrations on start
+        condition: service_healthy
     volumes:
-      - .:/app
       - ./data_docker:/app/data_docker
 
 volumes:

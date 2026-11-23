@@ -1,6 +1,7 @@
 import json
 import logging
 import subprocess
+import tomllib
 from pathlib import Path
 
 from django.apps import AppConfig
@@ -58,6 +59,18 @@ def _get_git_info():
 GIT_INFO = _get_git_info()
 
 
+def _get_app_version():
+    """Read the release version from pyproject.toml (the single source of truth)."""
+    try:
+        pyproject = Path(__file__).resolve().parent.parent / 'pyproject.toml'
+        return tomllib.loads(pyproject.read_text())['project']['version']
+    except Exception:
+        return ''
+
+
+APP_VERSION = _get_app_version()
+
+
 class MediaConfig(AppConfig):
     name = 'media'
     default_auto_field = 'django.db.models.BigAutoField'
@@ -66,7 +79,8 @@ class MediaConfig(AppConfig):
         """Import signals when the app is ready"""
         if GIT_INFO['commit_sha_short']:
             logger.info(
-                'StashCast commit=%s branch=%s message=%s',
+                'StashCast version=%s commit=%s branch=%s message=%s',
+                APP_VERSION,
                 GIT_INFO['commit_sha_short'],
                 GIT_INFO.get('branch', ''),
                 GIT_INFO.get('commit_message', ''),

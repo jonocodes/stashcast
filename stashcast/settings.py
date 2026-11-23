@@ -35,7 +35,7 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env.bool('DEBUG', default=True)
+DEBUG = env.bool('DEBUG', default=False)
 
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS')
 
@@ -122,6 +122,7 @@ UNFOLD = {
 }
 
 MIDDLEWARE = [
+    'stashcast.health.HealthCheckMiddleware',  # Must be first: skips host validation
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     # "whitenoise.middleware.WhiteNoiseMiddleware",
