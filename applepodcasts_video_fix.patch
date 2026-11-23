@@ -1,0 +1,44 @@
+--- a/yt_dlp/extractor/applepodcasts.py
++++ b/yt_dlp/extractor/applepodcasts.py
+@@ -11,6 +11,23 @@ from ..utils.traversal import traverse_obj
+ class ApplePodcastsIE(InfoExtractor):
+     _VALID_URL = r'https?://podcasts\.apple\.com/(?:[^/]+/)?podcast(?:/[^/]+){1,2}.*?\bi=(?P<id>\d+)'
+     _TESTS = [{
++        # Video podcast
++        'url': 'https://podcasts.apple.com/gb/podcast/apple-event-may-7/id275834665?i=1000654821230',
++        'info_dict': {
++            'id': '1000654821230',
++            'ext': 'mp4',
++            'title': 'Apple Event — May 7',
++            'episode': 'Apple Event — May 7',
++            'description': 'md5:c1f4a2e097d0ff2e26e602e47e8c4db1',
++            'upload_date': '20240507',
++            'timestamp': 1715090400,
++            'duration': 2312,
++            'series': 'Apple Events (video)',
++            'thumbnail': 're:.+[.](png|jpe?g|webp)',
++        },
++        'params': {
++            'format': 'best',
++        },
++    }, {
+         'url': 'https://podcasts.apple.com/us/podcast/ferreck-dawn-to-the-break-of-dawn-117/id1625658232?i=1000665010654',
+         'md5': '82cc219b8cc1dcf8bfc5a5e99b23b172',
+         'info_dict': {
+@@ -61,6 +78,9 @@ class ApplePodcastsIE(InfoExtractor):
+         model_data = traverse_obj(server_data, (
+             'headerButtonItems', lambda _, v: v['$kind'] == 'share' and v['modelType'] == 'EpisodeLockup',
+             'model', {dict}, any))
++
++        # Determine if this is a video or audio podcast
++        media_type = traverse_obj(model_data, ('playAction', 'episodeOffer', 'mediaType', {str}))
+
+         return {
+             'id': episode_id,
+@@ -75,5 +95,5 @@ class ApplePodcastsIE(InfoExtractor):
+                 'duration': ('duration', {int_or_none}),
+             }),
+             'thumbnail': self._og_search_thumbnail(webpage),
+-            'vcodec': 'none',
++            'vcodec': 'none' if media_type != 'video' else None,
+         }
