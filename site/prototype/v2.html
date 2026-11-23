@@ -1,0 +1,463 @@
+<!doctype html>
+<!--
+  PROTOTYPE round 2 — throwaway. Iterating on A ("The Pipe") and C ("Honest self-hosted").
+  ?variant=A|C  &palette=1..6   — bottom bar, ← / → for variant, 1-6 for palette.
+  Real app screenshots in assets/app/ come from fixture data (generated covers, no third-party art).
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StashCast — prototype round 2</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  .variant { display: none; }
+  .variant.on { display: block; }
+  a { color: inherit; }
+  img { max-width: 100%; }
+
+  /* ---------- palettes (A) ---------- */
+  #A[data-p="1"] { --bg:#0d0f14; --surf:#141924; --line:#2a3140; --text:#e8ecf3; --muted:#a8b1c2; --a1:#4fb3d1; --a2:#8a6fd1; --a3:#ffa23a; --code:#07090c; --on:#fff; }
+  #A[data-p="2"] { --bg:#f7f7fb; --surf:#ffffff; --line:#e3e5ee; --text:#15161d; --muted:#5b6070; --a1:#2496bb; --a2:#7656c8; --a3:#ec8613; --code:#15161d; --on:#fff; }
+  #A[data-p="3"] { --bg:#0b0b0b; --surf:#161616; --line:#2a2a2a; --text:#f5f5f5; --muted:#a3a3a3; --a1:#ff7a1a; --a2:#ff5c39; --a3:#ffd166; --code:#000; --on:#111; }
+  #A[data-p="4"] { --bg:#04232a; --surf:#0a3139; --line:#164a55; --text:#e6f6f7; --muted:#9cc3c8; --a1:#7fd3e6; --a2:#4fb3d1; --a3:#ffa23a; --code:#021a1f; --on:#04232a; }
+  #A[data-p="5"] { --bg:#1a1030; --surf:#241840; --line:#3a2a5e; --text:#f3eefe; --muted:#b9addb; --a1:#c4a8ff; --a2:#8a6fd1; --a3:#ffb347; --code:#120b22; --on:#1a1030; }
+  #A[data-p="6"] { --bg:#f5efe4; --surf:#fffaf1; --line:#e2d7c3; --text:#2b2333; --muted:#6b5f73; --a1:#3d8fa6; --a2:#6b4fb8; --a3:#e07a1f; --code:#2b2333; --on:#fff; }
+
+  /* ---------- palettes (C) ---------- */
+  #C[data-p="1"] { --bg:#0b0d0c; --surf:#050605; --line:#1e2420; --text:#d5dbd6; --hi:#f1f4f2; --muted:#7d8a80; --a1:#7fd38f; --a2:#7fd3e6; --a3:#ffa23a; }
+  #C[data-p="2"] { --bg:#0e0a04; --surf:#080502; --line:#2e2414; --text:#ffd9a0; --hi:#ffe9c7; --muted:#a3804a; --a1:#ffb000; --a2:#ffcf66; --a3:#ff6b35; }
+  #C[data-p="3"] { --bg:#fbfaf7; --surf:#ffffff; --line:#e7e3da; --text:#2b2f36; --hi:#111418; --muted:#6a717b; --a1:#1a7f37; --a2:#6b4fb8; --a3:#d9480f; }
+  #C[data-p="4"] { --bg:#110f1c; --surf:#0b0a13; --line:#2a2540; --text:#e1dcf2; --hi:#fff; --muted:#9a93b8; --a1:#7fd3e6; --a2:#c4a8ff; --a3:#ffa23a; }
+  #C[data-p="5"] { --bg:#0f1419; --surf:#0a0e12; --line:#24303b; --text:#d8e1e8; --hi:#fff; --muted:#8899a6; --a1:#b4f461; --a2:#61d4f4; --a3:#f4a261; }
+  #C[data-p="6"] { --bg:#f3f0ff; --surf:#ffffff; --line:#ddd6f5; --text:#2a2440; --hi:#140f2a; --muted:#6c6590; --a1:#6b4fb8; --a2:#2496bb; --a3:#e07a1f; }
+
+  /* =========================================================
+     A2 — The Pipe
+     ========================================================= */
+  #A { background: var(--bg); color: var(--text); font: 16px/1.55 Inter, ui-sans-serif, system-ui, sans-serif; min-height: 100vh; overflow-x: hidden; transition: background .3s, color .3s; }
+  #A .wrap { max-width: 1160px; margin: 0 auto; padding: 0 28px; }
+  #A nav { display: flex; align-items: center; justify-content: space-between; padding: 22px 0; }
+  #A nav img { height: 56px; }
+  #A nav .links { display: flex; gap: 28px; align-items: center; font-size: 15px; color: var(--muted); }
+  #A nav .links a { text-decoration: none; }
+  #A .btn { display: inline-flex; align-items: center; gap: 8px; padding: 11px 18px; border-radius: 10px; font-weight: 600; text-decoration: none; border: 0; cursor: pointer; font-size: 15px; }
+  #A .btn.primary { background: linear-gradient(135deg, var(--a1), var(--a2)); color: var(--on); }
+  #A .btn.ghost { background: var(--surf); color: var(--text); border: 1px solid var(--line); }
+  #A .hero { display: grid; grid-template-columns: 1.05fr 1fr; gap: 40px; align-items: center; padding: 40px 0 80px; position: relative; }
+  #A .hero::before { content: ""; position: absolute; inset: -120px -300px auto auto; width: 700px; height: 700px; background: radial-gradient(closest-side, color-mix(in srgb, var(--a2) 28%, transparent), transparent); pointer-events: none; }
+  #A .eyebrow { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--a1); font-weight: 700; }
+  #A h1 { font-size: 58px; line-height: 1.02; margin: 14px 0 18px; letter-spacing: -.03em; }
+  #A h1 .grad { background: linear-gradient(90deg, var(--a1), var(--a2) 60%, var(--a3)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  #A .lede { font-size: 19px; color: var(--muted); max-width: 520px; }
+  #A .paste { display: flex; margin-top: 28px; background: var(--surf); border: 1px solid var(--line); border-radius: 14px; padding: 6px; max-width: 540px; box-shadow: 0 0 0 6px color-mix(in srgb, var(--a1) 8%, transparent); }
+  #A .paste input { flex: 1; background: transparent; border: 0; color: var(--text); font: inherit; padding: 10px 12px; outline: none; }
+  #A .sub-ctas { margin-top: 16px; font-size: 14px; color: var(--muted); display: flex; gap: 18px; }
+  #A .stage { position: relative; height: 480px; }
+  #A .pill { position: absolute; left: 0; background: var(--surf); border: 1px solid var(--line); border-radius: 999px; padding: 8px 14px; font: 13px ui-monospace, monospace; color: var(--text); white-space: nowrap; animation: flow 6s ease-in-out infinite; opacity: 0; }
+  #A .pill b { color: var(--a3); font-weight: 600; }
+  #A .pill:nth-child(1) { top: 70px; } #A .pill:nth-child(2) { top: 180px; animation-delay: 2s; } #A .pill:nth-child(3) { top: 290px; animation-delay: 4s; }
+  @keyframes flow { 0% { transform: translateX(-20px); opacity: 0; } 12% { opacity: 1; } 55% { transform: translateX(140px); opacity: 1; } 75% { transform: translateX(230px) scale(.6); opacity: 0; } 100% { opacity: 0; } }
+  #A .phone { position: absolute; right: 0; top: 0; width: 280px; height: 480px; background: #0a0c10; color: #e8ecf3; border: 10px solid #232a37; border-radius: 40px; padding: 18px 14px; box-shadow: 0 30px 80px rgba(0,0,0,.35), 0 0 0 1px #313a4b; overflow: hidden; }
+  #A .phone h4 { margin: 4px 4px 12px; font-size: 13px; color: #7d8799; font-weight: 600; display: flex; justify-content: space-between; }
+  #A .ep { display: flex; gap: 10px; align-items: center; padding: 8px 6px; border-radius: 10px; }
+  #A .ep + .ep { border-top: 1px solid #1a1f2a; }
+  #A .ep img, #A .ep .art { width: 76px; height: 43px; border-radius: 6px; flex: none; object-fit: cover; }
+  #A .ep .t { font-size: 13px; font-weight: 600; line-height: 1.25; }
+  #A .ep .m { font-size: 11px; color: #7d8799; margin-top: 2px; }
+  #A .ep.new { animation: drop .6s cubic-bezier(.2,1.4,.4,1); background: rgba(79,179,209,.1); }
+  @keyframes drop { from { transform: translateY(-20px); opacity: 0; } }
+  #A .bar { height: 3px; background: #232a37; border-radius: 2px; margin-top: 5px; overflow: hidden; }
+  #A .bar i { display: block; height: 100%; width: 0; background: var(--a3); transition: width 2.2s ease; }
+  #A .strip { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 20px 0; color: var(--muted); font-size: 14px; }
+  #A .strip .wrap { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+  #A .strip b { color: var(--text); }
+  #A section { padding: 84px 0; }
+  #A h2 { font-size: 40px; letter-spacing: -.02em; margin: 0 0 10px; }
+  #A .sec-lede { color: var(--muted); font-size: 18px; margin: 0 0 40px; max-width: 640px; }
+  /* screenshot showcase */
+  #A .tabs { display: inline-flex; gap: 4px; background: var(--surf); border: 1px solid var(--line); border-radius: 12px; padding: 4px; margin-bottom: 22px; }
+  #A .tabs button { border: 0; background: none; color: var(--muted); font: 600 14px inherit; padding: 8px 14px; border-radius: 8px; cursor: pointer; }
+  #A .tabs button.cur { background: linear-gradient(135deg, var(--a1), var(--a2)); color: var(--on); }
+  #A .browser { border-radius: 14px; overflow: hidden; border: 1px solid var(--line); box-shadow: 0 40px 90px rgba(0,0,0,.3); background: var(--surf); transform: perspective(1800px) rotateX(4deg); transform-origin: top; }
+  #A .browser .chrome { display: flex; gap: 7px; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+  #A .browser .chrome i { width: 11px; height: 11px; border-radius: 50%; background: var(--line); }
+  #A .browser .chrome span { margin-left: 14px; flex: 1; max-width: 420px; background: var(--bg); border-radius: 7px; padding: 4px 12px; font-size: 12px; color: var(--muted); }
+  #A .browser img { display: block; width: 100%; }
+  #A .showcase { position: relative; }
+  #A .mobile-float { position: absolute; right: -10px; bottom: -40px; width: 210px; border-radius: 30px; border: 8px solid #232a37; overflow: hidden; box-shadow: 0 30px 60px rgba(0,0,0,.4); background: #000; }
+  #A .mobile-float img { display: block; }
+  #A .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 34px; }
+  #A .step { position: relative; padding: 28px; border-radius: 18px; background: var(--surf); border: 1px solid var(--line); box-shadow: 8px 8px 0 -1px color-mix(in srgb, var(--a2) 55%, var(--bg)), 16px 16px 0 -2px color-mix(in srgb, var(--a1) 35%, var(--bg)); }
+  #A .step .n { font: 700 13px ui-monospace, monospace; color: var(--a3); }
+  #A .step h3 { margin: 8px 0 6px; font-size: 21px; }
+  #A .step p { margin: 0; color: var(--muted); font-size: 15px; }
+  #A .spec { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+  #A table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  #A td, #A th { text-align: left; padding: 11px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  #A th { color: var(--muted); font-weight: 500; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; }
+  #A td:first-child { color: var(--muted); width: 120px; }
+  #A .yes { color: var(--a1); font-weight: 700; }
+  #A h3.t { font-size: 14px; text-transform: uppercase; letter-spacing: .08em; color: var(--a3); margin: 0 0 8px; }
+  #A .install { display: grid; grid-template-columns: 1fr 1.2fr; gap: 50px; align-items: center; }
+  #A pre { margin: 0; background: var(--code); border: 1px solid var(--line); border-radius: 14px; padding: 22px; font: 14px/1.7 ui-monospace, monospace; color: #c9d1de; overflow-x: auto; }
+  #A pre .c { color: #5b6577; } #A pre .p { color: var(--a3); }
+  #A footer { border-top: 1px solid var(--line); padding: 36px 0 120px; color: var(--muted); font-size: 14px; }
+  #A footer .wrap { display: flex; justify-content: space-between; }
+
+  /* =========================================================
+     C2 — Honest self-hosted
+     ========================================================= */
+  #C { background: var(--bg); color: var(--text); font: 14px/1.6 "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; min-height: 100vh; transition: background .3s, color .3s; }
+  #C .top { display: flex; align-items: center; gap: 18px; padding: 10px 22px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--bg); z-index: 2; }
+  #C .top img { height: 32px; }
+  #C .top .crumbs { color: var(--muted); }
+  #C .top .right { margin-left: auto; display: flex; gap: 18px; color: var(--muted); align-items: center; }
+  #C .top .right a { text-decoration: none; }
+  #C .top .star { border: 1px solid var(--line); padding: 4px 10px; border-radius: 6px; color: var(--text); }
+  #C .layout { display: grid; grid-template-columns: 220px 1fr; max-width: 1280px; margin: 0 auto; }
+  #C aside { border-right: 1px solid var(--line); padding: 26px 20px; position: sticky; top: 53px; height: calc(100vh - 53px); color: var(--muted); }
+  #C aside .h { color: var(--text); text-transform: uppercase; font-size: 11px; letter-spacing: .1em; margin: 18px 0 6px; opacity: .8; }
+  #C aside a { display: block; text-decoration: none; padding: 3px 0; }
+  #C aside a.cur { color: var(--a1); }
+  #C aside a.cur::before { content: "▸ "; }
+  #C main { padding: 34px 44px 130px; min-width: 0; }
+  #C .herogrid { display: grid; grid-template-columns: 1fr 1fr; gap: 34px; align-items: start; }
+  #C h1 { font-size: 30px; line-height: 1.25; margin: 0 0 12px; color: var(--hi); font-weight: 700; letter-spacing: -.01em; }
+  #C h1 .arrow { color: var(--a3); }
+  #C .tagline { color: var(--muted); margin: 0 0 22px; font-size: 15px; }
+  #C .badges { display: flex; gap: 8px; margin-bottom: 22px; flex-wrap: wrap; }
+  #C .badges span { border: 1px solid var(--line); border-radius: 4px; padding: 2px 8px; font-size: 12px; color: var(--muted); }
+  #C .badges span b { color: var(--a2); font-weight: 400; }
+  #C .cta { display: flex; gap: 10px; }
+  #C .cta a { text-decoration: none; border: 1px solid var(--line); border-radius: 6px; padding: 8px 14px; }
+  #C .cta a.pri { background: var(--a1); color: var(--bg); border-color: var(--a1); font-weight: 700; }
+  #C .shot { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--surf); }
+  #C .shot .tb { display: flex; gap: 6px; padding: 8px 10px; border-bottom: 1px solid var(--line); align-items: center; color: var(--muted); font-size: 12px; }
+  #C .shot .tb i { width: 10px; height: 10px; border-radius: 50%; background: var(--line); display: inline-block; }
+  #C .shot img { display: block; width: 100%; }
+  #C .shot .tb .tabs { margin-left: auto; display: flex; gap: 4px; }
+  #C .shot .tb .tabs button { background: none; border: 1px solid transparent; color: var(--muted); font: inherit; font-size: 12px; padding: 1px 8px; border-radius: 4px; cursor: pointer; }
+  #C .shot .tb .tabs button.cur { border-color: var(--line); color: var(--a1); }
+  #C .term { background: var(--surf); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; margin-top: 30px; }
+  #C .term .tb { display: flex; gap: 6px; padding: 10px 12px; border-bottom: 1px solid var(--line); align-items: center; color: var(--muted); font-size: 12px; }
+  #C .term .tb i { width: 11px; height: 11px; border-radius: 50%; background: var(--line); display: inline-block; }
+  #C .term .tb .copy { margin-left: auto; border: 1px solid var(--line); border-radius: 4px; padding: 1px 8px; cursor: pointer; }
+  #C .term pre { margin: 0; padding: 16px 18px; font: inherit; font-size: 13px; line-height: 1.75; white-space: pre-wrap; color: var(--text); }
+  #C .ps { color: var(--a3); } #C .dim { color: var(--muted); } #C .ok { color: var(--a1); } #C .hl { color: var(--a2); }
+  #C .cursor { display: inline-block; width: 8px; height: 15px; background: var(--text); vertical-align: -2px; animation: blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  #C h2 { font-size: 16px; color: var(--hi); margin: 46px 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+  #C h2::before { content: "## "; color: var(--muted); }
+  #C .two { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; }
+  #C .three { display: grid; grid-template-columns: 1.4fr 1fr; gap: 26px; align-items: start; }
+  #C table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  #C td, #C th { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  #C th { color: var(--muted); font-weight: 400; }
+  #C td:first-child { color: var(--muted); white-space: nowrap; }
+  #C .yes { color: var(--a1); } #C .no { color: var(--muted); }
+  #C .feeds div { display: flex; justify-content: space-between; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; margin-bottom: 8px; }
+  #C .feeds img { height: 18px; vertical-align: -4px; margin-right: 8px; border-radius: 3px; }
+  #C .feeds span { color: var(--muted); }
+  #C .flow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 13px; }
+  #C .flow span { border: 1px solid var(--line); padding: 6px 10px; border-radius: 6px; }
+  #C .flow em { color: var(--a3); font-style: normal; }
+  #C .phoneshot { border: 6px solid var(--line); border-radius: 26px; overflow: hidden; max-width: 240px; }
+  #C .phoneshot img { display: block; }
+
+  /* ---------- prototype switcher ---------- */
+  #proto-bar { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); z-index: 99; display: flex; align-items: center; gap: 4px; background: #fff; color: #111; border-radius: 999px; padding: 5px; box-shadow: 0 6px 30px rgba(0,0,0,.35), 0 0 0 2px #ff2d75; font: 600 13px ui-sans-serif, system-ui, sans-serif; }
+  #proto-bar button.nav { border: 0; background: #111; color: #fff; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 15px; }
+  #proto-bar .label { padding: 0 12px; min-width: 210px; text-align: center; }
+  #proto-bar .label small { color: #ff2d75; font-weight: 700; margin-right: 6px; }
+  #proto-bar .pals { display: flex; gap: 5px; padding: 0 10px 0 6px; border-left: 1px solid #ddd; align-items: center; }
+  #proto-bar .pals button { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px #bbb; cursor: pointer; padding: 0; }
+  #proto-bar .pals button.cur { box-shadow: 0 0 0 2px #111; }
+  #proto-bar .pname { font-weight: 500; color: #555; min-width: 120px; padding-left: 4px; }
+</style>
+</head>
+<body>
+
+<!-- ================================ A2 ================================ -->
+<div class="variant" id="A" data-name="The Pipe" data-p="1">
+  <div class="wrap">
+    <nav>
+      <img src="assets/header-transparent.png" alt="StashCast">
+      <div class="links">
+        <a href="#a-see">Screenshots</a><a href="#a-how">How it works</a><a href="#a-spec">Specs</a><a href="#a-install">Self-host</a><a href="#">GitHub ↗</a>
+        <a class="btn ghost" href="https://demo.stashcast.net/">Live demo</a>
+      </div>
+    </nav>
+
+    <div class="hero">
+      <div>
+        <div class="eyebrow">Self-hosted · Open source · GPLv3</div>
+        <h1>Any link.<br><span class="grad">Your podcast app.</span></h1>
+        <p class="lede">StashCast downloads the one-off video or episode someone sent you and drops it into a private podcast feed — so you can watch or listen later, offline, in the app you already use.</p>
+        <form class="paste" onsubmit="return stashA(event)">
+          <input id="a-url" placeholder="Paste any link" value="https://youtu.be/fixing-a-flat">
+          <button class="btn primary">Stash it →</button>
+        </form>
+        <div class="sub-ctas"><span>★ 1,000+ sites via yt-dlp</span><span>⬇ docker compose up</span><span>◎ Live demo</span></div>
+      </div>
+      <div class="stage">
+        <div class="pill"><b>youtube.com</b>/watch?v=compilers</div>
+        <div class="pill"><b>podcasts.apple.com</b>/ep/112</div>
+        <div class="pill"><b>soundcloud.com</b>/corner-bar</div>
+        <div class="phone">
+          <h4><span>StashCast · Combined</span><span>⋯</span></h4>
+          <div id="a-eps">
+            <div class="ep"><img src="assets/covers/compilers.webp" alt=""><div><div class="t">How Compilers Actually Work</div><div class="m">48 min · video</div></div></div>
+            <div class="ep"><img src="assets/covers/penny.webp" alt=""><div><div class="t">Ep. 112 — The Penny Problem</div><div class="m">32 min · audio</div></div></div>
+            <div class="ep"><img src="assets/covers/cornerbar.webp" alt=""><div><div class="t">Live at the Corner Bar</div><div class="m">1 h 04 · audio</div></div></div>
+            <div class="ep"><img src="assets/covers/garden.webp" alt=""><div><div class="t">Gardening for Lazy People</div><div class="m">21 min · video</div></div></div>
+            <div class="ep"><img src="assets/covers/bread.webp" alt=""><div><div class="t">Bread, Slowly</div><div class="m">25 min · video</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="strip"><div class="wrap">
+    <span><b>Sources</b> YouTube · Vimeo · SoundCloud · Apple Podcasts · direct MP3/MP4 · pages with embedded media</span>
+    <span><b>Players</b> AntennaPod · Overcast · Pocket Casts · any RSS app</span>
+  </div></div>
+
+  <section id="a-see"><div class="wrap">
+    <h2>A tidy little library.</h2>
+    <p class="sec-lede">Everything you've stashed, in one place — with artwork, durations, summaries and one-click refetch. Works on your phone too.</p>
+    <div class="tabs" id="a-tabs">
+      <button data-shot="grid" class="cur">Grid</button><button data-shot="list">List</button><button data-shot="item">Item</button><button data-shot="home">Home</button>
+    </div>
+    <div class="showcase">
+      <div class="browser">
+        <div class="chrome"><i></i><i></i><i></i><span id="a-url-bar">stash.your-host.net/admin/tools/grid/</span></div>
+        <img id="a-shot" src="assets/app/grid-dark.webp" alt="StashCast grid view">
+      </div>
+      <div class="mobile-float"><img id="a-mob" src="assets/app/mobile-dark.webp" alt="StashCast on mobile"></div>
+    </div>
+  </div></section>
+
+  <section id="a-how" style="padding-top:60px"><div class="wrap">
+    <h2>Three steps. No subscriptions.</h2>
+    <p class="sec-lede">You don't want the whole show. You want <em>that one episode</em>. StashCast is read-it-later for audio and video.</p>
+    <div class="steps">
+      <div class="step"><div class="n">01 — SEND</div><h3>Click the bookmarklet</h3><p>Or hit the API, or run <code>manage.py stash</code>. Any page with media works.</p></div>
+      <div class="step"><div class="n">02 — STASH</div><h3>It downloads in the background</h3><p>Metadata, artwork and subtitles are fetched; optional transcoding and summaries.</p></div>
+      <div class="step"><div class="n">03 — LISTEN</div><h3>It shows up in your feed</h3><p>Audio, video, or combined RSS feeds. Offline, with your app's speed controls.</p></div>
+    </div>
+  </div></section>
+
+  <section id="a-spec" style="padding-top:40px"><div class="wrap">
+    <h2>The honest details.</h2>
+    <p class="sec-lede">Small on purpose: single user, one Django process, one worker.</p>
+    <div class="spec">
+      <div>
+        <h3 class="t">Spec sheet</h3>
+        <table>
+          <tr><td>Sources</td><td>Anything yt-dlp supports, direct media, HTML with embeds, playlists</td></tr>
+          <tr><td>Interfaces</td><td>Web UI, bookmarklet, HTTP API, CLI</td></tr>
+          <tr><td>Feeds</td><td>audio.xml · video.xml · combined.xml — optionally token-protected</td></tr>
+          <tr><td>Extras</td><td>ffmpeg transcoding, subtitles, extractive summaries</td></tr>
+          <tr><td>Storage</td><td>Local disk, or S3 · R2 · MinIO</td></tr>
+          <tr><td>Languages</td><td>English · Español · Português</td></tr>
+        </table>
+      </div>
+      <div>
+        <h3 class="t">Is it the right tool?</h3>
+        <table>
+          <tr><th>You want to…</th><th>Use</th></tr>
+          <tr><td style="width:auto;color:inherit">Listen later to one-off links</td><td class="yes">StashCast ✓</td></tr>
+          <tr><td style="width:auto;color:inherit">Auto-follow channels &amp; playlists</td><td>TubeSync, Podsync</td></tr>
+          <tr><td style="width:auto;color:inherit">Archive media long-term</td><td>ArchiveBox, Tube Archivist</td></tr>
+          <tr><td style="width:auto;color:inherit">Save articles to read later</td><td>Savr (sister project)</td></tr>
+        </table>
+      </div>
+    </div>
+  </div></section>
+
+  <section id="a-install" style="padding-top:40px"><div class="wrap install">
+    <div>
+      <h2>Running in a minute.</h2>
+      <p class="sec-lede" style="margin-bottom:24px">One compose file. SQLite by default. Put it behind your reverse proxy and you're done.</p>
+      <a class="btn primary" href="#">Read the docs</a> &nbsp; <a class="btn ghost" href="https://demo.stashcast.net/">Poke the demo</a>
+    </div>
+<pre><span class="c"># grab it</span>
+<span class="p">$</span> git clone https://github.com/jonocodes/stashcast && cd stashcast
+<span class="p">$</span> docker compose up -d
+<span class="p">$</span> docker compose run web just setup
+<span class="p">$</span> docker compose run web ./manage.py createsuperuser
+
+<span class="c"># then add this to your podcast app</span>
+http://your-host:8000/feeds/audio.xml</pre>
+  </div></section>
+
+  <footer><div class="wrap"><span>StashCast · GPLv3 · made for the episode a friend sent you</span><span>GitHub · Demo · Savr</span></div></footer>
+</div>
+
+<!-- ================================ C2 ================================ -->
+<div class="variant" id="C" data-name="Honest self-hosted" data-p="1">
+  <div class="top">
+    <img src="assets/header-transparent.png" alt="StashCast">
+    <span class="crumbs">/ docs / overview</span>
+    <div class="right"><a href="https://demo.stashcast.net/">demo</a><a href="#">docs</a><a href="#">changelog</a><a class="star" href="#">★ GitHub</a></div>
+  </div>
+  <div class="layout">
+    <aside>
+      <div class="h">Start</div>
+      <a class="cur" href="#">Overview</a><a href="#">Quick start</a><a href="#">Bookmarklet</a>
+      <div class="h">Use</div>
+      <a href="#">Feeds</a><a href="#">API</a><a href="#">CLI</a>
+      <div class="h">Run</div>
+      <a href="#">Docker</a><a href="#">Bare metal</a><a href="#">S3 / R2</a><a href="#">Configuration</a>
+      <div class="h">Project</div>
+      <a href="#">Architecture</a><a href="#">Alternatives</a><a href="#">Contributing</a>
+    </aside>
+    <main>
+      <div class="herogrid">
+        <div>
+          <h1>stashcast <span class="arrow">—</span> any URL <span class="arrow">→</span> your podcast feed.</h1>
+          <p class="tagline">A small, single-user Django app. Give it a link; it runs yt-dlp + ffmpeg in a background worker and publishes the result as audio/video RSS feeds for your podcast app.</p>
+          <div class="badges"><span>license <b>GPLv3</b></span><span>python <b>3.12+</b></span><span>db <b>sqlite</b></span><span>queue <b>huey</b></span><span>storage <b>disk | s3</b></span><span>i18n <b>en es pt</b></span></div>
+          <div class="cta"><a class="pri" href="#">quick start →</a><a href="https://demo.stashcast.net/">live demo</a></div>
+        </div>
+        <div class="shot">
+          <div class="tb"><i></i><i></i><i></i>&nbsp; /admin/tools/<span id="c-path">grid</span>/
+            <span class="tabs" id="c-tabs"><button data-shot="grid" class="cur">grid</button><button data-shot="list">list</button><button data-shot="item">item</button></span></div>
+          <img id="c-shot" src="assets/app/grid-dark.webp" alt="StashCast grid view">
+        </div>
+      </div>
+
+      <div class="term">
+        <div class="tb"><i></i><i></i><i></i>&nbsp; ~/stashcast <span class="copy" onclick="this.textContent='copied ✓'">copy</span></div>
+<pre><span class="ps">$</span> docker compose up -d && docker compose run web just setup
+<span class="dim"> ✔ Container stashcast-web     Started
+ ✔ Container stashcast-worker  Started</span>
+<span class="ps">$</span> curl "localhost:8000/stash/?token=$TOKEN&type=auto&url=https://youtu.be/…"
+<span class="ps">$</span> docker compose logs -f worker
+<span class="dim">[huey]</span>    fetching metadata          <span class="hl">"How Compilers Actually Work"</span>
+<span class="dim">[yt-dlp]</span>  downloading                <span class="ok">248.4 MiB</span>
+<span class="dim">[ffmpeg]</span>  thumbnail → webp, subs → vtt
+<span class="dim">[stash]</span>   summary (lexrank, 3 sentences)
+<span class="ok">[feed]</span>    published → /feeds/video.xml <span class="cursor"></span></pre>
+      </div>
+
+      <div class="two">
+        <div>
+          <h2>Pipeline</h2>
+          <div class="flow"><span>bookmarklet</span><em>→</em><span>/stash/ API</span><em>→</em><span>huey worker</span><em>→</em><span>yt-dlp · ffmpeg</span><em>→</em><span>RSS</span></div>
+          <h2>Feeds</h2>
+          <div class="feeds">
+            <div><span><img src="assets/feed-audio.png" alt="">/feeds/audio.xml</span><span>audio</span></div>
+            <div><span><img src="assets/feed-video.png" alt="">/feeds/video.xml</span><span>video</span></div>
+            <div><span><img src="assets/feed-combined.png" alt="">/feeds/combined.xml</span><span>both</span></div>
+          </div>
+        </div>
+        <div>
+          <h2>Spec sheet</h2>
+          <table>
+            <tr><td>sources</td><td>anything yt-dlp supports, direct media, HTML w/ embeds, playlists</td></tr>
+            <tr><td>interfaces</td><td>web UI, admin, bookmarklet, HTTP API, manage.py CLI</td></tr>
+            <tr><td>processing</td><td>optional ffmpeg transcode, subtitles, extractive summaries</td></tr>
+            <tr><td>storage</td><td>local disk, or S3-compatible (S3, R2, MinIO)</td></tr>
+            <tr><td>auth</td><td>single user; optional token-protected feeds</td></tr>
+            <tr><td>i18n</td><td>en, es, pt</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <div class="three">
+        <div>
+          <h2>Is this the right tool?</h2>
+          <table>
+            <tr><th>you want to…</th><th>use</th></tr>
+            <tr><td>listen later to one-off links</td><td class="yes">stashcast ✓</td></tr>
+            <tr><td>auto-follow channels / playlists</td><td class="no">TubeSync, Podsync</td></tr>
+            <tr><td>archive media long-term</td><td class="no">ArchiveBox, Tube Archivist</td></tr>
+            <tr><td>save articles to read later</td><td class="no">Savr (sister project)</td></tr>
+          </table>
+        </div>
+        <div>
+          <h2>On mobile</h2>
+          <div class="phoneshot"><img id="c-mob" src="assets/app/mobile-dark.webp" alt="StashCast on mobile"></div>
+        </div>
+      </div>
+      <p class="dim" style="font-size:12px;margin-top:30px">screenshots: generated by Playwright from fixture data · covers are generated, not third-party art</p>
+    </main>
+  </div>
+</div>
+
+<!-- ======================= prototype switcher ======================= -->
+<div id="proto-bar">
+  <button class="nav" id="prev" aria-label="previous">←</button>
+  <span class="label" id="label"></span>
+  <button class="nav" id="next" aria-label="next">→</button>
+  <span class="pals" id="pals"></span><span class="pname" id="pname"></span>
+</div>
+
+<script>
+  const PALS = {
+    A: [['Night', '#0d0f14', 'dark'], ['Daylight', '#f7f7fb', 'light'], ['Ink + Tangerine', '#ff7a1a', 'dark'], ['Deep Sea', '#0a3139', 'dark'], ['Grape Soda', '#3a2a5e', 'dark'], ['Cream', '#f5efe4', 'light']],
+    C: [['Phosphor', '#7fd38f', 'dark'], ['Amber CRT', '#ffb000', 'dark'], ['Paper', '#fbfaf7', 'light'], ['Brand Dusk', '#8a6fd1', 'dark'], ['Slate + Lime', '#b4f461', 'dark'], ['Lavender', '#ddd6f5', 'light']],
+  };
+  const keys = ['A', 'C'];
+  const params = new URLSearchParams(location.search);
+  let cur = keys.includes(params.get('variant')) ? params.get('variant') : 'A';
+  let pal = +params.get('palette') || 1;
+  const shotState = { A: 'grid', C: 'grid' };
+
+  function mode() { return PALS[cur][pal - 1][2]; }
+  function refreshShots() {
+    const m = mode();
+    const a = shotState.A, c = shotState.C;
+    document.getElementById('a-shot').src = a === 'home' ? 'assets/app/home.webp' : `assets/app/${a}-${m}.webp`;
+    document.getElementById('a-mob').src = `assets/app/mobile-${m}.webp`;
+    document.getElementById('a-url-bar').textContent = a === 'home' ? 'stash.your-host.net/' : `stash.your-host.net/admin/tools/${a}/`;
+    document.getElementById('c-shot').src = `assets/app/${c}-${m}.webp`;
+    document.getElementById('c-mob').src = `assets/app/mobile-${m}.webp`;
+    document.getElementById('c-path').textContent = c;
+  }
+  function render() {
+    document.querySelectorAll('.variant').forEach(v => v.classList.toggle('on', v.id === cur));
+    const el = document.getElementById(cur);
+    el.dataset.p = pal;
+    document.getElementById('label').innerHTML = `<small>ROUND 2</small>${cur} (${el.dataset.name})`;
+    document.getElementById('pals').innerHTML = PALS[cur].map((p, i) => `<button title="${i + 1}. ${p[0]}" class="${i + 1 === pal ? 'cur' : ''}" style="background:${p[1]}" data-i="${i + 1}"></button>`).join('');
+    document.querySelectorAll('#pals button').forEach(b => b.onclick = () => { pal = +b.dataset.i; render(); });
+    document.getElementById('pname').textContent = `${pal}. ${PALS[cur][pal - 1][0]}`;
+    const u = new URL(location); u.searchParams.set('variant', cur); u.searchParams.set('palette', pal); history.replaceState(null, '', u);
+    refreshShots();
+  }
+  const step = d => { cur = keys[(keys.indexOf(cur) + d + keys.length) % keys.length]; window.scrollTo(0, 0); render(); };
+  document.getElementById('prev').onclick = () => step(-1);
+  document.getElementById('next').onclick = () => step(1);
+  addEventListener('keydown', e => {
+    if (e.target.closest('input, textarea, [contenteditable]')) return;
+    if (e.key === 'ArrowLeft') step(-1);
+    if (e.key === 'ArrowRight') step(1);
+    if (/^[1-6]$/.test(e.key)) { pal = +e.key; render(); }
+  });
+  document.querySelectorAll('#a-tabs button').forEach(b => b.onclick = () => {
+    document.querySelectorAll('#a-tabs button').forEach(x => x.classList.toggle('cur', x === b)); shotState.A = b.dataset.shot; refreshShots();
+  });
+  document.querySelectorAll('#c-tabs button').forEach(b => b.onclick = () => {
+    document.querySelectorAll('#c-tabs button').forEach(x => x.classList.toggle('cur', x === b)); shotState.C = b.dataset.shot; refreshShots();
+  });
+  render();
+
+  function stashA(e) {
+    e.preventDefault();
+    const url = document.getElementById('a-url').value || 'https://example.com';
+    let host = 'a link'; try { host = new URL(url).hostname; } catch {}
+    const ep = document.createElement('div');
+    ep.className = 'ep new';
+    ep.innerHTML = `<img src="assets/covers/bikes.webp" alt=""><div style="flex:1"><div class="t">Stashing from ${host}…</div><div class="bar"><i></i></div></div>`;
+    document.getElementById('a-eps').prepend(ep);
+    requestAnimationFrame(() => requestAnimationFrame(() => ep.querySelector('.bar i').style.width = '100%'));
+    setTimeout(() => { ep.querySelector('div:last-child').innerHTML = `<div class="t">Fixing a Flat in Five Minutes</div><div class="m">5 min · just now · ${host}</div>`; }, 2300);
+    return false;
+  }
+</script>
+</body>
+</html>
