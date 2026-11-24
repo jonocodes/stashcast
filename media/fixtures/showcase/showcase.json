@@ -1,0 +1,15 @@
+{
+  "_comment": "Showcase library for marketing screenshots (see `just site-screenshots`). Titles, authors and covers are invented; covers are rendered by site/scripts/covers.mjs.",
+  "audio_source": "demo_data/pecha-kucha-aud/aud.mp3",
+  "video_source": "demo_data/pecha-kucha-vid/vid.mp4",
+  "items": [
+    {"slug": "compilers", "media_type": "video", "title": "How Compilers Actually Work", "author": "CS Lectures Online", "duration_seconds": 2894, "file_size": 260456448, "source_url": "https://youtube.com/watch?v=compilers", "hours_ago": 1},
+    {"slug": "penny", "media_type": "audio", "title": "Ep. 112 — The Penny Problem", "author": "The Small Questions", "duration_seconds": 1935, "file_size": 30932992, "source_url": "https://podcasts.apple.com/ep/112", "hours_ago": 6},
+    {"slug": "cornerbar", "media_type": "audio", "title": "Live at the Corner Bar (Set Two)", "author": "Night Owl Radio", "duration_seconds": 3851, "file_size": 61655040, "source_url": "https://soundcloud.com/corner-bar", "hours_ago": 11},
+    {"slug": "garden", "media_type": "video", "title": "Gardening for Lazy People, Part 3", "author": "Backyard Basics", "duration_seconds": 1262, "file_size": 113558733, "source_url": "https://youtube.com/watch?v=garden", "hours_ago": 16},
+    {"slug": "bread", "media_type": "video", "title": "Bread, Slowly — A Weekend Bake", "author": "Flour & Time", "duration_seconds": 1540, "file_size": 138602086, "source_url": "https://vimeo.com/bread", "hours_ago": 21},
+    {"slug": "spreadsheet", "media_type": "audio", "title": "A Short History of the Spreadsheet", "author": "The Small Questions", "duration_seconds": 2411, "file_size": 38587596, "source_url": "https://podcasts.apple.com/ep/98", "hours_ago": 26},
+    {"slug": "night", "media_type": "audio", "title": "Night Owl Radio — Hour 3", "author": "Night Owl Radio", "duration_seconds": 3600, "file_size": 57600000, "source_url": "https://example.fm/night-owl/3", "hours_ago": 31},
+    {"slug": "bikes", "media_type": "video", "title": "Fixing a Flat in Five Minutes", "author": "Two Wheels Workshop", "duration_seconds": 327, "file_size": 29430000, "source_url": "https://youtube.com/watch?v=flat", "hours_ago": 36}
+  ]
+}
