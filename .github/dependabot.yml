@@ -1,0 +1,20 @@
+# Proposes updates for GitHub Actions and the Docker base image.
+# Python packages are upgraded on purpose with `just upgrade` (see README).
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ['*']
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: monthly
+    ignore:
+      # Python minor upgrades are a deliberate step (requires-python, lockfile)
+      - dependency-name: python
+        update-types: ['version-update:semver-minor']

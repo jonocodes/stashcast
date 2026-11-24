@@ -19,6 +19,24 @@ setup:
 setup-with-packages:
     ./setup.sh --with-packages
 
+# install the locked python dependencies (including dev tools) into the active venv
+install:
+    pip install -r requirements-dev.txt
+
+# re-lock after editing dependencies in pyproject.toml (keeps current versions where possible)
+lock:
+    uv lock
+    scripts/export-requirements.sh
+
+# upgrade every dependency to the newest allowed version, then test
+upgrade:
+    uv lock --upgrade
+    scripts/export-requirements.sh
+    just install
+    just test
+    just docker-smoke
+    git diff --stat uv.lock requirements.txt requirements-dev.txt
+
 # clean up dev dependencies
 clean:
     rm -rf __pycache__

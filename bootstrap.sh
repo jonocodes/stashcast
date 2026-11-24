@@ -54,7 +54,9 @@ elif command -v flox &> /dev/null || [[ -d ".flox" ]]; then
 
     echo "Flox detected"
 
-    flox install ffmpeg just python313Packages.pip python3 ruff yt-dlp gettext
+    # pip and yt-dlp come from the venv (locked in requirements-dev.txt). Flox
+    # copies would land on PYTHONPATH and shadow the locked versions.
+    flox install ffmpeg just python3 ruff gettext sqlite
 
     # check if flox is activated
     if [[ -v FLOX_ENV_PROJECT ]]; then

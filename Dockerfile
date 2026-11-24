@@ -14,16 +14,22 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     HOME=/tmp \
     XDG_CACHE_HOME=/tmp/cache
 
-# yt-dlp comes from requirements.txt (pip), which is far newer than Debian's
+# yt-dlp comes from pip (below), which is far newer than Debian's
 RUN apt-get update && \
     apt-get install -y --no-install-recommends ffmpeg just sqlite3 && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
+# Exact, hashed versions exported from uv.lock
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
+
+# The one deliberate exception to the lock: sites like YouTube break old
+# yt-dlp releases, so take the newest. Cached builds reuse this layer; the
+# manual "Run workflow" rebuild skips the cache to pick up a new release.
+RUN pip install --no-cache-dir --upgrade yt-dlp
 
 # Summarizer data, baked in so containers don't download it on every start
 RUN python -m nltk.downloader -d "$NLTK_DATA" punkt_tab stopwords
