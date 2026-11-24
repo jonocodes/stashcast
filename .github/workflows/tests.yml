@@ -16,8 +16,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      # setup-uv publishes no floating major tags, so pin the commit
       - name: Install uv
-        uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0 (no floating major tags)
+        uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
 
       - name: Check uv.lock is up to date
         run: uv lock --check
