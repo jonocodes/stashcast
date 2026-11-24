@@ -245,11 +245,36 @@ class HTMLExtractionE2ETest(TestCase):
         self.assertEqual(item.media_type, MediaItem.MEDIA_TYPE_AUDIO)
         self.assertTrue(item.content_path)
 
-    # NOTE: Skipped - yt-dlp HTML5 video extraction has format selection issues
-    # The audio extraction test below proves the HTML extraction infrastructure works
-    # def test_extract_video_from_html_page(self):
-    #     """Test extracting video from HTML page with <video> tag"""
-    #     ...
+    def test_extract_video_from_html_page(self):
+        """Test extracting video from HTML page with <video> tag.
+
+        Plain <video> embeds give yt-dlp a single format with no height or codec
+        metadata, so the default video format selector must still accept it (#42).
+        """
+        url = f'{self.video_base_url}/view.html'
+        response = self.client.get(
+            '/stash/',
+            {
+                'token': settings.STASHCAST_USER_TOKEN,
+                'url': url,
+                'type': 'auto',
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        guid = response.json().get('guid')
+
+        deadline = time.time() + 30
+        item = None
+        while time.time() < deadline:
+            item = MediaItem.objects.filter(guid=guid).first()
+            if item and item.status in (MediaItem.STATUS_READY, MediaItem.STATUS_ERROR):
+                break
+            time.sleep(0.3)
+
+        self.assertIsNotNone(item, 'Media item not found')
+        self.assertEqual(item.status, MediaItem.STATUS_READY, item.error_message)
+        self.assertEqual(item.media_type, MediaItem.MEDIA_TYPE_VIDEO)
+        self.assertTrue(item.get_absolute_content_path().exists())
 
 
 @override_settings(STASHCAST_SUMMARY_SENTENCES=0)

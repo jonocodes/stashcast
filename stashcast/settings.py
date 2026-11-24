@@ -274,12 +274,15 @@ STASHCAST_DEFAULT_YTDLP_ARGS_AUDIO = os.environ.get(
 
 # Video: H.264/AAC in MP4 container for maximum mobile compatibility
 # Limit to 720p to balance quality and file size
-# Format filter: prefer best video ≤720p + best audio, fallback to combined format ≤720p
+# Format filter: prefer best video ≤720p + best audio, fallback to combined format ≤720p,
+# then to the best format of any kind. The last `/b` matters: plain HTML5 <video> embeds
+# (and some smaller sites) expose a single format with no height or codec metadata, which
+# the height filters exclude, so without it they fail with "Requested format is not available".
 # Metadata is embedded, subtitles converted to VTT and embedded
 # Note: --embed-thumbnail and --convert-thumbnails removed (see audio args comment above)
 STASHCAST_DEFAULT_YTDLP_ARGS_VIDEO = os.environ.get(
     'STASHCAST_DEFAULT_YTDLP_ARGS_VIDEO',
-    '--format "bv*[height<=720][vcodec^=avc]+ba/b[height<=720]" '
+    '--format "bv*[height<=720][vcodec^=avc]+ba/b[height<=720]/b" '
     '--merge-output-format mp4 '
     '--embed-metadata '
     '--convert-subs vtt --embed-subs',
