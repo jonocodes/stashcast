@@ -6,6 +6,35 @@ build-backend = "setuptools.build_meta"
 name = "stashcast"
 version = "0.1.0"
 requires-python = ">=3.13"
+# Loose constraints only. Exact versions live in uv.lock, exported to
+# requirements*.txt by `just lock`. Upgrade with `just upgrade`.
+dependencies = [
+    "django>=6.0",
+    "gunicorn>=23.0.0",
+    "huey>=2.5.5",
+    "yt-dlp>=2025.12.8",
+    "pillow>=12.0.0",
+    "python-nanoid>=2.0.0",
+    "sumy>=0.11.0",
+    "nltk>=3.9.2",
+    "requests>=2.32.5",
+    "numpy>=2.4.0",
+    "scipy>=1.16.3",
+    "watchdog>=6.0.0",
+    "pytest>=9.0.0",
+    "pytest-django>=4.11.0",
+    "honcho>=2.0.0",
+    "beautifulsoup4>=4.12.0",
+    "django-huey-monitor>=0.9.0",
+    "bx-django-utils>=80",
+    "django-environ>=0.12.0",
+    "whitenoise>=6.11.0",
+    "textual>=1.0.0",
+    "django-unfold>=0.104.1",
+]
+
+[dependency-groups]
+dev = ["coverage>=7.0"]
 
 [tool.setuptools]
 packages = ["stashcast"]

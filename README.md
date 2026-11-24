@@ -58,7 +58,7 @@ The titles and artwork are invented showcase data; regenerate this image with `j
 
 ## Requirements
 
-- Python 3.12+
+- Python 3.13+
 - yt-dlp
 - ffmpeg
 
@@ -68,6 +68,7 @@ The titles and artwork are invented showcase data; regenerate this image with `j
 - ruff
 - gettext
 - docker
+- [uv](https://docs.astral.sh/uv/) (only to change or upgrade dependencies)
 
 
 ## Run in docker
@@ -441,8 +442,8 @@ See `.env.example` for all available configuration options.
 ## Development
 
 ```bash
-# Install dev dependencies (adds coverage)
-pip install -r requirements-dev.txt
+# Install the locked dependencies, including dev tools like coverage
+just install
 
 # Run all tests
 coverage run -m pytest
@@ -455,6 +456,17 @@ coverage report -m
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for more details on the codebase structure and testing strategy.
 
+### Dependencies
+
+Dependencies are declared with loose version ranges in `pyproject.toml` and locked to exact versions in `uv.lock`. `requirements.txt` and `requirements-dev.txt` are generated from the lock, with hashes, so Docker, CI, cPanel and local setups all install the same versions with plain `pip`. Don't edit them by hand.
+
+```bash
+just lock       # after adding or changing a dependency in pyproject.toml
+just upgrade    # move everything to the newest allowed versions, then run the tests and the Docker smoke test
+```
+
+CI fails if `uv.lock` or the requirements files are out of date. yt-dlp is the one exception to the lock: the Docker image always installs the newest yt-dlp, because sites like YouTube break old releases. Dependabot proposes monthly updates for GitHub Actions and the Docker base image.
+
 ### Versions and releases
 
 StashCast uses [semantic versioning](https://semver.org/). The version in `pyproject.toml` is the single source of truth and is shown on the About page. Bump the major version when upgrading needs manual steps, such as moving data or renaming a setting.
@@ -466,7 +478,7 @@ just release 0.2.0                 # bumps pyproject.toml, commits, tags v0.2.0
 git push origin main v0.2.0
 ```
 
-Pushing the tag runs `.github/workflows/docker.yml`. It runs the tests, builds and smoke-tests the image, publishes the version tags listed under [Image tags](#image-tags), and creates a GitHub release with generated notes. CI rejects a tag that doesn't match `pyproject.toml`. Tags like `v1.0.0-rc.1` publish a pre-release and leave `stable` alone.
+Pushing the tag runs `.github/workflows/docker.yml`. It runs the tests, builds and smoke-tests the image, publishes the version tags listed under [Image tags](#image-tags), and creates a GitHub release with generated notes and the `docker pull` command for that version. CI rejects a tag that doesn't match `pyproject.toml`. Tags like `v1.0.0-rc.1` publish a pre-release and leave `stable` alone.
 
 The tagging rules live in `scripts/docker_plan.py`, with tests in `scripts/test_docker_plan.py`.
 

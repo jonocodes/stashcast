@@ -26,7 +26,7 @@ jobs:
       targets: ${{ steps.plan.outputs.targets }}
     steps:
       - name: Checkout (with tags)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -49,7 +49,7 @@ jobs:
       NO_CACHE: ${{ github.event_name == 'workflow_dispatch' }}
     steps:
       - name: Checkout ${{ matrix.target.ref }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ matrix.target.ref }}
 
@@ -64,11 +64,11 @@ jobs:
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
-      - uses: docker/setup-qemu-action@v3
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-qemu-action@v4
+      - uses: docker/setup-buildx-action@v4
 
       - name: Build for smoke test (amd64)
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           load: true
@@ -87,7 +87,7 @@ jobs:
 
       - name: Log in to GHCR
         if: matrix.target.push
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -95,7 +95,7 @@ jobs:
 
       - name: Build and push (amd64 + arm64)
         if: matrix.target.push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           push: true
@@ -130,6 +130,19 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ github.ref_name }}
         run: |
+          version="${TAG#v}"
+          image="ghcr.io/${GITHUB_REPOSITORY,,}"
           prerelease=""
           [[ "$TAG" == *-* ]] && prerelease="--prerelease"
-          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --verify-tag --generate-notes $prerelease
+          # Shown above the generated notes
+          cat > notes.md <<EOF
+          ## Docker image
+
+          \`\`\`
+          docker pull ${image}:${version}
+          \`\`\`
+
+          Set \`STASHCAST_VERSION=${version}\` in \`.env\` to run this release with \`docker-compose.yml\`. Image page: https://github.com/${GITHUB_REPOSITORY}/pkgs/container/stashcast
+          EOF
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --verify-tag \
+            --generate-notes --notes "$(cat notes.md)" $prerelease

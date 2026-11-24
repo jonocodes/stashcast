@@ -32,3 +32,4 @@ When running in Claude Web (Ubuntu container without flox/Docker) follow .claude
 - Since flox is a personal detail, dont add it to the readme.
 - Run tests when making changes to verify for regressions.
 - Keep it DRY and regularly check for code duplication.
+- Dependencies live in `pyproject.toml`; `uv.lock` and `requirements*.txt` are generated. After changing dependencies run `just lock` and commit all three.
