@@ -19,3 +19,4 @@ django-environ>=0.12.0
 whitenoise>=6.11.0
 textual>=1.0.0
 django-unfold==0.104.1
+django-storages[s3]>=1.14

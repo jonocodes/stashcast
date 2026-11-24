@@ -44,6 +44,10 @@ dev:
 dev-docker *args:
     docker compose up --build {{ args }}
 
+# run the dev services in docker, storing published media in a local MinIO bucket
+dev-docker-s3 *args:
+    docker compose -f docker-compose.yml -f docker-compose.minio.yml up --build {{ args }}
+
 # kill the local dev process by port in case it's running detached
 kill:
     lsof -i tcp:8000 -t | xargs kill
