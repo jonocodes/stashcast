@@ -21,11 +21,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  # Upload and deploy are separate jobs: with upload-pages-artifact v5 the new
+  # artifact isn't always listed yet when deploy-pages looks for it moments
+  # later in the same job ("No artifacts named github-pages were found").
+  build:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -38,6 +38,13 @@ jobs:
         with:
           path: site/public
 
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v5
