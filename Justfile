@@ -96,3 +96,50 @@ release version:
     git commit -am "Release v{{ version }}"
     git tag -a "v{{ version }}" -m "v{{ version }}"
     echo "Tagged v{{ version }}. Publish it with: git push origin main v{{ version }}"
+
+# serve the marketing site (site/public) at http://localhost:8090
+site port="8090":
+    python3 -m http.server {{ port }} -d site/public
+
+# install the marketing-site tooling (Playwright); set CHROME to use an existing Chromium
+site-deps:
+    cd site && npm ci --silent
+
+# re-render the invented showcase cover art into media/fixtures/showcase/covers
+site-covers: site-deps
+    #!/usr/bin/env bash
+    set -euo pipefail
+    tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
+    node site/scripts/covers.mjs "$tmp"
+    for f in "$tmp"/*.png; do
+        ffmpeg -loglevel error -y -i "$f" -quality 82 "media/fixtures/showcase/covers/$(basename "$f" .png).webp"
+    done
+
+# regenerate the site + README screenshots from a throwaway instance seeded with showcase data
+site-screenshots port="8777": site-deps
+    #!/usr/bin/env bash
+    set -euo pipefail
+    tmp=$(mktemp -d)
+    export STASHCAST_DATA_DIR="$tmp" NLTK_DATA="$tmp" DEBUG=True SECRET_KEY=screenshots \
+        STASHCAST_USER_TOKEN=screenshots ALLOWED_HOSTS=127.0.0.1,localhost
+    ./manage.py migrate -v 0
+    DJANGO_SUPERUSER_PASSWORD=admin ./manage.py createsuperuser --username admin --email "" --noinput
+    ./manage.py seed_showcase
+    ./manage.py runserver 127.0.0.1:{{ port }} --noreload >"$tmp/server.log" 2>&1 &
+    server=$!
+    trap 'kill $server 2>/dev/null || true; rm -rf "$tmp"' EXIT
+    for _ in $(seq 60); do curl -sf -o /dev/null http://127.0.0.1:{{ port }}/ && break; sleep 0.5; done
+    out=site/public/assets
+    # hero covers first: the OG card below is rendered from the site itself
+    for f in media/fixtures/showcase/covers/*.webp; do
+        ffmpeg -loglevel error -y -i "$f" -vf scale=320:-1 -quality 80 "$out/covers/$(basename "$f")"
+    done
+    mkdir "$tmp/shots"
+    node site/scripts/screenshots.mjs http://127.0.0.1:{{ port }} "$tmp/shots"
+    for f in "$tmp"/shots/*.png; do
+        n=$(basename "$f" .png)
+        [ "$n" = og ] || ffmpeg -loglevel error -y -i "$f" -quality 82 "$out/app/$n.webp"
+    done
+    cp "$tmp/shots/og.png" "$out/og.png"
+    ffmpeg -loglevel error -y -i "$tmp/shots/grid-dark.png" -vf scale=1280:-1 docs/screenshot-grid-view.png
+    echo "Updated $out/app, $out/covers, $out/og.png and docs/screenshot-grid-view.png"

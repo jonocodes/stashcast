@@ -30,7 +30,7 @@ I created this since friends and family often send me links to listen to a singl
 
 ## Features
 
-- Download media from any URL supported by yt-dlp, direct media URLs, HTML with embedded media, playlists, multiple embeds
+- Download media from any URL supported by yt-dlp (YouTube, Vimeo, SoundCloud, Apple Podcasts episodes and thousands more), direct media URLs (a raw .mp3 or .mp4), HTML with embedded media, playlists, multiple embeds
 - **Multi-language support** - UI and video subtitles in your preferred language (see [i18n docs](docs/INTERNATIONALIZATION.md))
 - Async background processing via task queue
 - Automatic media type detection (audio/video)
@@ -53,6 +53,8 @@ I created this since friends and family often send me links to listen to a singl
 ## Grid view screenshot
 
 ![screenshot](./docs/screenshot-grid-view.png)
+
+The titles and artwork are invented showcase data; regenerate this image with `just site-screenshots` (see [Marketing site](#marketing-site)).
 
 ## Requirements
 
@@ -467,3 +469,17 @@ git push origin main v0.2.0
 Pushing the tag runs `.github/workflows/docker.yml`. It runs the tests, builds and smoke-tests the image, publishes the version tags listed under [Image tags](#image-tags), and creates a GitHub release with generated notes. CI rejects a tag that doesn't match `pyproject.toml`. Tags like `v1.0.0-rc.1` publish a pre-release and leave `stable` alone.
 
 The tagging rules live in `scripts/docker_plan.py`, with tests in `scripts/test_docker_plan.py`.
+
+## Marketing site
+
+The home page at `site/public/` is plain static HTML (no build step), deployed to GitHub Pages by `.github/workflows/pages.yml` on every push to `main` that touches it. One-time setup: in the repo settings, set Pages → Source to "GitHub Actions".
+
+```bash
+just site                # serve it at http://localhost:8090
+just site-screenshots    # regenerate every app screenshot on the site, its social card (og.png) and docs/screenshot-grid-view.png
+just site-covers         # re-render the showcase cover art (rarely needed)
+```
+
+`just site-screenshots` never touches your real library. It boots a throwaway instance in a temp data dir, fills it with `./manage.py seed_showcase` (invented titles and artwork from `media/fixtures/showcase/`, media from `demo_data/`), captures the app with Playwright in light and dark mode, and converts the results to webp. It needs Node, ffmpeg and a Chromium that Playwright can drive: run `cd site && npx playwright-core install chromium` once, or point `CHROME` at an existing binary.
+
+`seed_showcase` refuses to run against a library that already has items, unless you pass `--replace` (which deletes them).

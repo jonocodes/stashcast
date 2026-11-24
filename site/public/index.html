@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StashCast — any link, in your podcast app</title>
+<meta name="description" content="StashCast is a self-hosted, open source app that downloads one-off videos and podcast episodes into a private podcast feed, so you can watch or listen later in the app you already use.">
+<meta name="color-scheme" content="dark light">
+<meta property="og:type" content="website">
+<meta property="og:title" content="StashCast — any link, in your podcast app">
+<meta property="og:description" content="Self-hosted read-it-later for audio and video. Stash any link; it shows up in your podcast app.">
+<meta property="og:image" content="https://stashcast.net/assets/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="assets/favicon.ico">
+<style>
+  /* Palette: "Night" by default, "Daylight" when the OS prefers light. Both use the logo's colours. */
+  :root {
+    --bg: #0d0f14; --surf: #141924; --line: #2a3140; --text: #e8ecf3; --muted: #a8b1c2;
+    --a1: #4fb3d1; --a2: #8a6fd1; --a3: #ffa23a; --code: #07090c; --on: #fff; --glow: rgba(138,111,209,.28);
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f7f7fb; --surf: #fff; --line: #e3e5ee; --text: #15161d; --muted: #5b6070;
+      --a1: #2496bb; --a2: #7656c8; --a3: #d9760a; --code: #15161d; --glow: rgba(118,86,200,.16);
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.55 Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; overflow-x: hidden; }
+  a { color: inherit; }
+  img { max-width: 100%; }
+  code { font: .92em ui-monospace, SFMono-Regular, Menlo, monospace; }
+  main { overflow-x: clip; } /* keeps the hero glow from widening the page on phones */
+  .wrap { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+  /* nav */
+  nav { display: flex; align-items: center; justify-content: space-between; padding: 20px 0; gap: 16px; }
+  nav .logo img { height: 52px; display: block; }
+  nav .links { display: flex; gap: 26px; align-items: center; font-size: 15px; color: var(--muted); }
+  nav .links a { text-decoration: none; }
+  nav .links a:hover { color: var(--text); }
+
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 11px 18px; border-radius: 10px; font: 600 15px/1.2 inherit; text-decoration: none; border: 0; cursor: pointer; white-space: nowrap; }
+  .btn.primary { background: linear-gradient(135deg, var(--a1), var(--a2)); color: var(--on); }
+  .btn.ghost { background: var(--surf); color: var(--text); border: 1px solid var(--line); }
+  .btn:focus-visible, .tabs button:focus-visible, input:focus-visible { outline: 3px solid var(--a3); outline-offset: 2px; }
+
+  /* hero */
+  .hero { display: grid; grid-template-columns: 1.05fr 1fr; gap: 40px; align-items: center; padding-top: 40px; padding-bottom: 80px; position: relative; }
+  .hero::before { content: ""; position: absolute; inset: -120px -300px auto auto; width: 700px; height: 700px; background: radial-gradient(closest-side, var(--glow), transparent); pointer-events: none; z-index: -1; }
+  .eyebrow { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--a1); font-weight: 700; }
+  h1 { font-size: clamp(40px, 6vw, 58px); line-height: 1.02; margin: 14px 0 18px; letter-spacing: -.03em; }
+  .grad { background: linear-gradient(90deg, var(--a1), var(--a2) 60%, var(--a3)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .lede { font-size: 19px; color: var(--muted); max-width: 520px; margin: 0; }
+  .paste { display: flex; margin-top: 28px; background: var(--surf); border: 1px solid var(--line); border-radius: 14px; padding: 6px; max-width: 540px; box-shadow: 0 0 0 6px color-mix(in srgb, var(--a1) 8%, transparent); }
+  .paste input { flex: 1; min-width: 0; background: transparent; border: 0; color: var(--text); font: inherit; padding: 10px 12px; border-radius: 8px; }
+  .paste-note { margin: 10px 2px 0; font-size: 14px; color: var(--a3); min-height: 1.5em; }
+  .facts { margin-top: 8px; font-size: 14px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 6px 18px; }
+
+  .stage { position: relative; height: 480px; }
+  .pill { position: absolute; left: 0; background: var(--surf); border: 1px solid var(--line); border-radius: 999px; padding: 8px 14px; font: 13px ui-monospace, monospace; white-space: nowrap; animation: flow 6s ease-in-out infinite; opacity: 0; }
+  .pill b { color: var(--a3); font-weight: 600; }
+  .pill:nth-child(1) { top: 70px; } .pill:nth-child(2) { top: 180px; animation-delay: 2s; } .pill:nth-child(3) { top: 290px; animation-delay: 4s; }
+  @keyframes flow { 0% { transform: translateX(-20px); opacity: 0; } 12% { opacity: 1; } 55% { transform: translateX(140px); opacity: 1; } 75% { transform: translateX(230px) scale(.6); opacity: 0; } 100% { opacity: 0; } }
+  .phone { position: absolute; right: 0; top: 0; width: 290px; height: 480px; background: #0a0c10; color: #e8ecf3; border: 10px solid #232a37; border-radius: 40px; padding: 18px 14px; box-shadow: 0 30px 80px rgba(0,0,0,.35), 0 0 0 1px #313a4b; overflow: hidden; }
+  .phone h2 { margin: 4px 4px 12px; font-size: 13px; color: #7d8799; font-weight: 600; display: flex; justify-content: space-between; letter-spacing: 0; }
+  .eps { list-style: none; margin: 0; padding: 0; }
+  .ep { display: flex; gap: 10px; align-items: center; padding: 8px 6px; border-radius: 10px; }
+  .ep + .ep { border-top: 1px solid #1a1f2a; }
+  .ep img { width: 76px; height: 43px; border-radius: 6px; flex: none; object-fit: cover; }
+  .ep .t { font-size: 13px; font-weight: 600; line-height: 1.25; }
+  .ep .m { font-size: 11px; color: #7d8799; margin-top: 2px; }
+  .ep.new { animation: drop .6s cubic-bezier(.2,1.4,.4,1); background: rgba(79,179,209,.1); }
+  @keyframes drop { from { transform: translateY(-20px); opacity: 0; } }
+  .bar { height: 3px; background: #232a37; border-radius: 2px; margin-top: 5px; overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 0; background: var(--a3); transition: width 2.2s ease; }
+
+  .strip { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 20px 0; color: var(--muted); font-size: 14px; }
+  .strip .wrap { display: flex; justify-content: space-between; gap: 10px 24px; flex-wrap: wrap; }
+  .strip b { color: var(--text); }
+
+  section { padding: 84px 0; }
+  section h2 { font-size: clamp(30px, 4.4vw, 40px); letter-spacing: -.02em; margin: 0 0 10px; line-height: 1.1; }
+  .sec-lede { color: var(--muted); font-size: 18px; margin: 0 0 40px; max-width: 640px; }
+
+  /* sources */
+  .sources { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .sources li { background: var(--surf); border: 1px solid var(--line); border-radius: 16px; padding: 20px 22px; border-top: 3px solid var(--a1); }
+  .sources li:nth-child(3n+2) { border-top-color: var(--a2); }
+  .sources li:nth-child(3n) { border-top-color: var(--a3); }
+  .sources b { display: block; font-size: 17px; margin-bottom: 4px; }
+  .sources span { color: var(--muted); font-size: 15px; }
+
+  /* screenshots */
+  .tabs { display: inline-flex; gap: 4px; background: var(--surf); border: 1px solid var(--line); border-radius: 12px; padding: 4px; margin-bottom: 22px; }
+  .tabs button { border: 0; background: none; color: var(--muted); font: 600 14px inherit; padding: 8px 14px; border-radius: 8px; cursor: pointer; }
+  .tabs button[aria-selected="true"] { background: linear-gradient(135deg, var(--a1), var(--a2)); color: var(--on); }
+  .showcase { position: relative; }
+  .browser { border-radius: 14px; overflow: hidden; border: 1px solid var(--line); box-shadow: 0 40px 90px rgba(0,0,0,.3); background: var(--surf); transform: perspective(1800px) rotateX(4deg); transform-origin: top; }
+  .browser .chrome { display: flex; gap: 7px; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+  .browser .chrome i { width: 11px; height: 11px; border-radius: 50%; background: var(--line); flex: none; }
+  .browser .chrome span { margin-left: 14px; flex: 1; max-width: 420px; background: var(--bg); border-radius: 7px; padding: 4px 12px; font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .browser img { display: block; width: 100%; height: auto; }
+  .panel[hidden] { display: none; }
+  .mobile-float { position: absolute; right: -10px; bottom: -40px; width: 210px; border-radius: 30px; border: 8px solid #232a37; overflow: hidden; box-shadow: 0 30px 60px rgba(0,0,0,.4); background: #000; }
+  .mobile-float img { display: block; width: 100%; height: auto; }
+
+  /* steps */
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 34px; list-style: none; padding: 0; margin: 0; }
+  .step { padding: 28px; border-radius: 18px; background: var(--surf); border: 1px solid var(--line); box-shadow: 8px 8px 0 -1px color-mix(in srgb, var(--a2) 55%, var(--bg)), 16px 16px 0 -2px color-mix(in srgb, var(--a1) 35%, var(--bg)); }
+  .step .n { font: 700 13px ui-monospace, monospace; color: var(--a3); }
+  .step h3 { margin: 8px 0 6px; font-size: 21px; }
+  .step p { margin: 0; color: var(--muted); font-size: 15px; }
+
+  /* details */
+  .spec { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  td, th { text-align: left; padding: 11px 12px 11px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 500; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; }
+  .spec-table th[scope="row"] { color: var(--muted); width: 120px; text-transform: none; letter-spacing: 0; font-size: 15px; font-weight: 400; }
+  .yes { color: var(--a1); font-weight: 700; }
+  .spec h3 { font-size: 14px; text-transform: uppercase; letter-spacing: .08em; color: var(--a3); margin: 0 0 8px; }
+
+  /* install */
+  .install { display: grid; grid-template-columns: 1fr 1.2fr; gap: 50px; align-items: center; }
+  .install .ctas { display: flex; flex-wrap: wrap; gap: 12px; }
+  pre { margin: 0; background: var(--code); border: 1px solid var(--line); border-radius: 14px; padding: 22px; font: 14px/1.7 ui-monospace, monospace; color: #c9d1de; overflow-x: auto; }
+  pre .c { color: #6b7587; } pre .p { color: #ffa23a; }
+
+  footer { border-top: 1px solid var(--line); padding: 36px 0 60px; color: var(--muted); font-size: 14px; }
+  footer .wrap { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  footer nav { padding: 0; gap: 18px; justify-content: flex-start; }
+
+  /* responsive */
+  @media (max-width: 960px) {
+    nav .links .hide-sm { display: none; }
+    .hero { grid-template-columns: 1fr; padding-bottom: 50px; }
+    .stage { height: auto; display: flex; justify-content: center; }
+    .pill { display: none; }
+    .phone { position: relative; }
+    .steps, .spec, .install { grid-template-columns: 1fr; }
+    .sources { grid-template-columns: 1fr 1fr; }
+    .install { gap: 30px; }
+    .mobile-float { width: 150px; border-width: 6px; border-radius: 22px; right: 0; bottom: -30px; }
+  }
+  @media (max-width: 600px) {
+    nav .logo img { height: 40px; }
+    nav .links { gap: 12px; }
+    .paste { flex-direction: column; gap: 6px; }
+    .paste .btn { justify-content: center; }
+    .browser { transform: none; }
+    .mobile-float { display: none; }
+    .sources { grid-template-columns: 1fr; }
+    .tabs { display: flex; overflow-x: auto; }
+    section { padding: 60px 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .pill { animation: none; opacity: 1; }
+    .pill:nth-child(2) { left: 30px; } .pill:nth-child(3) { left: 10px; }
+    .ep.new { animation: none; }
+    .bar i { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="wrap">
+  <nav aria-label="Main">
+    <a class="logo" href="./"><img src="assets/logo.png" alt="StashCast" width="160" height="52"></a>
+    <div class="links">
+      <a class="hide-sm" href="#sources">Sources</a>
+      <a class="hide-sm" href="#screenshots">Screenshots</a>
+      <a class="hide-sm" href="#how">How it works</a>
+      <a class="hide-sm" href="#details">Details</a>
+      <a class="hide-sm" href="#install">Self-host</a>
+      <a href="https://github.com/jonocodes/stashcast">GitHub</a>
+      <a class="btn ghost" href="https://demo.stashcast.net/">Live demo</a>
+    </div>
+  </nav>
+</header>
+
+<main>
+  <div class="wrap hero">
+    <div>
+      <div class="eyebrow">Self-hosted · Open source · GPLv3</div>
+      <h1>Any link.<br><span class="grad">Your podcast app.</span></h1>
+      <p class="lede">A YouTube video, an Apple Podcasts episode, a raw MP3, a talk embedded on some conference page: StashCast downloads the one-off thing someone sent you into a private podcast feed, so you can watch or listen later, offline, in the app you already use.</p>
+      <form class="paste" id="paste" aria-describedby="paste-note">
+        <label class="sr-only" for="paste-url">A link to stash</label>
+        <input id="paste-url" type="url" placeholder="Paste any link" value="https://youtu.be/fixing-a-flat">
+        <button class="btn primary" type="submit">Stash it →</button>
+      </form>
+      <p class="paste-note" id="paste-note" aria-live="polite"></p>
+      <div class="facts"><span>Not just YouTube: podcasts, MP3s, embeds</span><span>Runs with Docker Compose</span><span>Single user, your server</span></div>
+    </div>
+    <div class="stage" aria-hidden="true">
+      <div class="pill"><b>youtube.com</b>/watch?v=compilers</div>
+      <div class="pill"><b>podcasts.apple.com</b>/ep/112</div>
+      <div class="pill"><b>soundcloud.com</b>/corner-bar</div>
+      <div class="phone">
+        <h2><span>StashCast · Combined</span><span>⋯</span></h2>
+        <ul class="eps" id="eps">
+          <li class="ep"><img src="assets/covers/compilers.webp" alt=""><div><div class="t">How Compilers Actually Work</div><div class="m">48 min · video</div></div></li>
+          <li class="ep"><img src="assets/covers/penny.webp" alt=""><div><div class="t">Ep. 112 — The Penny Problem</div><div class="m">32 min · audio</div></div></li>
+          <li class="ep"><img src="assets/covers/cornerbar.webp" alt=""><div><div class="t">Live at the Corner Bar</div><div class="m">1 h 04 · audio</div></div></li>
+          <li class="ep"><img src="assets/covers/garden.webp" alt=""><div><div class="t">Gardening for Lazy People</div><div class="m">21 min · video</div></div></li>
+          <li class="ep"><img src="assets/covers/bread.webp" alt=""><div><div class="t">Bread, Slowly</div><div class="m">25 min · video</div></div></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="strip"><div class="wrap">
+    <span><b>Comes out in</b> AntennaPod · Overcast · Pocket Casts · Apple Podcasts · any app that reads RSS</span>
+    <span><b>Feeds</b> audio · video · combined</span>
+  </div></div>
+
+  <section id="sources"><div class="wrap">
+    <h2>Not just YouTube.</h2>
+    <p class="sec-lede">If you can open it in a browser and it plays, StashCast can probably stash it.</p>
+    <ul class="sources">
+      <li><b>Podcast episodes</b><span>Apple Podcasts links and episode pages: just the one episode, no subscription.</span></li>
+      <li><b>Raw audio &amp; video files</b><span>A direct link to an .mp3, .m4a, .mp4 or .ogg. Transcoded if you want.</span></li>
+      <li><b>Embedded players</b><span>Talks, lectures and interviews sitting on an ordinary web page. It finds the media for you.</span></li>
+      <li><b>Thousands of sites</b><span>YouTube, Vimeo, SoundCloud and everything else <a href="https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md">yt-dlp supports</a>.</span></li>
+      <li><b>Spotify links</b><span>Spotify audio is DRM-locked, so StashCast finds the same episode elsewhere and lets you pick it.</span></li>
+      <li><b>Playlists &amp; multi-embed pages</b><span>Stash a whole playlist, or every clip on a page, in one go.</span></li>
+    </ul>
+  </div></section>
+
+  <section id="screenshots" style="padding-top:20px"><div class="wrap">
+    <h2>A tidy little library.</h2>
+    <p class="sec-lede">Everything you've stashed in one place, with artwork, durations, summaries and one-click refetch. It works on your phone too.</p>
+    <div class="tabs" role="tablist" aria-label="Screenshots">
+      <button role="tab" id="tab-grid" aria-controls="shot-grid" aria-selected="true">Grid</button>
+      <button role="tab" id="tab-list" aria-controls="shot-list" aria-selected="false" tabindex="-1">List</button>
+      <button role="tab" id="tab-item" aria-controls="shot-item" aria-selected="false" tabindex="-1">Item</button>
+      <button role="tab" id="tab-home" aria-controls="shot-home" aria-selected="false" tabindex="-1">Home</button>
+    </div>
+    <div class="showcase">
+      <div class="browser">
+        <div class="chrome"><i></i><i></i><i></i><span id="url-bar">stash.your-server.net/admin/tools/grid/</span></div>
+        <div class="panel" id="shot-grid" role="tabpanel" aria-labelledby="tab-grid" data-url="stash.your-server.net/admin/tools/grid/">
+          <picture><source srcset="assets/app/grid-light.webp" media="(prefers-color-scheme: light)"><img src="assets/app/grid-dark.webp" width="2560" height="1600" alt="StashCast grid view: a library of stashed videos and episodes with cover art and durations"></picture>
+        </div>
+        <div class="panel" id="shot-list" role="tabpanel" aria-labelledby="tab-list" data-url="stash.your-server.net/admin/tools/list/" hidden>
+          <picture><source srcset="assets/app/list-light.webp" media="(prefers-color-scheme: light)"><img src="assets/app/list-dark.webp" width="2560" height="1600" loading="lazy" alt="StashCast list view"></picture>
+        </div>
+        <div class="panel" id="shot-item" role="tabpanel" aria-labelledby="tab-item" data-url="stash.your-server.net/admin/tools/item/…" hidden>
+          <picture><source srcset="assets/app/item-light.webp" media="(prefers-color-scheme: light)"><img src="assets/app/item-dark.webp" width="2560" height="1600" loading="lazy" alt="A single stashed item with its summary"></picture>
+        </div>
+        <div class="panel" id="shot-home" role="tabpanel" aria-labelledby="tab-home" data-url="stash.your-server.net/" hidden>
+          <img src="assets/app/home.webp" width="2560" height="1600" loading="lazy" alt="The StashCast home page with links to the audio, video and combined feeds">
+        </div>
+      </div>
+      <div class="mobile-float">
+        <picture><source srcset="assets/app/mobile-light.webp" media="(prefers-color-scheme: light)"><img src="assets/app/mobile-dark.webp" width="780" height="1688" loading="lazy" alt="StashCast on a phone"></picture>
+      </div>
+    </div>
+  </div></section>
+
+  <section id="how" style="padding-top:60px"><div class="wrap">
+    <h2>Three steps. No subscriptions.</h2>
+    <p class="sec-lede">You don't want the whole show. You want <em>that one episode</em>. StashCast is read-it-later for audio and video.</p>
+    <ol class="steps">
+      <li class="step"><div class="n">01 — SEND</div><h3>Click the bookmarklet</h3><p>Or call the API, or run <code>manage.py stash</code>. Any page with media works.</p></li>
+      <li class="step"><div class="n">02 — STASH</div><h3>It downloads in the background</h3><p>Metadata, artwork and subtitles are fetched, with optional transcoding and summaries.</p></li>
+      <li class="step"><div class="n">03 — LISTEN</div><h3>It shows up in your feed</h3><p>Audio, video or combined RSS feeds. Offline, with your app's speed controls.</p></li>
+    </ol>
+  </div></section>
+
+  <section id="details" style="padding-top:40px"><div class="wrap">
+    <h2>The honest details.</h2>
+    <p class="sec-lede">Small on purpose: single user, one Django process, one worker.</p>
+    <div class="spec">
+      <div>
+        <h3>Spec sheet</h3>
+        <table class="spec-table">
+          <tr><th scope="row">Sources</th><td>Anything yt-dlp supports, direct media, HTML pages with embeds, playlists</td></tr>
+          <tr><th scope="row">Interfaces</th><td>Web UI, bookmarklet, HTTP API, CLI</td></tr>
+          <tr><th scope="row">Feeds</th><td>Audio, video and combined, optionally protected by a token</td></tr>
+          <tr><th scope="row">Extras</th><td>ffmpeg transcoding, subtitles, extractive summaries</td></tr>
+          <tr><th scope="row">Storage</th><td>Plain files on local disk, SQLite database</td></tr>
+          <tr><th scope="row">Languages</th><td>English · Español · Português</td></tr>
+        </table>
+      </div>
+      <div>
+        <h3>Is it the right tool?</h3>
+        <table>
+          <tr><th scope="col">You want to…</th><th scope="col">Use</th></tr>
+          <tr><td>Listen later to one-off links</td><td class="yes">StashCast ✓</td></tr>
+          <tr><td>Auto-follow channels and playlists</td><td><a href="https://github.com/meeb/tubesync">TubeSync</a>, <a href="https://github.com/mxpv/podsync">Podsync</a></td></tr>
+          <tr><td>Archive media long-term</td><td><a href="https://github.com/ArchiveBox/ArchiveBox">ArchiveBox</a>, <a href="https://github.com/tubearchivist/tubearchivist">Tube Archivist</a></td></tr>
+          <tr><td>Save articles to read later</td><td><a href="https://github.com/jonocodes/savr">Savr</a> (sister project)</td></tr>
+        </table>
+      </div>
+    </div>
+  </div></section>
+
+  <section id="install" style="padding-top:40px"><div class="wrap install">
+    <div>
+      <h2>Running in a minute.</h2>
+      <p class="sec-lede" style="margin-bottom:24px">One compose file and SQLite by default. Put it behind your reverse proxy and you're done.</p>
+      <div class="ctas"><a class="btn primary" href="https://github.com/jonocodes/stashcast#readme">Read the docs</a><a class="btn ghost" href="https://demo.stashcast.net/">Try the demo</a></div>
+    </div>
+<pre aria-label="Install commands"><span class="c"># get it running</span>
+<span class="p">$</span> git clone https://github.com/jonocodes/stashcast
+<span class="p">$</span> cd stashcast && docker compose up -d
+<span class="p">$</span> docker compose run web just setup
+<span class="p">$</span> docker compose run web ./manage.py createsuperuser
+
+<span class="c"># then subscribe to this in your podcast app</span>
+http://your-server:8000/feeds/audio.xml</pre>
+  </div></section>
+</main>
+
+<footer><div class="wrap">
+  <span>StashCast · GPLv3 · made for the episode a friend sent you</span>
+  <nav aria-label="Footer"><a href="https://github.com/jonocodes/stashcast">GitHub</a><a href="https://demo.stashcast.net/">Demo</a><a href="https://github.com/jonocodes/savr">Savr</a></nav>
+</div></footer>
+
+<script>
+  // Screenshot tabs (arrow keys move between tabs, per the ARIA tabs pattern)
+  const tabs = [...document.querySelectorAll('[role="tab"]')];
+  function select(tab) {
+    tabs.forEach(t => {
+      const on = t === tab;
+      t.setAttribute('aria-selected', on);
+      t.tabIndex = on ? 0 : -1;
+      document.getElementById(t.getAttribute('aria-controls')).hidden = !on;
+    });
+    document.getElementById('url-bar').textContent = document.getElementById(tab.getAttribute('aria-controls')).dataset.url;
+  }
+  tabs.forEach((t, i) => {
+    t.addEventListener('click', () => select(t));
+    t.addEventListener('keydown', e => {
+      const d = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
+      if (!d) return;
+      const next = tabs[(i + d + tabs.length) % tabs.length];
+      select(next); next.focus();
+    });
+  });
+
+  // Hero "Stash it": a preview of what happens, not a real download
+  document.getElementById('paste').addEventListener('submit', e => {
+    e.preventDefault();
+    let host = 'that link';
+    try { host = new URL(document.getElementById('paste-url').value).hostname; } catch {}
+    const ep = document.createElement('li');
+    ep.className = 'ep new';
+    ep.innerHTML = '<img src="assets/covers/bikes.webp" alt=""><div style="flex:1"><div class="t"></div><div class="bar"><i></i></div></div>';
+    ep.querySelector('.t').textContent = `Stashing from ${host}…`;
+    document.getElementById('eps').prepend(ep);
+    requestAnimationFrame(() => requestAnimationFrame(() => ep.querySelector('.bar i').style.width = '100%'));
+    setTimeout(() => {
+      ep.querySelector('div').innerHTML = '<div class="t">Fixing a Flat in Five Minutes</div><div class="m"></div>';
+      ep.querySelector('.m').textContent = `5 min · just now · ${host}`;
+      document.getElementById('paste-note').innerHTML = 'That was a preview. <a href="#install">Run your own StashCast</a> to stash for real.';
+    }, 2300);
+  });
+</script>
+</body>
+</html>
