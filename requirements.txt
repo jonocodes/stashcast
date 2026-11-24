@@ -1,4 +1,5 @@
 django>=6.0
+gunicorn>=23.0.0
 huey>=2.5.5
 yt-dlp>=2025.12.8
 pillow>=12.0.0

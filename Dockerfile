@@ -1,54 +1,45 @@
 FROM python:3.13-slim
 
-# Git info passed as build args (no .git directory needed)
+# Build info shown on the About page (passed as build args; no .git needed)
 ARG GIT_COMMIT_SHA=""
 ARG GIT_COMMIT_MSG=""
 ARG GIT_BRANCH=""
 
-# Create the app directory
-RUN mkdir /app
+# The app runs as an arbitrary uid (see docker/entrypoint.sh), so HOME and
+# caches (yt-dlp keeps one) point somewhere that is always writable
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    STASHCAST_DATA_DIR=/app/data_docker \
+    NLTK_DATA=/usr/share/nltk_data \
+    HOME=/tmp \
+    XDG_CACHE_HOME=/tmp/cache
 
-# Set the working directory inside the container
-WORKDIR /app
-
-# Set environment variables
-# Prevents Python from writing pyc files to disk
-ENV PYTHONDONTWRITEBYTECODE=1
-#Prevents Python from buffering stdout and stderr
-ENV PYTHONUNBUFFERED=1
-
-# Install system dependencies
+# yt-dlp comes from requirements.txt (pip), which is far newer than Debian's
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends ffmpeg yt-dlp just sqlite3 && \
+    apt-get install -y --no-install-recommends ffmpeg just sqlite3 && \
     rm -rf /var/lib/apt/lists/*
 
-# Upgrade pip
-RUN pip install --upgrade pip
+WORKDIR /app
 
-# Copy the Django project  and install dependencies
-COPY requirements.txt  /app/
+COPY requirements.txt /app/
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
-# run this command to install all dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Summarizer data, baked in so containers don't download it on every start
+RUN python -m nltk.downloader -d "$NLTK_DATA" punkt_tab stopwords
 
-# Copy the Django project to the container
 COPY . /app/
 
-# Write git info (outside /app so volume mounts don't hide it)
-RUN printf '{"commit_sha": "%s", "commit_message": "%s", "branch": "%s"}\n' \
-    "$GIT_COMMIT_SHA" "$GIT_COMMIT_MSG" "$GIT_BRANCH" > /etc/git_info.json
+# Outside /app so volume mounts don't hide it. Python builds the JSON so
+# quotes in commit messages can't break it.
+RUN GIT_COMMIT_SHA="$GIT_COMMIT_SHA" GIT_COMMIT_MSG="$GIT_COMMIT_MSG" GIT_BRANCH="$GIT_BRANCH" \
+    python -c 'import json, os; json.dump({"commit_sha": os.environ["GIT_COMMIT_SHA"], "commit_message": os.environ["GIT_COMMIT_MSG"], "branch": os.environ["GIT_BRANCH"]}, open("/etc/git_info.json", "w"))'
 
-# Expose the Django port
+RUN SECRET_KEY="dummy" ALLOWED_HOSTS="dummy" STASHCAST_USER_TOKEN="dummy" \
+    python manage.py collectstatic --noinput
+
 EXPOSE 8000
 
-# temp env vars so collectstatic works
-# ENV SECRET_KEY="dummy"
-# ENV ALLOWED_HOSTS="dummy"
-# ENV STASHCAST_USER_TOKEN="dummy"
-RUN SECRET_KEY="dummy" ALLOWED_HOSTS="dummy" STASHCAST_USER_TOKEN="dummy" python manage.py collectstatic --noinput
-
-# Make setup executable (contains migrations/NLTK data)
-RUN chmod +x setup.sh
-
-# Run setup (migrations, NLTK) and start Django server
-CMD ["bash", "-c", "pwd && ls -la && ./setup.sh && python manage.py collectstatic --noinput --clear && python manage.py runserver 0.0.0.0:8000"]
+ENTRYPOINT ["/app/docker/entrypoint.sh"]
+# The worker uses the same image with: python manage.py run_huey
+CMD ["/app/docker/start-web.sh"]

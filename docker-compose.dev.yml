@@ -1,0 +1,23 @@
+# Development override: builds the image from this checkout instead of pulling it.
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+# (or: just dev-docker)
+
+x-build: &build
+  context: .
+  args:
+    GIT_COMMIT_SHA: ${GIT_COMMIT_SHA:-}
+    GIT_COMMIT_MSG: ${GIT_COMMIT_MSG:-}
+    GIT_BRANCH: ${GIT_BRANCH:-}
+
+services:
+  web:
+    build: *build
+    image: stashcast:dev
+
+  worker:
+    build: *build
+    image: stashcast:dev
+    volumes:
+      # Run the worker against the live source so code changes apply on restart
+      - .:/app
+      - ./data_docker:/app/data_docker

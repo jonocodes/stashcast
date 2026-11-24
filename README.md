@@ -72,21 +72,76 @@ The titles and artwork are invented showcase data; regenerate this image with `j
 
 ## Run in docker
 
-Start the service.
+Images are published to `ghcr.io/jonocodes/stashcast` for amd64 and arm64. You only need `docker-compose.yml` and a `.env` file, not the source:
 
 ```bash
-docker compose up
-```
+curl -O https://raw.githubusercontent.com/jonocodes/stashcast/main/docker-compose.yml
+curl -o .env https://raw.githubusercontent.com/jonocodes/stashcast/main/.env.example
+# Edit .env: set SECRET_KEY, STASHCAST_USER_TOKEN and ALLOWED_HOSTS,
+# and remove DEBUG=True (that line is for local development)
 
-Set up the db and create a super user
-
-```bash
-docker compose run web just setup
-docker compose run web python manage.py createsuperuser
+docker compose up -d
+docker compose run --rm web python manage.py createsuperuser
 ```
 
 Now visit http://localhost:8000
 
+The stack has three containers: `web` (gunicorn), `worker` (the Huey task queue) and `caddy`, which serves static files and media and proxies everything else to `web`. Data lives in `./data_docker`. The web container runs migrations on every start.
+
+The app runs as uid/gid 1000 inside the container. Set `PUID` and `PGID` in `.env` if your data directory should be owned by someone else. On start the container fixes ownership of the data directory, including data written by older images that ran as root.
+
+### Image tags
+
+| Tag | What it is |
+|---|---|
+| `latest` | Newest build of `main` |
+| `stable` | Newest release |
+| `X.Y` (e.g. `0.2`) | Newest patch release of that minor version |
+| `X.Y.Z` (e.g. `0.2.0`) | One exact release, never rebuilt |
+| `sha-<commit>` | One exact `main` build, never rebuilt |
+
+When a site like YouTube breaks and needs a newer yt-dlp, run the Docker workflow by hand (Actions → Docker → Run workflow). It rebuilds `latest`, `stable` and `X.Y` with the newest yt-dlp. Pick a tag with `STASHCAST_VERSION` in `.env` (default `latest`).
+
+### Building the image yourself
+
+```bash
+just dev-docker        # build from this checkout and run the stack
+just docker-smoke      # build like CI does and smoke test the image
+```
+
+### NixOS
+
+There is no Nix package. Run the published image with `virtualisation.oci-containers`, and serve static files and media with your own web server:
+
+```nix
+{
+  virtualisation.oci-containers.containers = let
+    common = {
+      image = "ghcr.io/jonocodes/stashcast:stable";
+      environmentFiles = [ "/var/lib/stashcast/stashcast.env" ];  # SECRET_KEY, ALLOWED_HOSTS, STASHCAST_USER_TOKEN
+      volumes = [
+        "/var/lib/stashcast/data:/app/data_docker"
+        "/var/lib/stashcast/static:/app/staticfiles"
+      ];
+    };
+  in {
+    stashcast-web = common // { ports = [ "127.0.0.1:8000:8000" ]; };
+    stashcast-worker = common // { cmd = [ "python" "manage.py" "run_huey" ]; dependsOn = [ "stashcast-web" ]; };
+  };
+
+  services.caddy.virtualHosts."stashcast.example.com".extraConfig = ''
+    handle_path /static/* {
+      root * /var/lib/stashcast/static
+      file_server
+    }
+    handle_path /media/files/* {
+      root * /var/lib/stashcast/data/media
+      file_server
+    }
+    reverse_proxy 127.0.0.1:8000
+  '';
+}
+```
 
 ## Installation (without docker)
 
@@ -365,11 +420,16 @@ See `.env.example` for all available configuration options.
 
 #### Required
 
+- `SECRET_KEY`: Django secret key
+- `ALLOWED_HOSTS`: Comma-separated host names the site is served on
 - `STASHCAST_DATA_DIR`: Base directory for application data (media is stored in `STASHCAST_DATA_DIR/media`; default: `./data`)
 - `STASHCAST_USER_TOKEN`: API key for stash endpoint
 
 #### Optional
 
+- `DEBUG`: Django debug mode (default: off; `.env.example` turns it on for development)
+- `PUID` / `PGID`: Docker only. User and group the app runs as (default: 1000)
+- `GUNICORN_CMD_ARGS`: Docker only. Extra gunicorn options, e.g. `--workers 4`
 - `STASHCAST_MEDIA_BASE_URL`: External CDN URL for media files
 - `STASHCAST_DEFAULT_YTDLP_ARGS_AUDIO`: Default yt-dlp arguments for audio
 - `STASHCAST_DEFAULT_YTDLP_ARGS_VIDEO`: Default yt-dlp arguments for video
@@ -394,6 +454,21 @@ coverage report -m
 ```
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for more details on the codebase structure and testing strategy.
+
+### Versions and releases
+
+StashCast uses [semantic versioning](https://semver.org/). The version in `pyproject.toml` is the single source of truth and is shown on the About page. Bump the major version when upgrading needs manual steps, such as moving data or renaming a setting.
+
+To release from `main`:
+
+```bash
+just release 0.2.0                 # bumps pyproject.toml, commits, tags v0.2.0
+git push origin main v0.2.0
+```
+
+Pushing the tag runs `.github/workflows/docker.yml`. It runs the tests, builds and smoke-tests the image, publishes the version tags listed under [Image tags](#image-tags), and creates a GitHub release with generated notes. CI rejects a tag that doesn't match `pyproject.toml`. Tags like `v1.0.0-rc.1` publish a pre-release and leave `stable` alone.
+
+The tagging rules live in `scripts/docker_plan.py`, with tests in `scripts/test_docker_plan.py`.
 
 ## Marketing site
 

@@ -1,5 +1,8 @@
 set shell := ["bash", "-c"]
 
+# compose files for running a locally built image
+dev_compose := "docker compose -f docker-compose.yml -f docker-compose.dev.yml"
+
 # set dotenv-load
 
 # setenv := '. ".envrc"'
@@ -40,9 +43,9 @@ dev-web:
 dev:
     exec honcho start
 
-# run the dev services in docker
+# run the dev services in docker, built from this checkout
 dev-docker *args:
-    docker compose up --build {{ args }}
+    {{ dev_compose }} up --build {{ args }}
 
 # kill the local dev process by port in case it's running detached
 kill:
@@ -75,7 +78,24 @@ m *args:
 
 # alias to run commands in docker
 docker-run *args:
-    docker compose run web {{ args }}
+    {{ dev_compose }} run web {{ args }}
+
+# build the image from git-tracked files (like CI) and smoke test it
+docker-smoke tag="stashcast:smoke":
+    scripts/docker-build-clean.sh {{ tag }}
+    scripts/docker-smoke-test.sh {{ tag }}
+
+# bump the version, commit and tag a release (e.g. just release 0.2.0)
+release version:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    [[ "{{ version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]] || { echo "version must look like 1.2.3"; exit 1; }
+    [[ "$(git rev-parse --abbrev-ref HEAD)" == main ]] || { echo "release from main"; exit 1; }
+    git diff --quiet && git diff --cached --quiet || { echo "commit or stash your changes first"; exit 1; }
+    sed -i 's/^version = ".*"/version = "{{ version }}"/' pyproject.toml
+    git commit -am "Release v{{ version }}"
+    git tag -a "v{{ version }}" -m "v{{ version }}"
+    echo "Tagged v{{ version }}. Publish it with: git push origin main v{{ version }}"
 
 # serve the marketing site (site/public) at http://localhost:8090
 site port="8090":

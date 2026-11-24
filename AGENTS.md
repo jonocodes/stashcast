@@ -15,6 +15,8 @@ I often use flox for managing my environment. This means you will need to run `f
 
 ## Using docker
 You can also run all the commands using the included docker setup, but note that does not work well in Claude Web since that is a container itself.
+- `docker-compose.yml` runs the published image; add `docker-compose.dev.yml` to build locally (`just dev-docker`).
+- After changing the Dockerfile or anything under `docker/`, run `just docker-smoke` (set `CONTAINER_ENGINE=podman` on podman-only machines).
 
 ## Some common commands
 - Stash a URL: `./manage.py stash https://example.com/video.mp4`

@@ -1,5 +1,21 @@
 # StashCast Deployment Guide
 
+## Deploying with Docker (recommended)
+
+Run the published image with `docker-compose.yml`. See [Run in docker](README.md#run-in-docker) in the README for setup, image tags, and a NixOS example.
+
+Upgrading:
+
+```bash
+docker compose pull
+docker compose up -d
+```
+
+Migrations run when the web container starts. To roll back, set `STASHCAST_VERSION` in `.env` to an earlier `X.Y.Z` tag. That only works if the release didn't migrate the database.
+
+`docker-compose.coolify.yml` is for [Coolify](https://coolify.io/), which builds the image from the repo, including for branch preview deploys.
+
+
 ## Deploying with cPanel
 
 cPanel provides a "Setup Python App" interface that makes deployment simpler. Here's how to deploy StashCast on cPanel:

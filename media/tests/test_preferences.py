@@ -166,6 +166,17 @@ class PreferencesViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'admin/preferences.html')
 
+    def test_shows_app_version_from_pyproject(self):
+        """The About section shows the release version from pyproject.toml."""
+        import tomllib
+        from pathlib import Path
+
+        pyproject = Path(settings.BASE_DIR) / 'pyproject.toml'
+        version = tomllib.loads(pyproject.read_text())['project']['version']
+
+        response = self.client.get('/admin/tools/preferences/')
+        self.assertContains(response, f'<code>{version}</code>', html=False)
+
     def test_requires_authentication(self):
         """Unauthenticated requests are redirected to the login page."""
         self.client.logout()

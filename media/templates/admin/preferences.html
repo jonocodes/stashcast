@@ -238,6 +238,12 @@
                 </a>
             </td>
         </tr>
+        {% if app_version %}
+        <tr>
+            <td>{% trans "Version" %}</td>
+            <td><code>{{ app_version }}</code></td>
+        </tr>
+        {% endif %}
         <tr>
             <td>{% trans "Deployed" %}</td>
             <td>

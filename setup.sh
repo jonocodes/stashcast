@@ -17,7 +17,17 @@ export NLTK_DATA=${NLTK_DATA:=$STASHCAST_DATA_DIR}
 echo "Using STASHCAST_DATA_DIR: $STASHCAST_DATA_DIR"
 echo "Using NLTK_DATA: $NLTK_DATA"
 
-python -c "import nltk; nltk.download('punkt_tab'); nltk.download('stopwords')"
+# Only download NLTK data that is missing (the Docker image ships it already)
+python - <<'PY'
+import os
+import nltk
+
+for resource, package in [('tokenizers/punkt_tab', 'punkt_tab'), ('corpora/stopwords', 'stopwords')]:
+    try:
+        nltk.data.find(resource)
+    except LookupError:
+        nltk.download(package, download_dir=os.environ['NLTK_DATA'])
+PY
 
 # temp dummy values for initial setup so migrations can run
 export SECRET_KEY="dummy"

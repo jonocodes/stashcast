@@ -1,0 +1,135 @@
+name: Docker
+
+# Builds, smoke tests and publishes ghcr.io/<owner>/stashcast.
+# Tagging rules live in scripts/docker_plan.py (and are unit tested there).
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main, master]
+  # Manual "Run workflow" rebuilds latest/stable/X.Y, e.g. to get a new yt-dlp
+  workflow_dispatch:
+
+concurrency:
+  group: docker-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  test:
+    uses: ./.github/workflows/tests.yml
+
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      targets: ${{ steps.plan.outputs.targets }}
+    steps:
+      - name: Checkout (with tags)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Decide what to build
+        id: plan
+        run: python3 scripts/docker_plan.py
+
+  build:
+    needs: [test, plan]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJSON(needs.plan.outputs.targets) }}
+    env:
+      # Manual rebuilds skip the layer cache so pip fetches the newest yt-dlp
+      NO_CACHE: ${{ github.event_name == 'workflow_dispatch' }}
+    steps:
+      - name: Checkout ${{ matrix.target.ref }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.target.ref }}
+
+      - name: Collect build info
+        id: info
+        run: |
+          {
+            echo "sha=$(git rev-parse HEAD)"
+            echo "created=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "msg<<EOF"
+            git log -1 --pretty=%s
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build for smoke test (amd64)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          pull: true
+          no-cache: ${{ env.NO_CACHE == 'true' }}
+          tags: stashcast:smoke
+          build-args: |
+            GIT_COMMIT_SHA=${{ steps.info.outputs.sha }}
+            GIT_COMMIT_MSG=${{ steps.info.outputs.msg }}
+            GIT_BRANCH=${{ matrix.target.branch }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke test
+        run: scripts/docker-smoke-test.sh stashcast:smoke
+
+      - name: Log in to GHCR
+        if: matrix.target.push
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push (amd64 + arm64)
+        if: matrix.target.push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64,linux/arm64
+          no-cache: ${{ env.NO_CACHE == 'true' }}
+          tags: ${{ matrix.target.tags }}
+          labels: |
+            org.opencontainers.image.title=StashCast
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.licenses=GPL-3.0
+            org.opencontainers.image.revision=${{ steps.info.outputs.sha }}
+            org.opencontainers.image.version=${{ matrix.target.version }}
+            org.opencontainers.image.created=${{ steps.info.outputs.created }}
+          build-args: |
+            GIT_COMMIT_SHA=${{ steps.info.outputs.sha }}
+            GIT_COMMIT_MSG=${{ steps.info.outputs.msg }}
+            GIT_BRANCH=${{ matrix.target.branch }}
+          # On normal pushes, amd64 layers come from the smoke-test build above
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  release:
+    # A pushed version tag also gets a GitHub release with generated notes
+    needs: build
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          prerelease=""
+          [[ "$TAG" == *-* ]] && prerelease="--prerelease"
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --verify-tag --generate-notes $prerelease
