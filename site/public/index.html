@@ -128,6 +128,9 @@
   .install .ctas { display: flex; flex-wrap: wrap; gap: 12px; }
   pre { margin: 0; background: var(--code); border: 1px solid var(--line); border-radius: 14px; padding: 22px; font: 14px/1.7 ui-monospace, monospace; color: #c9d1de; overflow-x: auto; }
   pre .c { color: #6b7587; } pre .p { color: #ffa23a; }
+  /* long URLs wrap instead of scrolling; soft wraps don't end up in copied text */
+  .install pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+  .install pre .w { display: inline-block; padding-left: 2ch; text-indent: -2ch; } /* wrapped lines hang under the command */
 
   footer { border-top: 1px solid var(--line); padding: 36px 0 60px; color: var(--muted); font-size: 14px; }
   footer .wrap { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
@@ -303,17 +306,21 @@
   <section id="install" style="padding-top:40px"><div class="wrap install">
     <div>
       <h2>Running in a minute.</h2>
-      <p class="sec-lede" style="margin-bottom:24px">One compose file and SQLite by default. Put it behind your reverse proxy and you're done.</p>
+      <p class="sec-lede" style="margin-bottom:24px">A published image for amd64 and arm64, one compose file and SQLite by default. Put it behind your reverse proxy and you're done.</p>
       <div class="ctas"><a class="btn primary" href="https://github.com/jonocodes/stashcast#readme">Read the docs</a><a class="btn ghost" href="https://demo.stashcast.net/">Try the demo</a></div>
     </div>
-<pre aria-label="Install commands"><span class="c"># get it running</span>
-<span class="p">$</span> git clone https://github.com/jonocodes/stashcast
-<span class="p">$</span> cd stashcast && docker compose up -d
-<span class="p">$</span> docker compose run web just setup
-<span class="p">$</span> docker compose run web ./manage.py createsuperuser
+<pre aria-label="Install commands"><span class="w"><span class="c"># get it running</span></span>
+<span class="w"><span class="p">$</span> mkdir stashcast && cd stashcast</span>
+<span class="w"><span class="p">$</span> curl -O https://raw.githubusercontent.com/<wbr>jonocodes/<wbr>stashcast/<wbr>main/<wbr>docker-compose.yml</span>
+<span class="w"><span class="p">$</span> curl -o .env https://raw.githubusercontent.com/<wbr>jonocodes/<wbr>stashcast/<wbr>main/<wbr>.env.example</span>
 
-<span class="c"># then subscribe to this in your podcast app</span>
-http://your-server:8000/feeds/audio.xml</pre>
+<span class="w"><span class="c"># edit .env: set SECRET_KEY, STASHCAST_USER_TOKEN and</span></span>
+<span class="w"><span class="c"># ALLOWED_HOSTS, and remove DEBUG=True</span></span>
+<span class="w"><span class="p">$</span> docker compose up -d</span>
+<span class="w"><span class="p">$</span> docker compose run --rm web python manage.py createsuperuser</span>
+
+<span class="w"><span class="c"># then subscribe to this in your podcast app</span></span>
+<span class="w">http://your-server:8000/<wbr>feeds/<wbr>audio.xml</span></pre>
   </div></section>
 </main>
 
