@@ -45,6 +45,7 @@ I created this since friends and family often send me links to listen to a singl
 
 - Downloading non audio/video content. For that you may check out our sister project [Savr](https://github.com/jonocodes/savr).
 - Only downloading youtube videos. yt-dlp supports thousands of of different websites.
+- Downloading videos to a single Android device, without central control. [YTDLnis](https://github.com/deniscerri/ytdlnis) and [Seal](https://github.com/JunkFood02/Seal) run yt-dlp on the phone itself.
 - Subscribing to playlists. For that you could checkout [TubeSync](https://github.com/meeb/tubesync) or [Podsync](https://github.com/mxpv/podsync).
 - Long term archiving. While this may work for you there are other tools perhaps more suited for this. See [ArchiveBox](https://github.com/ArchiveBox/ArchiveBox) or [Tube Archivist](https://github.com/tubearchivist/tubearchivist)
 - A playback tool. The grid and list view are good ways to view your content, but StashCast's best experience would be to use a Podcast app for playback.
